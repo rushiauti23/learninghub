@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>JWT end to end: a field guide for backend developers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F5F7FA; --panel:#FFFFFF; --ink:#141A26; --ink2:#323B4D; --muted:#5B6475; --rule:#DCE1E8; --code:#EEF1F5;
+  --h:#C9304F; --p:#7438C2; --s:#0B84A5; --ok:#17784F; --bad:#B8312A; --warn:#9A6200;
+  --c-client:#0E7490; --f-client:#E3F4F8;
+  --c-svc:#047857;    --f-svc:#E2F4EC;
+  --c-store:#6D28D9;  --f-store:#EEE8FB;
+  --c-cache:#0369A1;  --f-cache:#E3EFF8;
+  --c-sec:#BE123C;    --f-sec:#FBE7EC;
+  --c-ext:#556070;    --f-ext:#ECEFF3;
+  --grid:#E6EAF0;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E1421; --panel:#141C2C; --ink:#E7EBF3; --ink2:#C3CBD9; --muted:#97A1B4; --rule:#263048; --code:#1A2336;
+    --h:#FF6F8A; --p:#B78CF5; --s:#4CC6E4; --ok:#4FD39A; --bad:#FF7A70; --warn:#F2B451;
+    --c-client:#22D3EE; --f-client:#0C2A36;
+    --c-svc:#34D399;    --f-svc:#0B2C24;
+    --c-store:#A78BFA;  --f-store:#211A3D;
+    --c-cache:#38BDF8;  --f-cache:#0C2438;
+    --c-sec:#FB7185;    --f-sec:#35131F;
+    --c-ext:#94A3B8;    --f-ext:#1B2333;
+    --grid:#18213333;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+    --paper:#0E1421; --panel:#141C2C; --ink:#E7EBF3; --ink2:#C3CBD9; --muted:#97A1B4; --rule:#263048; --code:#1A2336;
+    --h:#FF6F8A; --p:#B78CF5; --s:#4CC6E4; --ok:#4FD39A; --bad:#FF7A70; --warn:#F2B451;
+    --c-client:#22D3EE; --f-client:#0C2A36;
+    --c-svc:#34D399;    --f-svc:#0B2C24;
+    --c-store:#A78BFA;  --f-store:#211A3D;
+    --c-cache:#38BDF8;  --f-cache:#0C2438;
+    --c-sec:#FB7185;    --f-sec:#35131F;
+    --c-ext:#94A3B8;    --f-ext:#1B2333;
+    --grid:#18213333;
+    color-scheme:dark;
+}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 16px);}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.62 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+code,pre,.mono{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+a{color:var(--s)}
+:focus-visible{outline:2px solid var(--s);outline-offset:2px;border-radius:3px}
+
+.shell{display:grid;grid-template-columns:230px minmax(0,1fr);gap:56px;max-width:1240px;margin:0 auto;padding:40px 28px 80px}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;font-size:14px;line-height:1.4}
+nav.toc .brand{font:600 15px/1.3 "IBM Plex Mono",monospace;margin-bottom:18px;display:flex;gap:2px}
+nav.toc .brand i{font-style:normal}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:t}
+nav.toc li{margin:0}
+nav.toc a{display:block;padding:6px 0 6px 12px;color:var(--muted);text-decoration:none;border-left:2px solid var(--rule)}
+nav.toc a:hover{color:var(--ink);border-left-color:var(--ink2)}
+nav.toc a.on{color:var(--ink);border-left-color:var(--p);font-weight:500}
+nav.toc .theme{margin-top:22px;font:500 13px "IBM Plex Sans",sans-serif;background:none;border:1px solid var(--rule);color:var(--muted);border-radius:6px;padding:6px 10px;cursor:pointer}
+
+main{min-width:0}
+.col{max-width:760px}
+section{padding-top:28px;margin-top:56px;border-top:1px solid var(--rule)}
+section:first-of-type{border-top:0;margin-top:0;padding-top:0}
+h1{font-weight:700;font-size:clamp(34px,5vw,54px);line-height:1.04;letter-spacing:-.025em;margin:0 0 18px;max-width:15ch}
+h2{font-size:30px;line-height:1.15;letter-spacing:-.015em;margin:0 0 14px;font-weight:600}
+h3{font-size:20px;line-height:1.3;margin:34px 0 10px;font-weight:600}
+h4{font-size:16px;margin:22px 0 6px;font-weight:600}
+p{margin:0 0 14px}
+.lede{font-size:20px;line-height:1.5;color:var(--ink2);max-width:40em}
+.small{font-size:14px;color:var(--muted)}
+ul.plain{padding-left:20px;margin:0 0 14px}
+ul.plain li{margin-bottom:6px}
+:not(pre)>code{font-size:.86em;background:var(--code);padding:.08em .35em;border-radius:4px;word-break:break-word}
+.hh{color:var(--h)} .pp{color:var(--p)} .ss{color:var(--s)}
+
+/* hero token */
+.token{font:500 clamp(13px,1.55vw,17px)/1.55 "IBM Plex Mono",monospace;word-break:break-all;background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:22px 24px;margin:26px 0 0}
+.token .dot{color:var(--ink);font-weight:700}
+.token .sh{color:var(--h)} .token .sp{color:var(--p)} .token .sx{color:var(--s)}
+.lab{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr) minmax(0,.8fr);gap:14px;margin-top:14px}
+.pane{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;min-width:0;display:flex;flex-direction:column}
+.pane h4{margin:0 0 2px;font-size:15px}
+.pane .what{font-size:13px;color:var(--muted);margin-bottom:8px}
+.pane.h{border-top:3px solid var(--h)} .pane.p{border-top:3px solid var(--p)} .pane.s{border-top:3px solid var(--s)}
+.pane textarea{flex:1;width:100%;min-height:220px;resize:vertical;font:13px/1.5 "IBM Plex Mono",monospace;color:var(--ink);background:var(--code);border:1px solid transparent;border-radius:6px;padding:10px}
+.pane textarea:focus{border-color:var(--p);outline:none}
+.pane .sigtxt{font:12px/1.5 "IBM Plex Mono",monospace;background:var(--code);border-radius:6px;padding:10px;color:var(--ink2);word-break:break-all;flex:1}
+.verdict{margin-top:14px;background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:16px 18px;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:20px}
+.checks{list-style:none;margin:0;padding:0;font-size:14px}
+.checks li{display:grid;grid-template-columns:22px 1fr;gap:6px;padding:5px 0;border-bottom:1px dashed var(--rule)}
+.checks li:last-child{border-bottom:0}
+.checks .i{font-weight:700}
+.checks .y .i{color:var(--ok)} .checks .n .i{color:var(--bad)}
+.checks .msg{display:block;font:12px/1.4 "IBM Plex Mono",monospace;color:var(--muted)}
+.result{font:600 22px/1.2 "IBM Plex Mono",monospace;margin:4px 0 6px}
+.result.ok{color:var(--ok)} .result.bad{color:var(--bad)}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;font-size:14px}
+.ctl select,.ctl button,.btn{font:500 14px "IBM Plex Sans",sans-serif;color:var(--ink);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:6px 10px;cursor:pointer}
+.ctl button:hover,.btn:hover{border-color:var(--ink2)}
+.hint{font-size:14px;color:var(--muted);margin-top:10px}
+
+/* tables */
+.tw{overflow-x:auto;margin:10px 0 18px;border:1px solid var(--rule);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;line-height:1.45}
+th,td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--rule)}
+th{font-weight:600;font-size:13.5px;color:var(--muted);background:var(--code)}
+tr:last-child td{border-bottom:0}
+td code{white-space:nowrap}
+td.wrap code{white-space:normal;word-break:break-all}
+
+/* code */
+pre{background:var(--code);border:1px solid var(--rule);border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:13.5px;line-height:1.55;margin:10px 0 18px;color:var(--ink)}
+pre .c{color:var(--muted);font-style:italic}
+pre .k{color:var(--p)}
+pre .s{color:var(--s)}
+.fname{font:500 12.5px "IBM Plex Mono",monospace;color:var(--muted);margin:18px 0 -6px}
+
+/* diagrams */
+.wide{margin:18px 0 10px;background:var(--panel);border:1px solid var(--rule);border-radius:12px;overflow-x:auto}
+.wide svg{display:block;width:100%}
+svg text{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.bx{stroke-width:1.5}
+.t-client .bx,.bx.t-client{fill:var(--f-client);stroke:var(--c-client)}
+.t-svc .bx,.bx.t-svc{fill:var(--f-svc);stroke:var(--c-svc)}
+.t-store .bx,.bx.t-store{fill:var(--f-store);stroke:var(--c-store)}
+.t-cache .bx,.bx.t-cache{fill:var(--f-cache);stroke:var(--c-cache)}
+.t-sec .bx,.bx.t-sec{fill:var(--f-sec);stroke:var(--c-sec)}
+.t-ext .bx,.bx.t-ext{fill:var(--f-ext);stroke:var(--c-ext)}
+.bt{fill:var(--ink);font-size:12.5px;font-weight:600}
+.bs{fill:var(--muted);font-size:10px}
+.al{fill:var(--ink2);font-size:10.5px;paint-order:stroke;stroke:var(--panel);stroke-width:4px;stroke-linejoin:round}
+.bound{fill:none;stroke:var(--c-sec);stroke-dasharray:6 4;stroke-width:1}
+.boundl{fill:var(--c-sec);font-size:11px;font-weight:600}
+.ar{fill:none;stroke-width:1.5}
+.ar.dash{stroke-dasharray:5 4}
+.a-client{stroke:var(--c-client)} .a-svc{stroke:var(--c-svc)} .a-sec{stroke:var(--c-sec)} .a-cache{stroke:var(--c-cache)} .a-ext{stroke:var(--c-ext)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13px;color:var(--muted);margin:8px 0 18px}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.sw{width:14px;height:14px;border-radius:3px;border:1.5px solid}
+.ln{width:26px;border-top:1.5px solid var(--ink2)} .ln.d{border-top-style:dashed}
+
+/* sequence diagrams */
+.seq .life{stroke:var(--rule);stroke-width:1.2;stroke-dasharray:3 4}
+.seq .msg{stroke:var(--ink2);stroke-width:1.3;fill:none}
+.seq .msg.ret{stroke-dasharray:5 4;stroke:var(--muted)}
+.seq .ml{fill:var(--ink);font-size:11px;paint-order:stroke;stroke:var(--panel);stroke-width:5px;stroke-linejoin:round}
+.seq .ml.ret{fill:var(--muted)}
+.seq .n{fill:var(--p);font-weight:600}
+.seq .pn{fill:var(--ink);font-size:12px;font-weight:600}
+
+/* tabs */
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 0}
+.tabs button{font:500 14.5px "IBM Plex Sans",sans-serif;background:none;border:1px solid var(--rule);color:var(--muted);padding:7px 13px;border-radius:999px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tabpanel[hidden]{display:none}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.box{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:14px 18px}
+.box h4{margin-top:0}
+
+/* validation pipeline */
+ol.pipe{list-style:none;counter-reset:s;margin:16px 0;padding:0}
+ol.pipe>li{counter-increment:s;display:grid;grid-template-columns:40px minmax(0,1fr);gap:4px 14px;padding:12px 0;border-bottom:1px solid var(--rule)}
+ol.pipe>li::before{content:counter(s);font:600 15px/1 "IBM Plex Mono",monospace;color:var(--p);border:1.5px solid var(--p);border-radius:50%;width:30px;height:30px;display:grid;place-items:center}
+ol.pipe b{display:block;font-weight:600}
+ol.pipe .fail{font:12.5px/1.45 "IBM Plex Mono",monospace;color:var(--bad);display:block;margin-top:3px}
+ol.pipe .who{font-size:13.5px;color:var(--muted)}
+
+/* troubleshooting */
+.filter{width:100%;font:15px "IBM Plex Sans",sans-serif;padding:10px 14px;border:1px solid var(--rule);border-radius:8px;background:var(--panel);color:var(--ink);margin:6px 0 12px}
+details.issue{border:1px solid var(--rule);border-radius:10px;background:var(--panel);margin-bottom:8px}
+details.issue summary{cursor:pointer;padding:12px 16px;list-style:none;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:baseline}
+details.issue summary::-webkit-details-marker{display:none}
+details.issue summary .err{font:500 13.5px/1.45 "IBM Plex Mono",monospace;color:var(--bad)}
+details.issue summary .sym{display:block;font:15px/1.4 "IBM Plex Sans",sans-serif;color:var(--ink);margin-top:2px}
+details.issue summary .tg{font-size:12px;color:var(--muted);white-space:nowrap}
+details.issue[open] summary{border-bottom:1px solid var(--rule)}
+details.issue .body{padding:12px 16px 4px;font-size:15.5px}
+details.issue .body h5{margin:6px 0 4px;font-size:14px;color:var(--muted);font-weight:600}
+.empty{display:none;color:var(--muted);font-size:15px}
+
+/* checklist */
+ul.check{list-style:none;padding:0;margin:12px 0}
+ul.check li{border-bottom:1px solid var(--rule)}
+ul.check label{display:grid;grid-template-columns:24px 1fr;gap:10px;padding:10px 0;cursor:pointer}
+ul.check input{width:18px;height:18px;margin-top:3px;accent-color:var(--ok)}
+ul.check input:checked+span{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--rule)}
+
+footer{margin-top:64px;font-size:13.5px;color:var(--muted)}
+
+@media (max-width:980px){
+  .shell{grid-template-columns:1fr;gap:20px;padding:24px 18px 64px}
+  nav.toc{position:static;border-bottom:1px solid var(--rule);padding-bottom:14px}
+  nav.toc ol{display:flex;flex-wrap:wrap;gap:4px 14px}
+  nav.toc a{border-left:0;padding:4px 0}
+  .lab{grid-template-columns:1fr}
+  .verdict,.two{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="toc" aria-label="Contents">
+  <div class="brand mono"><i class="hh">JWT</i><i>.</i><i class="pp">field</i><i>.</i><i class="ss">guide</i></div>
+  <ol>
+    <li><a href="#token">Try a real token</a></li>
+    <li><a href="#anatomy">Anatomy and claims</a></li>
+    <li><a href="#algorithms">Signing algorithms</a></li>
+    <li><a href="#architecture">End-to-end architecture</a></li>
+    <li><a href="#scenarios">Flows by scenario</a></li>
+    <li><a href="#validation">How an API validates</a></li>
+    <li><a href="#spring">Spring Security code</a></li>
+    <li><a href="#types">Token types and storage</a></li>
+    <li><a href="#providers">Identity providers</a></li>
+    <li><a href="#troubleshooting">Issues and fixes</a></li>
+    <li><a href="#attacks">Attacks to defend against</a></li>
+    <li><a href="#checklist">Production checklist</a></li>
+  </ol>
+  <button class="theme" id="themeBtn" type="button">Switch theme</button>
+</nav>
+
+<main>
+<!-- ============ HERO ============ -->
+<section id="token">
+  <h1>JWT, end to end, for backend developers</h1>
+  <p class="lede">How tokens are issued, carried, validated and broken: the flows, the identity-provider quirks, the Spring Security code and the error messages you will actually meet in production.</p>
+
+  <div class="token" id="tokenView" aria-label="Encoded JWT"></div>
+  <div class="lab">
+    <div class="pane h">
+      <h4 class="hh">Header</h4>
+      <div class="what">How it was signed and with which key. Edit me.</div>
+      <textarea id="hTA" spellcheck="false" aria-label="Decoded header JSON"></textarea>
+    </div>
+    <div class="pane p">
+      <h4 class="pp">Payload</h4>
+      <div class="what">The claims. Readable by anyone. Edit me.</div>
+      <textarea id="pTA" spellcheck="false" aria-label="Decoded payload JSON"></textarea>
+    </div>
+    <div class="pane s">
+      <h4 class="ss">Signature</h4>
+      <div class="what">RS256 over <code>base64url(header) + "." + base64url(payload)</code>, made with the IdP's private key.</div>
+      <div class="sigtxt" id="sigTxt"></div>
+    </div>
+  </div>
+
+  <div class="verdict" aria-live="polite">
+    <div>
+      <h4 style="margin:0 0 6px">What the Orders API checks</h4>
+      <ul class="checks" id="checks"></ul>
+    </div>
+    <div>
+      <div class="small">Response</div>
+      <div class="result" id="result">…</div>
+      <div class="mono small" id="resultDetail"></div>
+      <div class="ctl">
+        <label for="clock">Server clock</label>
+        <select id="clock">
+          <option value="300" selected>5 min after issue</option>
+          <option value="930">15½ min (30 s past exp)</option>
+          <option value="1020">17 min after issue</option>
+          <option value="-120">2 min before issue</option>
+        </select>
+        <button type="button" id="resetBtn">Reset token</button>
+      </div>
+      <p class="hint">This token is genuinely signed. The page holds only the public key, exactly like your API. Change one character of the payload, say <code>"roles":["admin"]</code>, and the signature check fails. Set <code>"alg":"none"</code> or <code>"HS256"</code> and the allowlist rejects it before any crypto runs. Try the clock: 30 s past <code>exp</code> still passes, because Spring allows 60 s of clock skew by default.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ANATOMY ============ -->
+<section id="anatomy"><div class="col">
+  <h2>Anatomy and claims</h2>
+  <p>A JWT (RFC 7519) is a set of claims serialized as JSON and protected by a signature. The compact form is three base64url strings joined by dots: <span class="hh mono">header</span>.<span class="pp mono">payload</span>.<span class="ss mono">signature</span>. That is technically a <b>JWS</b> (RFC 7515). An encrypted <b>JWE</b> (RFC 7516) has five segments and hides the payload; you rarely need one between your own services, and many APIs reject them outright.</p>
+  <p>The single most important fact: <b>base64url is encoding, not encryption.</b> Anyone holding the token can read every claim. The signature only proves who issued it and that nobody changed it. So no passwords, no BSN or IBAN, nothing you would not print in a log line.</p>
+
+  <h3>Header</h3>
+  <div class="tw"><table>
+    <tr><th>Field</th><th>Meaning</th><th>Backend rule</th></tr>
+    <tr><td><code>alg</code></td><td>Signing algorithm, e.g. RS256</td><td>Never trust it. Compare against a fixed allowlist configured on your side.</td></tr>
+    <tr><td><code>kid</code></td><td>Key ID: which public key in the issuer's JWKS verifies this token</td><td>Look it up only in the trusted JWKS. Never use it in a file path or SQL query.</td></tr>
+    <tr><td><code>typ</code></td><td><code>JWT</code>, or <code>at+jwt</code> for access tokens per RFC 9068</td><td>If your IdP sets <code>at+jwt</code>, require it, so an ID token can't be replayed as an access token.</td></tr>
+    <tr><td><code>jku</code>, <code>x5u</code>, <code>jwk</code></td><td>URL of, or embedded, signing keys</td><td>Ignore. Keys come from your configuration, never from the token.</td></tr>
+  </table></div>
+
+  <h3>Payload: registered and common claims</h3>
+  <div class="tw"><table>
+    <tr><th>Claim</th><th>Meaning</th><th>What you do with it</th></tr>
+    <tr><td><code>iss</code></td><td>Issuer URL</td><td>Exact string match with the expected issuer. Trailing slash counts.</td></tr>
+    <tr><td><code>sub</code></td><td>Subject: user ID, or client ID for machine tokens</td><td>Your stable user key. Don't use email; it changes.</td></tr>
+    <tr><td><code>aud</code></td><td>Audience: string or array of APIs meant to accept it</td><td>Must contain <em>your</em> API's identifier. Spring does not check it unless you configure it.</td></tr>
+    <tr><td><code>exp</code> / <code>nbf</code> / <code>iat</code></td><td>Expiry, not-before, issued-at (Unix seconds, UTC)</td><td>Reject outside the window, allowing a small skew (30–60 s).</td></tr>
+    <tr><td><code>jti</code></td><td>Unique token ID</td><td>Key for a denylist or replay detection.</td></tr>
+    <tr><td><code>scope</code> / <code>scp</code></td><td>Granted scopes (space-separated string or array)</td><td>Spring maps each to <code>SCOPE_x</code> authorities.</td></tr>
+    <tr><td><code>azp</code> / <code>client_id</code></td><td>The client app that requested the token</td><td>Useful for auditing and per-client rules.</td></tr>
+    <tr><td><code>nonce</code>, <code>auth_time</code>, <code>acr</code>, <code>amr</code></td><td>OIDC login details (ID tokens)</td><td>Clients check <code>nonce</code>; APIs can require <code>acr</code>/<code>amr</code> for step-up (e.g. MFA).</td></tr>
+    <tr><td><code>cnf</code></td><td>Confirmation key for sender-constrained tokens (DPoP, mTLS)</td><td>Holder must prove possession of the key, so a stolen token alone is useless.</td></tr>
+  </table></div>
+
+  <h3>How the signature is made</h3>
+<pre>signingInput = base64url(headerJson) + "." + base64url(payloadJson)
+signature    = RSASSA-PKCS1-v1_5-SIGN( SHA-256(signingInput), issuerPrivateKey )   <span class="c">// RS256</span>
+token        = signingInput + "." + base64url(signature)
+
+<span class="c">// verification on your API</span>
+valid = RSASSA-PKCS1-v1_5-VERIFY( SHA-256(signingInput), signature, publicKeyFromJWKS[kid] )</pre>
+  <p>Note that the signature covers the <em>encoded</em> bytes. Re-serializing the JSON with different whitespace or key order produces a different signing input, which is why you must never "decode, modify, re-encode" a token you intend to keep valid.</p>
+</div></section>
+
+<!-- ============ ALGORITHMS ============ -->
+<section id="algorithms"><div class="col">
+  <h2>Signing algorithms</h2>
+  <p>The real choice is <b>symmetric versus asymmetric</b>. With HMAC, the secret that verifies a token can also mint one, so every verifier is also a potential forger. With RSA or EC, the IdP keeps the private key and everyone else gets the public half from a JWKS endpoint. For anything with more than one service, use asymmetric.</p>
+  <div class="tw"><table>
+    <tr><th>alg</th><th>Type</th><th>Key</th><th>Use it when</th></tr>
+    <tr><td><code>HS256</code></td><td>HMAC, symmetric</td><td>Shared secret, at least 256 random bits</td><td>Issuer and verifier are the same service. Short secrets are brute-forced offline.</td></tr>
+    <tr><td><code>RS256</code></td><td>RSA PKCS#1 v1.5</td><td>RSA 2048+</td><td>The default of almost every IdP. Widest support.</td></tr>
+    <tr><td><code>PS256</code></td><td>RSA-PSS</td><td>RSA 2048+</td><td>Same keys, more modern padding; required by some financial-grade profiles (FAPI).</td></tr>
+    <tr><td><code>ES256</code></td><td>ECDSA P-256</td><td>EC key</td><td>Small tokens and fast signing. Don't hand-roll it; signature encoding and nonce generation are easy to get wrong.</td></tr>
+    <tr><td><code>EdDSA</code></td><td>Ed25519</td><td>OKP key</td><td>Fast and misuse-resistant, but check every consumer supports it.</td></tr>
+    <tr><td><code>none</code></td><td>Unsigned</td><td>—</td><td>Never. Reject at the allowlist.</td></tr>
+  </table></div>
+
+  <h3>JWKS and key rotation</h3>
+  <p>An issuer publishes its public keys at a JWKS URL (discoverable from <code>{issuer}/.well-known/openid-configuration</code> as <code>jwks_uri</code>). Each key carries a <code>kid</code>. Your API caches the set and picks the key whose <code>kid</code> matches the token header. Rotation that never breaks anything follows one order:</p>
+  <ol class="plain">
+    <li>Publish the new public key in the JWKS next to the old one.</li>
+    <li>Wait longer than your consumers' JWKS cache lifetime.</li>
+    <li>Start signing with the new private key.</li>
+    <li>Keep the old public key until the longest-lived token signed with it has expired, then remove it.</li>
+  </ol>
+<pre>{
+  "keys": [
+    { "kty": "RSA", "kid": "acme-2026-10", "use": "sig", "alg": "RS256", "n": "u1cK…", "e": "AQAB" },
+    { "kty": "RSA", "kid": "acme-2026-07", "use": "sig", "alg": "RS256", "n": "xQ9P…", "e": "AQAB" }
+  ]
+}</pre>
+</div></section>
+<!-- ============ ARCHITECTURE ============ -->
+<section id="architecture">
+  <div class="col">
+  <h2>End-to-end architecture</h2>
+  <p>One picture of where a token is born, where it travels and who checks it. The numbered path is a user signing into a web app and placing an order; ⑩ and ⑪ are a batch job calling the same API with its own identity.</p>
+  </div>
+  <div class="wide">
+  <svg viewBox="0 0 1110 620" role="img" aria-label="JWT architecture: browser, client, identity provider, gateway, APIs, JWKS cache and denylist">
+    <defs>
+      <marker id="am-client" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto-start-reverse"><polygon points="0 0,10 3.5,0 7" style="fill:var(--c-client)"/></marker>
+      <marker id="am-svc" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto-start-reverse"><polygon points="0 0,10 3.5,0 7" style="fill:var(--c-svc)"/></marker>
+      <marker id="am-sec" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto-start-reverse"><polygon points="0 0,10 3.5,0 7" style="fill:var(--c-sec)"/></marker>
+      <marker id="am-cache" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto-start-reverse"><polygon points="0 0,10 3.5,0 7" style="fill:var(--c-cache)"/></marker>
+      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" style="stroke:var(--grid)" stroke-width="0.6"/></pattern>
+    </defs>
+    <rect width="1110" height="620" fill="url(#grid)"/>
+
+    <!-- arrows first (behind boxes) -->
+    <path class="ar a-client" d="M105 298 L105 222 L450 222 L450 128" marker-end="url(#am-client)"/>
+    <path class="ar dash a-sec" d="M490 128 L490 244 L300 244 L300 298" marker-end="url(#am-sec)"/>
+    <path class="ar a-sec" d="M335 298 L335 266 L620 266 L620 128" marker-start="url(#am-sec)" marker-end="url(#am-sec)"/>
+    <path class="ar dash a-sec" d="M750 298 L750 206 L680 206 L680 128" marker-start="url(#am-sec)" marker-end="url(#am-sec)"/>
+    <line class="ar a-client" x1="365" y1="332" x2="418" y2="332" marker-end="url(#am-client)"/>
+    <line class="ar a-svc" x1="570" y1="332" x2="628" y2="332" marker-end="url(#am-svc)"/>
+    <line class="ar a-svc" x1="790" y1="332" x2="898" y2="332" marker-end="url(#am-svc)"/>
+    <line class="ar a-cache" x1="710" y1="364" x2="710" y2="468" marker-end="url(#am-cache)"/>
+    <path class="ar dash a-cache" d="M775 364 L775 420 L960 420 L960 468" marker-end="url(#am-cache)"/>
+    <path class="ar dash a-cache" d="M710 536 L710 580 L1092 580 L1092 96 L1067 96" marker-end="url(#am-cache)"/>
+    <path class="ar a-svc" d="M290 536 L290 596 L16 596 L16 16 L600 16 L600 64" marker-end="url(#am-svc)"/>
+    <path class="ar a-svc" d="M365 502 L495 502 L495 366" marker-end="url(#am-svc)"/>
+
+    <!-- IdP trust boundary -->
+    <rect class="bound" x="370" y="34" width="715" height="150" rx="12"/>
+    <text class="boundl" x="384" y="54">Identity provider</text>
+    <text class="bs" x="1072" y="54" text-anchor="end">Private key stays inside; public keys published on /jwks</text>
+
+    <g class="t-sec"><rect class="bx" x="395" y="66" width="150" height="60" rx="6"/><text class="bt" x="470" y="91" text-anchor="middle">/authorize</text><text class="bs" x="470" y="108" text-anchor="middle">login, MFA, consent</text></g>
+    <g class="t-sec"><rect class="bx" x="565" y="66" width="150" height="60" rx="6"/><text class="bt" x="640" y="91" text-anchor="middle">/token</text><text class="bs" x="640" y="108" text-anchor="middle">issues and signs JWTs</text></g>
+    <g class="t-ext"><rect class="bx" x="735" y="66" width="160" height="60" rx="6"/><text class="bt" x="815" y="91" text-anchor="middle">.well-known</text><text class="bs" x="815" y="108" text-anchor="middle">openid-configuration</text></g>
+    <g class="t-store"><rect class="bx" x="915" y="66" width="150" height="60" rx="6"/><text class="bt" x="990" y="91" text-anchor="middle">/jwks</text><text class="bs" x="990" y="108" text-anchor="middle">public keys by kid</text></g>
+
+    <g class="t-ext"><rect class="bx" x="30" y="300" width="150" height="64" rx="6"/><text class="bt" x="105" y="327" text-anchor="middle">User + browser</text><text class="bs" x="105" y="344" text-anchor="middle">or mobile app</text></g>
+    <g class="t-client"><rect class="bx" x="215" y="300" width="150" height="64" rx="6"/><text class="bt" x="290" y="327" text-anchor="middle">Client / BFF</text><text class="bs" x="290" y="344" text-anchor="middle">holds the tokens</text></g>
+    <g class="t-sec"><rect class="bx" x="420" y="300" width="150" height="64" rx="6"/><text class="bt" x="495" y="327" text-anchor="middle">API gateway</text><text class="bs" x="495" y="344" text-anchor="middle">coarse JWT check</text></g>
+    <g class="t-svc"><rect class="bx" x="630" y="300" width="160" height="64" rx="6"/><text class="bt" x="710" y="327" text-anchor="middle">Orders API</text><text class="bs" x="710" y="344" text-anchor="middle">resource server</text></g>
+    <g class="t-svc"><rect class="bx" x="900" y="300" width="160" height="64" rx="6"/><text class="bt" x="980" y="327" text-anchor="middle">Payments API</text><text class="bs" x="980" y="344" text-anchor="middle">downstream service</text></g>
+
+    <g class="t-svc"><rect class="bx" x="215" y="470" width="150" height="64" rx="6"/><text class="bt" x="290" y="497" text-anchor="middle">Batch job</text><text class="bs" x="290" y="514" text-anchor="middle">machine client</text></g>
+    <g class="t-cache"><rect class="bx" x="630" y="470" width="160" height="64" rx="6"/><text class="bt" x="710" y="497" text-anchor="middle">JWKS cache</text><text class="bs" x="710" y="514" text-anchor="middle">in memory, by kid</text></g>
+    <g class="t-cache"><rect class="bx" x="900" y="470" width="160" height="64" rx="6"/><text class="bt" x="980" y="497" text-anchor="middle">Denylist</text><text class="bs" x="980" y="514" text-anchor="middle">Redis, jti until exp</text></g>
+
+    <!-- labels -->
+    <text class="al" x="120" y="214">① login redirect + PKCE challenge</text>
+    <text class="al" x="308" y="238">② code (redirect)</text>
+    <text class="al" x="350" y="284">③ code + verifier, returns access, ID, refresh tokens</text>
+    <text class="al" x="392" y="324" text-anchor="middle">④ Bearer</text>
+    <text class="al" x="599" y="324" text-anchor="middle">⑤</text>
+    <text class="al" x="702" y="420" text-anchor="end">⑥ verify signature by kid</text>
+    <text class="al" x="760" y="224">⑦ token exchange</text>
+    <text class="al" x="760" y="238">aud: payments-api</text>
+    <text class="al" x="844" y="324" text-anchor="middle">⑧ new token</text>
+    <text class="al" x="868" y="412" text-anchor="middle">⑨ check jti (optional)</text>
+    <text class="al" x="900" y="598" text-anchor="middle">refetch /jwks on unknown kid, then cache</text>
+    <text class="al" x="28" y="32">⑩ client_credentials grant</text>
+    <text class="al" x="430" y="494" text-anchor="middle">⑪ Bearer</text>
+  </svg>
+  </div>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--f-client);border-color:var(--c-client)"></i>Client</span>
+    <span><i class="sw" style="background:var(--f-svc);border-color:var(--c-svc)"></i>Service</span>
+    <span><i class="sw" style="background:var(--f-sec);border-color:var(--c-sec)"></i>Security / auth</span>
+    <span><i class="sw" style="background:var(--f-store);border-color:var(--c-store)"></i>Key store</span>
+    <span><i class="sw" style="background:var(--f-cache);border-color:var(--c-cache)"></i>Cache</span>
+    <span><i class="ln"></i>Synchronous call</span>
+    <span><i class="ln d"></i>Redirect, async or optional</span>
+  </div>
+  <div class="col">
+  <h3>What each hop is responsible for</h3>
+  <div class="two">
+    <div class="box"><h4>The identity provider</h4><p class="small" style="margin:0">Authenticates people and clients, decides what goes into the token, signs it, publishes public keys, and handles refresh, revocation and logout. You configure it; you don't write it.</p></div>
+    <div class="box"><h4>The client or BFF</h4><p class="small" style="margin:0">Runs the login flow, stores tokens safely, attaches <code>Authorization: Bearer</code>, refreshes before expiry. It treats the access token as an opaque string and never makes authorization decisions from it.</p></div>
+    <div class="box"><h4>The gateway</h4><p class="small" style="margin:0">Rejects garbage early: signature, expiry, issuer, maybe a scope per route. It forwards the original token. It must strip any inbound identity headers like <code>X-User-Id</code> so callers can't forge them.</p></div>
+    <div class="box"><h4>Each resource server</h4><p class="small" style="margin:0">Validates the token again (zero trust: the network is not proof), checks <code>aud</code>, maps scopes and roles, and does object-level checks such as "does this <code>sub</code> own order 42?".</p></div>
+  </div>
+  </div>
+</section>
+
+<!-- ============ SCENARIOS ============ -->
+<section id="scenarios">
+  <div class="col">
+  <h2>Flows by scenario</h2>
+  <p>Five flows cover almost every backend system. Pick one to see the message sequence; dashed arrows are responses or redirects, loops are local work.</p>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Scenarios">
+    <button role="tab" aria-selected="true" aria-controls="sc-a" id="tab-a">Web login (code + PKCE)</button>
+    <button role="tab" aria-selected="false" aria-controls="sc-b" id="tab-b">Service to service</button>
+    <button role="tab" aria-selected="false" aria-controls="sc-c" id="tab-c">Refresh and rotation</button>
+    <button role="tab" aria-selected="false" aria-controls="sc-d" id="tab-d">Calling downstream APIs</button>
+    <button role="tab" aria-selected="false" aria-controls="sc-e" id="tab-e">Logout and revocation</button>
+  </div>
+
+  <div class="tabpanel" role="tabpanel" id="sc-a" aria-labelledby="tab-a">
+    <div class="wide" id="seq-a"></div>
+    <div class="col">
+      <p><b>Use for</b> any human login: SPAs, server-rendered apps, mobile. The implicit flow and the password grant are deprecated in OAuth 2.1; Authorization Code with PKCE replaces both. PKCE ties the code to the client instance that started the flow, so an intercepted code is useless without the <code>code_verifier</code>.</p>
+      <p><b>Why a BFF.</b> Here the browser never sees a token; it holds a session cookie and the backend-for-frontend calls APIs with the access token. A pure SPA can run the same flow itself, but then tokens live in JavaScript, where any XSS can read them.</p>
+      <p><b>Watch for:</b> <code>redirect_uri</code> must match the registration exactly (scheme, host, port, path); <code>state</code> stops login CSRF; <code>nonce</code> stops ID token replay; ask for an API scope or audience or you'll get a token your API can't accept.</p>
+    </div>
+  </div>
+  <div class="tabpanel" role="tabpanel" id="sc-b" aria-labelledby="tab-b" hidden>
+    <div class="wide" id="seq-b"></div>
+    <div class="col">
+      <p><b>Use for</b> schedulers, batch jobs, consumers of a queue, any process acting as itself rather than as a user. The token's <code>sub</code> is the client ID, there is no refresh token, and you simply request a new token when the cached one is close to expiry.</p>
+      <p><b>Client authentication</b> options, weakest to strongest: <code>client_secret_basic</code>, <code>private_key_jwt</code> (the client signs a short JWT assertion with its own key, so no shared secret exists), and mutual TLS. On Kubernetes, workload identity federation can replace secrets entirely.</p>
+      <p><b>Watch for:</b> fetching a fresh token per request (it hammers the IdP and adds latency; cache it), and granting machine clients broad scopes "to make it work".</p>
+    </div>
+  </div>
+  <div class="tabpanel" role="tabpanel" id="sc-c" aria-labelledby="tab-c" hidden>
+    <div class="wide" id="seq-c"></div>
+    <div class="col">
+      <p><b>Short access tokens, long refresh tokens.</b> Access tokens can't be recalled once issued, so they live 5–15 minutes. The refresh token is only ever sent to the IdP, which can revoke it, and that is where long sessions come from.</p>
+      <p><b>Rotation with reuse detection:</b> each refresh returns a new refresh token and invalidates the old one. If an old one shows up again, either the client or an attacker has a copy, and the IdP can't tell which, so it revokes the whole family and forces a fresh login.</p>
+      <p><b>Watch for:</b> parallel requests that all hit 401 and all refresh with the same token. With rotation on, the second refresh looks like reuse and logs the user out. Make refresh single-flight: one in-progress refresh, everyone else awaits its result.</p>
+    </div>
+  </div>
+  <div class="tabpanel" role="tabpanel" id="sc-d" aria-labelledby="tab-d" hidden>
+    <div class="wide" id="seq-d"></div>
+    <div class="col">
+      <p><b>The problem:</b> Orders API received a token whose <code>aud</code> is <code>orders-api</code>, and now needs to call Payments API on the user's behalf. Forwarding the same token ("token relay") either fails Payments' audience check or, worse, means Payments accepts tokens meant for someone else.</p>
+      <p><b>Token exchange</b> (RFC 8693) asks the IdP for a new token for the new audience, keeping the user as <code>sub</code> and recording Orders as the actor in <code>act</code>. Microsoft Entra calls this pattern On-Behalf-Of and implements it with the <code>jwt-bearer</code> grant; Keycloak supports standard token exchange.</p>
+      <p><b>Alternatives:</b> if Payments doesn't care about the user, Orders can use its own client-credentials token instead. Inside a service mesh, mTLS proves which <em>service</em> is calling, while the JWT still carries which <em>user</em> it's for.</p>
+    </div>
+  </div>
+  <div class="tabpanel" role="tabpanel" id="sc-e" aria-labelledby="tab-e" hidden>
+    <div class="wide" id="seq-e"></div>
+    <div class="col">
+      <p><b>The stateless trade-off:</b> a JWT stays valid until <code>exp</code> no matter what happens at the IdP. Logout revokes the refresh token and ends the SSO session, but any access token already out there keeps working until it expires.</p>
+      <p><b>Your options, cheapest first:</b> short access-token lifetimes; revoke refresh tokens on logout, password change and account disable; a <code>jti</code> denylist with TTL equal to the token's remaining lifetime for high-risk cases; or token introspection (RFC 7662) on sensitive endpoints, which trades statelessness for an IdP call per request.</p>
+      <p><b>Watch for:</b> back-channel logout (the IdP calls each client's logout endpoint with a signed logout token) only works if your clients implement and expose that endpoint.</p>
+    </div>
+  </div>
+</section>
+<!-- ============ VALIDATION ============ -->
+<section id="validation"><div class="col">
+  <h2>How an API validates a token</h2>
+  <p>Order matters: cheap structural checks first, crypto next, claims after the signature is proven (an unsigned claim is just user input). In Spring Security, steps 1–8 happen inside <code>BearerTokenAuthenticationFilter</code> → <code>JwtAuthenticationProvider</code> → <code>NimbusJwtDecoder</code>.</p>
+  <ol class="pipe">
+    <li><div><b>Extract the bearer token</b><span class="who">From <code>Authorization: Bearer …</code> only. Spring's <code>DefaultBearerTokenResolver</code> ignores query parameters unless you opt in, because URLs end up in logs.</span><span class="fail">401 · no token → WWW-Authenticate: Bearer</span></div></li>
+    <li><div><b>Parse</b><span class="who">Three segments, valid base64url, valid JSON. An opaque token fails here.</span><span class="fail">Malformed token / Invalid JWT serialization</span></div></li>
+    <li><div><b>Check the algorithm against your allowlist</b><span class="who">Configured on the server, e.g. only RS256. Stops <code>alg:none</code> and RS→HS confusion.</span><span class="fail">Another algorithm expected</span></div></li>
+    <li><div><b>Select the key by kid</b><span class="who">From the cached JWKS of the configured issuer. Unknown <code>kid</code> triggers one rate-limited refetch, which is how rotation is picked up.</span><span class="fail">no matching key(s) found</span></div></li>
+    <li><div><b>Verify the signature</b><span class="who">Now the claims can be trusted as the issuer wrote them.</span><span class="fail">Invalid signature</span></div></li>
+    <li><div><b>Check time</b><span class="who"><code>exp</code> and <code>nbf</code> with clock skew. Spring's <code>JwtTimestampValidator</code> allows 60 s by default.</span><span class="fail">Jwt expired at … / Jwt used before …</span></div></li>
+    <li><div><b>Check the issuer</b><span class="who">Exact match. <code>JwtIssuerValidator</code>, added automatically when you configure <code>issuer-uri</code>.</span><span class="fail">The iss claim is not valid</span></div></li>
+    <li><div><b>Check the audience</b><span class="who">Not on by default. Add it, or any token from the same IdP for any other API gets in.</span><span class="fail">The aud claim is not valid</span></div></li>
+    <li><div><b>Check the token is the right kind</b><span class="who">Reject ID tokens and refresh tokens used as access tokens: <code>typ: at+jwt</code>, Cognito's <code>token_use</code>, or the presence of a scope claim.</span></div></li>
+    <li><div><b>Map authorities</b><span class="who"><code>JwtAuthenticationConverter</code> turns claims into <code>GrantedAuthority</code>s and puts a <code>JwtAuthenticationToken</code> in the <code>SecurityContext</code>.</span></div></li>
+    <li><div><b>Authorize the request</b><span class="who">Route rules (<code>hasAuthority("SCOPE_orders.write")</code>), method rules (<code>@PreAuthorize</code>), then object-level checks in your service. Broken object-level authorization is the number one API vulnerability on the OWASP API list, and no token can fix it for you.</span><span class="fail">403 Forbidden · insufficient_scope</span></div></li>
+    <li><div><b>Optional: revocation</b><span class="who">Denylist lookup by <code>jti</code>, or introspection, for endpoints where minutes of exposure after logout are not acceptable.</span></div></li>
+  </ol>
+</div></section>
+
+<!-- ============ SPRING ============ -->
+<section id="spring"><div class="col">
+  <h2>Spring Security code</h2>
+  <p>Spring Boot 3 / Spring Security 6 with <code>spring-boot-starter-oauth2-resource-server</code>. The minimal setup is configuration only; the rest is what production usually needs.</p>
+
+  <div class="fname">application.yml</div>
+<pre>spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://auth.acme.example/realms/acme   <span class="c"># discovery → jwks_uri, adds iss check</span>
+          <span class="c"># jwk-set-uri: …/protocol/openid-connect/certs        # skip discovery (useful behind proxies)</span>
+          audiences: orders-api                               <span class="c"># Boot 3.x: adds the aud check</span>
+          jws-algorithms: RS256                               <span class="c"># the allowlist</span>
+
+logging.level.org.springframework.security: DEBUG             <span class="c"># TRACE while debugging 401/403</span></pre>
+
+  <div class="fname">SecurityConfig.java</div>
+<pre><span class="k">@Configuration</span>
+<span class="k">@EnableWebSecurity</span>
+<span class="k">@EnableMethodSecurity</span>
+class SecurityConfig {
+
+  <span class="k">@Bean</span>
+  SecurityFilterChain api(HttpSecurity http) throws Exception {
+    return http
+        .csrf(csrf -> csrf.disable())            <span class="c">// stateless, bearer only, no cookies</span>
+        .cors(Customizer.withDefaults())         <span class="c">// lets OPTIONS preflight through</span>
+        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/actuator/health/**").permitAll()
+            .requestMatchers(HttpMethod.POST, "/orders/**").hasAuthority("SCOPE_orders.write")
+            .requestMatchers("/admin/**").hasRole("ADMIN")      <span class="c">// needs ROLE_ADMIN</span>
+            .anyRequest().authenticated())
+        .oauth2ResourceServer(rs -> rs.jwt(jwt -> jwt
+            .jwtAuthenticationConverter(new KeycloakAuthConverter())))
+        .build();
+  }
+
+  <span class="k">@Bean</span>
+  JwtDecoder jwtDecoder(<span class="k">@Value</span>(<span class="s">"${spring.security.oauth2.resourceserver.jwt.issuer-uri}"</span>) String issuer) {
+    NimbusJwtDecoder decoder = (NimbusJwtDecoder) JwtDecoders.fromIssuerLocation(issuer);
+
+    OAuth2TokenValidator&lt;Jwt> audience = new JwtClaimValidator&lt;List&lt;String>>(
+        JwtClaimNames.AUD, aud -> aud != null &amp;&amp; aud.contains("orders-api"));
+
+    decoder.setJwtValidator(new DelegatingOAuth2TokenValidator&lt;>(
+        new JwtTimestampValidator(Duration.ofSeconds(30)),   <span class="c">// tighter than the 60 s default</span>
+        new JwtIssuerValidator(issuer),
+        audience));
+    return decoder;
+  }
+}</pre>
+  <p class="small">Declaring your own <code>JwtDecoder</code> bean replaces Boot's auto-configured one, including the <code>audiences</code> and <code>jws-algorithms</code> properties, so restate everything you need in code.</p>
+
+  <div class="fname">KeycloakAuthConverter.java — roles from nested claims</div>
+<pre>class KeycloakAuthConverter implements Converter&lt;Jwt, AbstractAuthenticationToken> {
+
+  private final JwtGrantedAuthoritiesConverter scopes = new JwtGrantedAuthoritiesConverter(); <span class="c">// scope/scp → SCOPE_x</span>
+
+  <span class="k">@Override</span>
+  public AbstractAuthenticationToken convert(Jwt jwt) {
+    Set&lt;GrantedAuthority> authorities = new HashSet&lt;>(scopes.convert(jwt));
+
+    Map&lt;String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
+    if (realmAccess != null &amp;&amp; realmAccess.get("roles") instanceof Collection&lt;?> roles) {
+      roles.forEach(r -> authorities.add(new SimpleGrantedAuthority("ROLE_" + r)));
+    }
+    return new JwtAuthenticationToken(jwt, authorities, jwt.getClaimAsString("preferred_username"));
+  }
+}
+
+<span class="c">// Entra ID app roles live in a flat "roles" claim, so the built-in converter is enough:</span>
+var entraRoles = new JwtGrantedAuthoritiesConverter();
+entraRoles.setAuthoritiesClaimName("roles");
+entraRoles.setAuthorityPrefix("ROLE_");</pre>
+
+  <div class="fname">Using the token in a controller</div>
+<pre><span class="k">@PostMapping</span>("/orders")
+<span class="k">@PreAuthorize</span>("hasAuthority('SCOPE_orders.write')")
+OrderDto create(<span class="k">@AuthenticationPrincipal</span> Jwt jwt, <span class="k">@RequestBody</span> NewOrder body) {
+  String userId = jwt.getSubject();          <span class="c">// stable id, not email</span>
+  return orders.createFor(userId, body);     <span class="c">// ownership enforced in the service</span>
+}</pre>
+
+  <div class="fname">Several issuers (e.g. two tenants, or old and new IdP during a migration)</div>
+<pre>var resolver = JwtIssuerAuthenticationManagerResolver.fromTrustedIssuers(
+    "https://auth.acme.example/realms/acme",
+    "https://login.microsoftonline.com/&lt;tenant-id>/v2.0");
+
+http.oauth2ResourceServer(rs -> rs.authenticationManagerResolver(resolver));</pre>
+
+  <div class="fname">Forwarding to a downstream API with WebClient (client-credentials)</div>
+<pre><span class="c"># application.yml</span>
+spring.security.oauth2.client:
+  registration.payments:
+    provider: acme
+    client-id: orders-api
+    client-secret: ${PAYMENTS_CLIENT_SECRET}
+    authorization-grant-type: client_credentials
+    scope: payments.write
+  provider.acme.issuer-uri: https://auth.acme.example/realms/acme
+
+<span class="k">@Bean</span>
+OAuth2AuthorizedClientManager clientManager(ClientRegistrationRepository regs,
+                                            OAuth2AuthorizedClientService clients) {
+  var mgr = new AuthorizedClientServiceOAuth2AuthorizedClientManager(regs, clients); <span class="c">// works off request threads too</span>
+  mgr.setAuthorizedClientProvider(OAuth2AuthorizedClientProviderBuilder.builder().clientCredentials().build());
+  return mgr;
+}
+
+<span class="c">// fetches, caches and refreshes the token for you</span>
+<span class="k">@Bean</span>
+WebClient payments(OAuth2AuthorizedClientManager mgr) {
+  var oauth = new ServletOAuth2AuthorizedClientExchangeFilterFunction(mgr);
+  oauth.setDefaultClientRegistrationId("payments");
+  return WebClient.builder().baseUrl("https://payments.internal").apply(oauth.oauth2Configuration()).build();
+}</pre>
+
+  <div class="fname">OrdersControllerTest.java — testing without an IdP</div>
+<pre>mockMvc.perform(post("/orders")
+        .with(jwt()
+            .jwt(j -> j.subject("u-42").claim("aud", List.of("orders-api")))
+            .authorities(new SimpleGrantedAuthority("SCOPE_orders.write")))
+        .contentType(APPLICATION_JSON).content(body))
+    .andExpect(status().isCreated());
+
+<span class="c">// jwt() skips the JwtDecoder entirely: your validators are NOT exercised here.</span>
+<span class="c">// Test them directly: decoder.decode(token) with tokens you sign in the test (below).</span></pre>
+
+  <div class="fname">Minting a test token with Nimbus JOSE + JWT</div>
+<pre>RSAKey key = new RSAKeyGenerator(2048).keyID("test-1").generate();
+
+JWTClaimsSet claims = new JWTClaimsSet.Builder()
+    .issuer("https://auth.acme.example/realms/acme")
+    .subject("u-42")
+    .audience("orders-api")
+    .issueTime(new Date())
+    .expirationTime(Date.from(Instant.now().plusSeconds(600)))
+    .jwtID(UUID.randomUUID().toString())
+    .claim("scope", "orders.read orders.write")
+    .build();
+
+SignedJWT jwt = new SignedJWT(
+    new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(key.getKeyID()).type(JOSEObjectType.JWT).build(),
+    claims);
+jwt.sign(new RSASSASigner(key));
+String token = jwt.serialize();
+
+JwtDecoder decoder = NimbusJwtDecoder.withPublicKey(key.toRSAPublicKey()).build();</pre>
+  <p class="small">For production token issuing, use an IdP or Spring Authorization Server rather than hand-built signing code: login, MFA, consent, rotation and revocation are the hard part, not the signature.</p>
+</div></section>
+
+<!-- ============ TOKEN TYPES ============ -->
+<section id="types"><div class="col">
+  <h2>Token types and where to keep them</h2>
+  <div class="tw"><table>
+    <tr><th></th><th>Access token</th><th>ID token</th><th>Refresh token</th></tr>
+    <tr><td><b>For</b></td><td>The API (resource server)</td><td>The client app</td><td>The IdP's <code>/token</code> endpoint</td></tr>
+    <tr><td><b>Proves</b></td><td>The caller may do X on behalf of Y</td><td>The user logged in, and how</td><td>The client may get new access tokens</td></tr>
+    <tr><td><b>aud</b></td><td>Your API</td><td>The client ID</td><td>The IdP</td></tr>
+    <tr><td><b>Format</b></td><td>JWT or opaque</td><td>Always JWT (OIDC)</td><td>Usually opaque</td></tr>
+    <tr><td><b>Lifetime</b></td><td>5–15 min typical</td><td>Minutes; used once at login</td><td>Hours to days, rotated</td></tr>
+    <tr><td><b>Mistake to avoid</b></td><td>Clients parsing it for UI logic</td><td>Sending it to APIs as a bearer token</td><td>Storing it in the browser</td></tr>
+  </table></div>
+
+  <h3>JWT or opaque access tokens</h3>
+  <p>A JWT is validated locally: no network call, scales freely, but can't be revoked before <code>exp</code> and exposes its claims to whoever holds it. An opaque token is a random reference that the API sends to the IdP's introspection endpoint (RFC 7662): instantly revocable and private, at the cost of one call per request (usually cached for seconds). A common split is opaque at the internet edge, exchanged by the gateway for an internal JWT ("phantom token" pattern).</p>
+
+  <h3>Storage</h3>
+  <div class="tw"><table>
+    <tr><th>Where</th><th>Risk</th><th>Verdict</th></tr>
+    <tr><td><code>localStorage</code> / <code>sessionStorage</code></td><td>Any XSS reads it and ships it elsewhere; persists</td><td>Avoid for access and refresh tokens</td></tr>
+    <tr><td>JavaScript memory</td><td>Lost on reload; XSS can still use it during the session</td><td>Acceptable for SPAs with short tokens</td></tr>
+    <tr><td><code>HttpOnly; Secure; SameSite</code> cookie via a BFF</td><td>Needs CSRF protection on the BFF</td><td>Recommended for browser apps</td></tr>
+    <tr><td>iOS Keychain / Android Keystore</td><td>Device compromise</td><td>Standard for mobile</td></tr>
+    <tr><td>Service memory, refreshed before expiry</td><td>Heap dumps, logs</td><td>Standard for services; never log tokens</td></tr>
+  </table></div>
+</div></section>
+<!-- ============ PROVIDERS ============ -->
+<section id="providers"><div class="col">
+  <h2>Identity providers and their quirks</h2>
+  <p>Every IdP speaks OAuth 2.0 and OIDC, and every one of them puts things in slightly different places. Before configuring anything, decode a real token from the target environment and copy <code>iss</code> and <code>aud</code> from it.</p>
+</div>
+  <div class="tw"><table>
+    <tr><th>Provider</th><th>Issuer (<code>iss</code>)</th><th>JWKS</th><th>Roles / scopes</th><th>Watch out for</th></tr>
+    <tr><td><b>Keycloak</b></td><td class="wrap"><code>https://{host}/realms/{realm}</code></td><td class="wrap"><code>{iss}/protocol/openid-connect/certs</code></td><td><code>realm_access.roles</code>, <code>resource_access.{client}.roles</code>, <code>scope</code></td><td><code>iss</code> follows the hostname the token was requested through unless the hostname is pinned (<code>KC_HOSTNAME</code>), so in-cluster and public URLs produce different issuers. Default <code>aud</code> is often just <code>account</code>; add an audience mapper.</td></tr>
+    <tr><td><b>Microsoft Entra ID</b></td><td class="wrap">v2: <code>https://login.microsoftonline.com/{tenant}/v2.0</code><br>v1: <code>https://sts.windows.net/{tenant}/</code></td><td class="wrap"><code>https://login.microsoftonline.com/{tenant}/discovery/v2.0/keys</code></td><td><code>scp</code> (delegated, space-separated), <code>roles</code> (app roles, also on app-only tokens)</td><td>The token version is set by the <em>API's</em> app registration (<code>requestedAccessTokenVersion</code>), not by the endpoint the client used. <code>aud</code> is the App ID URI or the client ID GUID depending on version. Microsoft Graph tokens are not yours to validate. Over ~200 groups, the token carries an overage pointer instead of <code>groups</code>. Downstream calls use On-Behalf-Of.</td></tr>
+    <tr><td><b>Auth0</b></td><td class="wrap"><code>https://{tenant}.auth0.com/</code> (trailing slash) or your custom domain</td><td class="wrap"><code>{iss}.well-known/jwks.json</code></td><td><code>scope</code>, <code>permissions</code> (with RBAC enabled)</td><td>Without an <code>audience</code> parameter on the authorize request you don't get a JWT for your API. The trailing slash in <code>iss</code> breaks naive string comparisons. Custom claims are usually namespaced as URLs.</td></tr>
+    <tr><td><b>Okta</b></td><td class="wrap"><code>https://{org}.okta.com/oauth2/{authServerId}</code> (e.g. <code>default</code>)</td><td class="wrap"><code>{iss}/v1/keys</code></td><td><code>scp</code> (array), groups via a custom claim</td><td>Tokens from the org authorization server (<code>https://{org}.okta.com</code> without <code>/oauth2/…</code>) are for Okta's own APIs; your API should trust a custom authorization server.</td></tr>
+    <tr><td><b>AWS Cognito</b></td><td class="wrap"><code>https://cognito-idp.{region}.amazonaws.com/{userPoolId}</code></td><td class="wrap"><code>{iss}/.well-known/jwks.json</code></td><td><code>scope</code>, <code>cognito:groups</code></td><td>Access tokens have no <code>aud</code>; they carry <code>client_id</code> and <code>token_use: access</code>. A standard audience validator rejects them, so validate <code>client_id</code> and <code>token_use</code> instead. ID tokens do carry <code>aud</code>.</td></tr>
+    <tr><td><b>Google</b></td><td class="wrap"><code>https://accounts.google.com</code> (also seen without <code>https://</code>)</td><td class="wrap"><code>https://www.googleapis.com/oauth2/v3/certs</code></td><td>None</td><td>Google access tokens are opaque and meant for Google APIs. To authenticate a user to your API with Google, validate the ID token (<code>aud</code> = your client ID) and issue your own session or token.</td></tr>
+    <tr><td><b>Spring Authorization Server</b></td><td class="wrap">Whatever you configure as <code>issuer</code></td><td class="wrap"><code>{iss}/oauth2/jwks</code></td><td><code>scope</code>; add more with <code>OAuth2TokenCustomizer</code></td><td>The sample <code>JWKSource</code> generates a fresh RSA key at startup: every restart, and every extra replica, invalidates all tokens. Load keys from a keystore or vault, and plan rotation yourself.</td></tr>
+  </table></div>
+<div class="col">
+  <p class="small">The OIDC discovery document at <code>{iss}/.well-known/openid-configuration</code> is the source of truth for every provider: <code>issuer</code>, <code>jwks_uri</code>, <code>token_endpoint</code>, supported algorithms and grant types.</p>
+</div></section>
+
+<!-- ============ TROUBLESHOOTING ============ -->
+<section id="troubleshooting"><div class="col">
+  <h2>Issues and fixes</h2>
+  <p>First move for any 401: decode the token (header and payload) and read Spring's log at DEBUG. The <code>WWW-Authenticate</code> response header also carries the reason, e.g. <code>error="invalid_token", error_description="Jwt expired at …"</code>.</p>
+  <input class="filter" id="filter" type="search" placeholder="Filter by error text or symptom, e.g. aud, 403, PKIX, expired" aria-label="Filter issues">
+
+  <details class="issue"><summary><span><span class="err">Signed JWT rejected: Another algorithm expected, or no matching key(s) found</span><span class="sym">Every request gets 401, token looks fine</span></span><span class="tg">key / alg</span></summary><div class="body">
+    <h5>Cause</h5><p>The token's <code>kid</code> isn't in the JWKS you're reading, or its <code>alg</code> isn't in your allowlist. Typical reasons: decoder pointed at the wrong realm or tenant; a token from another environment (test token against prod); a Microsoft Graph token sent to your API; the IdP signs with ES256 while you only allow RS256.</p>
+    <h5>Fix</h5><p>Compare the header's <code>kid</code> and <code>alg</code> with the keys at your <code>jwks_uri</code>. Point the decoder at the issuer that minted the token, request a token for your API's scope, or add the algorithm via <code>jws-algorithms</code>. Nimbus refetches the JWKS once on an unknown <code>kid</code>, so a persistent failure means the key genuinely isn't there.</p>
+  </div></details>
+
+  <details class="issue"><summary><span><span class="err">The iss claim is not valid</span><span class="sym">Works locally, fails in the cluster (or the reverse)</span></span><span class="tg">issuer</span></summary><div class="body">
+    <h5>Cause</h5><p>Issuer comparison is an exact string match. Usual suspects: trailing slash (Auth0); Entra v1 versus v2 issuer; Keycloak minting tokens with the internal URL (<code>http://keycloak:8080/realms/acme</code>) because the client called it in-cluster, while the API expects the public URL.</p>
+    <h5>Fix</h5><p>Copy <code>iss</code> from a real token into config. Pin the IdP's public hostname (Keycloak <code>KC_HOSTNAME</code>, proxy headers forwarded correctly). If you must accept two forms during a migration, use <code>JwtIssuerAuthenticationManagerResolver</code> rather than disabling the check.</p>
+  </div></details>
+
+  <details class="issue"><summary><span><span class="err">The aud claim is not valid</span><span class="sym">Signature and issuer pass, audience fails</span></span><span class="tg">audience</span></summary><div class="body">
+    <h5>Cause</h5><p>The client asked for a token for a different resource: missing <code>audience</code> parameter (Auth0), wrong scope (Entra: <code>api://orders/.default</code> versus Graph's <code>User.Read</code>), no audience mapper (Keycloak gives <code>account</code>), or Cognito access tokens with no <code>aud</code> at all.</p>
+    <h5>Fix</h5><p>Fix the token request, not the validator. For Cognito, validate <code>client_id</code> and <code>token_use</code> with a custom <code>JwtClaimValidator</code>. Removing the audience check is how a token for one API becomes a key to all of them.</p>
+  </div></details>
+
+  <details class="issue"><summary><span><span class="err">Jwt expired at 2026-10-06T08:15:00Z</span><span class="sym">Intermittent 401s after some minutes, or in long batch runs</span></span><span class="tg">time</span></summary><div class="body">
+    <h5>Cause</h5><p>The client isn't refreshing, a batch job reuses one token for an hour-long run, or a pod's clock has drifted.</p>
+    <h5>Fix</h5><p>Refresh proactively (when less than ~60 s remain) or on 401 with one retry. Let <code>OAuth2AuthorizedClientManager</code> handle machine tokens. Check NTP on nodes. Keep skew at 30–60 s; raising token lifetime or skew to hide the problem extends the window for stolen tokens too.</p>
+  </div></details>
+
+  <details class="issue"><summary><span><span class="err">Jwt used before 2026-10-06T08:00:00Z</span><span class="sym">Brand-new tokens rejected right after login</span></span><span class="tg">time</span></summary><div class="body">
+    <h5>Cause</h5><p>The API's clock is behind the IdP's clock by more than the allowed skew, so <code>nbf</code> / <code>iat</code> look like the future.</p>
+    <h5>Fix</h5><p>Sync clocks (NTP, chrony). Container hosts and VMs that were suspended are the common offenders.</p>
+  </div></details>
+
+  <details class="issue"><summary><span><span class="err">403 Forbidden</span><span class="sym">Token is valid, user definitely has the role</span></span><span class="tg">authorities</span></summary><div class="body">
+    <h5>Cause</h5><p>Spring's default converter only reads <code>scope</code> / <code>scp</code> and prefixes <code>SCOPE_</code>. <code>hasRole("ADMIN")</code> looks for <code>ROLE_ADMIN</code>. Keycloak nests roles in <code>realm_access.roles</code>; Entra puts app roles in <code>roles</code>; Cognito uses <code>cognito:groups</code>. None of these are mapped automatically.</p>
+    <h5>Fix</h5><p>Add a <code>JwtAuthenticationConverter</code> (see the Spring section). To see what you actually got, log <code>SecurityContextHolder.getContext().getAuthentication().getAuthorities()</code> or enable TRACE on <code>org.springframework.security</code>.</p>
+  </div></details>
+
+  <details class="issue"><summary><span><span class="err">PKIX path building failed / Couldn't retrieve remote JWK set</span><span class="sym">API can't start or every request fails on a corporate network</span></span><span class="tg">network / TLS</span></summary><div class="body">
+    <h5>Cause</h5><p>The API can't fetch discovery or JWKS: a TLS-inspecting proxy with a corporate root CA the JVM doesn't trust, an outbound proxy that isn't configured, or egress blocked by a network policy or service mesh.</p>
+    <h5>Fix</h5><p>Import the corporate root CA (<code>keytool -importcert -cacerts -alias corp-root -file corp-root.cer</code>, or a custom truststore via <code>-Djavax.net.ssl.trustStore</code>); set <code>-Dhttps.proxyHost</code> / <code>-Dhttps.proxyPort</code> or give <code>NimbusJwtDecoder.withJwkSetUri(…).restOperations(…)</code> a configured <code>RestTemplate</code>; allow egress to the IdP host in the mesh. Using <code>jwk-set-uri</code> instead of <code>issuer-uri</code> removes the discovery call.</p>
+  </div></details>
+
+  <details class="issue"><summary><span><span class="err">431 Request Header Fields Too Large / 400 Request header is too large</span><span class="sym">Some users can't use the app; usually those in many groups</span></span><span class="tg">size</span></summary><div class="body">
+    <h5>Cause</h5><p>Groups or roles bloat the token past the server's header limit (Tomcat's default is 8 KB), or a proxy's buffer in front of it.</p>
+    <h5>Fix</h5><p>Keep tokens small: put coarse roles in the token and look up fine-grained permissions server-side. Raise <code>server.max-http-request-header-size</code> and proxy buffers only as a stopgap.</p>
+  </div></details>
+
+  <details class="issue"><summary><span><span class="err">Blocked by CORS policy: Response to preflight request doesn't pass access control check</span><span class="sym">Works in Postman, fails in the browser</span></span><span class="tg">CORS</span></summary><div class="body">
+    <h5>Cause</h5><p>The <code>Authorization</code> header makes the browser send an <code>OPTIONS</code> preflight without credentials. Spring Security answers it with 401 before CORS headers are added.</p>
+    <h5>Fix</h5><p>Enable <code>http.cors(...)</code> with a <code>CorsConfigurationSource</code> that allows your origin and the <code>Authorization</code> header. Spring Security then handles preflight before authentication.</p>
+  </div></details>
+
+  <details class="issue"><summary><span><span class="err">401 with an ID token</span><span class="sym">The frontend sends the token it got at login and the API rejects it</span></span><span class="tg">token type</span></summary><div class="body">
+    <h5>Cause</h5><p>The ID token's <code>aud</code> is the client ID, not your API. Some frontends grab <code>id_token</code> because it's always a JWT.</p>
+    <h5>Fix</h5><p>Send <code>access_token</code>. On the API, reject ID tokens explicitly (check <code>typ</code> or the presence of scopes), because with a loose audience check they might otherwise pass.</p>
+  </div></details>
+
+  <details class="issue"><summary><span><span class="err">invalid_grant on refresh, then forced logout</span><span class="sym">Users randomly logged out, often when a page fires several calls at once</span></span><span class="tg">refresh</span></summary><div class="body">
+    <h5>Cause</h5><p>Several requests got 401 at once and each tried to refresh with the same refresh token. With rotation and reuse detection on, the second use revokes the whole token family.</p>
+    <h5>Fix</h5><p>Single-flight refresh: keep one shared in-flight promise (or a lock in the BFF), queue other requests behind it. Some IdPs offer a short reuse grace period; use it as a safety net, not the design.</p>
+  </div></details>
+
+  <details class="issue"><summary><span><span class="err">Token still works after logout or account disable</span><span class="sym">Security review finding</span></span><span class="tg">revocation</span></summary><div class="body">
+    <h5>Cause</h5><p>That is how self-contained tokens behave: nothing checks the IdP until <code>exp</code>.</p>
+    <h5>Fix</h5><p>Short access-token TTL, revoke refresh tokens on logout and disable, a <code>jti</code> denylist (TTL = remaining lifetime) checked by a filter after JWT authentication, or introspection for high-value operations.</p>
+  </div></details>
+
+  <details class="issue"><summary><span><span class="err">All tokens invalid after the auth server restarted or scaled</span><span class="sym">Mass 401s right after a deploy</span></span><span class="tg">key rotation</span></summary><div class="body">
+    <h5>Cause</h5><p>The signing key is generated in memory at startup (the Spring Authorization Server sample does this), so each restart or replica has a different key. Or a rotation started signing with a new key before consumers' JWKS caches had it.</p>
+    <h5>Fix</h5><p>Persist signing keys (keystore, KMS, vault) and share them across replicas. Rotate in the publish, wait, sign, retire order described in the algorithms section.</p>
+  </div></details>
+
+  <details class="issue"><summary><span><span class="err">Malformed token / Invalid JWT serialization: Missing dot delimiter(s)</span><span class="sym">Decoder fails before any validation</span></span><span class="tg">parsing</span></summary><div class="body">
+    <h5>Cause</h5><p>It isn't a JWT: an opaque token (Auth0 without audience, Google access token, introspection-only setups), <code>Bearer Bearer …</code>, quotes or a newline copied from JSON, or standard base64 instead of base64url.</p>
+    <h5>Fix</h5><p>Log the token's shape (segment count and length, never the token itself). For opaque tokens, configure <code>opaqueToken()</code> introspection instead of <code>jwt()</code>.</p>
+  </div></details>
+
+  <details class="issue"><summary><span><span class="err">Service trusts X-User-Id from the gateway</span><span class="sym">Anyone inside the network can call services as any user</span></span><span class="tg">gateway / mesh</span></summary><div class="body">
+    <h5>Cause</h5><p>The gateway validates the JWT and passes identity as plain headers; services trust those headers because "only the gateway can reach us".</p>
+    <h5>Fix</h5><p>Forward the JWT itself and validate it in every service, and strip identity headers from inbound traffic at the edge. Pair with mesh mTLS and authorization policies so only expected workloads can call each service.</p>
+  </div></details>
+  <p class="empty" id="empty">No issue matches that filter. Try a shorter word from the error message.</p>
+</div></section>
+
+<!-- ============ ATTACKS ============ -->
+<section id="attacks"><div class="col">
+  <h2>Attacks to defend against</h2>
+  <div class="tw"><table>
+    <tr><th>Attack</th><th>How it works</th><th>Defense</th></tr>
+    <tr><td><b>alg: none</b></td><td>Attacker strips the signature and sets <code>alg</code> to <code>none</code>; a naive library accepts it.</td><td>Server-side algorithm allowlist.</td></tr>
+    <tr><td><b>Algorithm confusion</b></td><td>Token switched from RS256 to HS256 and signed with the server's <em>public</em> key as the HMAC secret. A library that picks the algorithm from the header verifies it.</td><td>Allowlist; bind each key to one algorithm.</td></tr>
+    <tr><td><b>Weak HMAC secret</b></td><td>Tokens are cracked offline with a GPU and a wordlist, then forged.</td><td>256-bit random secrets, or asymmetric keys.</td></tr>
+    <tr><td><b>jku / x5u / embedded jwk</b></td><td>Header points at the attacker's own key set.</td><td>Keys come only from configured JWKS.</td></tr>
+    <tr><td><b>kid injection</b></td><td><code>kid</code> used as a file path or SQL value: <code>../../dev/null</code>, <code>' OR '1'='1</code>.</td><td>Treat <code>kid</code> as a lookup key into a trusted map only.</td></tr>
+    <tr><td><b>Cross-service replay</b></td><td>A token for API A is replayed against API B from the same IdP.</td><td>Audience validation in every API.</td></tr>
+    <tr><td><b>Token theft</b></td><td>XSS, logs, browser history, proxies, crash dumps.</td><td>BFF and cookies, no tokens in URLs or logs, short TTL, sender-constrained tokens (DPoP or mTLS).</td></tr>
+    <tr><td><b>Claim trust before verify</b></td><td>Code reads claims (say, the tenant) to choose a key or route before verification.</td><td>Verify first; the only pre-verify reads are <code>kid</code> and <code>alg</code>, against fixed config.</td></tr>
+  </table></div>
+</div></section>
+
+<!-- ============ CHECKLIST ============ -->
+<section id="checklist"><div class="col">
+  <h2>Production checklist</h2>
+  <p class="small">Your ticks are saved in this browser only.</p>
+  <ul class="check" id="checkList"></ul>
+  <footer>Built as a reference for backend developers. Standards referenced: RFC 7519 (JWT), 7515 (JWS), 7517 (JWK), 7636 (PKCE), 7662 (introspection), 8693 (token exchange), 9068 (JWT access tokens), 9449 (DPoP), OpenID Connect Core and OAuth 2.1 draft.</footer>
+</div></section>
+</main>
+</div>
+<script>
+(function(){
+"use strict";
+var TOKEN = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImFjbWUtMjAyNi0xMCJ9.eyJpc3MiOiJodHRwczovL2F1dGguYWNtZS5leGFtcGxlL3JlYWxtcy9hY21lIiwic3ViIjoiOGYxNGU0NWYtY2VlYS00YzZiLTlkMWUtM2I1YTJjN2QxZTkwIiwiYXVkIjpbIm9yZGVycy1hcGkiXSwiYXpwIjoib3JkZXJzLXdlYiIsImV4cCI6MTc5MTI3NDUwMCwibmJmIjoxNzkxMjczNjAwLCJpYXQiOjE3OTEyNzM2MDAsImp0aSI6ImI3ZTJjMWQ0LTVhNmYtNGUzYi04YzlkLTBlMWYyYTNiNGM1ZCIsInNjb3BlIjoib3BlbmlkIG9yZGVycy5yZWFkIG9yZGVycy53cml0ZSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJjdXN0b21lciJdfSwicHJlZmVycmVkX3VzZXJuYW1lIjoicnVzaGkifQ.nEOh5cY7zClQLmxGElbDi7VNOQ03tIm91yiiNHYFGzVfhdmSPArhPDf5psjzKEAuq0NY6tHtyQzBdWWUhnlmmGIsGgC9OcTwR17K5Ls5s6hdlyLS3A5npPSgPm2kYeICeiy3AVJ8_5QRAezYuBqE-hEyhZnGSs7_mRBu4MfZ882HHQwSWTszXm9fFlgq8tElf-crWBwmbsDzlMPJ7PWyXNZQ_f-i6HcPAb1lmbIeaFRiKa3tv3282aL7tTlTKPW_9ZGxY-yJXQYXXj9Sc0nonfP4olhlwnIHvI0iTsIL0qL8TfRecal7TgY_CEcaj5OWLanOvFgJjW5uxGu5rAFlmg", JWK = {"kty": "RSA", "kid": "acme-2026-10", "alg": "RS256", "use": "sig", "n": "3Xu0QPNQ9i4OANszuqhAbFmCKKlsiMGjsW-tiFXKaYPNFEmvQIYsYbTqip1zdSWxnrBErhMsAIS7QStJ_gMYOqWkCez4Ui2MHoWfhHqOrFcSnjmeXH69lHOD7IV01M-8vLZgdVRIBJdOuCnRFzw2nQeWzum-2RyG-KEcAL2awWZ3IXPoQpUyRJxdgOaFHg3iRMWA_PneORIcQFeopZfUkxRyItlnau9_kz1S-3KnblXj_6oc6LlPp03kMJ-Ob2codngerGIQbILlt-3JzTn8dG6_H2D23ti5psmJ5cG287pIYZFdtdVcvvUY2SNtJXmmEP0nxr7hh5FLF4wfAFj93Q", "e": "AQAB"}, IAT = 1791273600;
+var EXPECT = {iss:"https://auth.acme.example/realms/acme", aud:"orders-api", algs:["RS256"], skew:60};
+var $ = function(id){return document.getElementById(id);};
+var esc = function(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");};
+
+/* ---------- theme ---------- */
+var root = document.documentElement;
+try{ var t = localStorage.getItem("jwt-theme"); if(t) root.setAttribute("data-theme", t); }catch(e){}
+$("themeBtn").addEventListener("click", function(){
+  var cur = root.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  var next = cur === "dark" ? "light" : "dark";
+  root.setAttribute("data-theme", next);
+  try{ localStorage.setItem("jwt-theme", next); }catch(e){}
+});
+
+/* ---------- base64url ---------- */
+function b64d(s){ s = s.replace(/-/g,"+").replace(/_/g,"/"); while(s.length % 4) s += "="; var bin = atob(s); var u = new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; }
+function b64e(str){ var bytes = new TextEncoder().encode(str), bin=""; for(var i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]); return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
+function dec(s){ return new TextDecoder().decode(b64d(s)); }
+
+/* ---------- playground ---------- */
+var parts = TOKEN.split("."), H0 = parts[0], P0 = parts[1], S0 = parts[2];
+var hObj0 = JSON.parse(dec(H0)), pObj0 = JSON.parse(dec(P0));
+var hTA = $("hTA"), pTA = $("pTA");
+function reset(){ hTA.value = JSON.stringify(hObj0, null, 2); pTA.value = JSON.stringify(pObj0, null, 2); run(); }
+$("sigTxt").textContent = S0;
+
+var keyP = null;
+try { keyP = crypto.subtle.importKey("jwk", JWK, {name:"RSASSA-PKCS1-v1_5", hash:"SHA-256"}, false, ["verify"]); } catch(e){ keyP = Promise.reject(e); }
+
+function seg(ta, obj0, seg0){
+  var o; try{ o = JSON.parse(ta.value); }catch(e){ return {err:true}; }
+  if(JSON.stringify(o) === JSON.stringify(obj0)) return {seg:seg0, obj:o};
+  return {seg:b64e(JSON.stringify(o)), obj:o};
+}
+function fmt(ts){ return new Date(ts*1000).toISOString().replace(".000",""); }
+
+var runId = 0;
+function run(){
+  var id = ++runId;
+  var h = seg(hTA, hObj0, H0), p = seg(pTA, pObj0, P0);
+  $("tokenView").innerHTML = '<span class="sh">'+esc(h.seg||"???")+'</span><span class="dot">.</span><span class="sp">'+esc(p.seg||"???")+'</span><span class="dot">.</span><span class="sx">'+esc(S0)+'</span>';
+  var now = IAT + parseInt($("clock").value, 10);
+  var list = [];
+  function add(ok, name, msg){ list.push({ok:ok, name:name, msg:msg}); }
+
+  if(h.err || p.err){ add(false, "Parse", "Invalid JSON: the token can't be decoded"); return render(list, id); }
+  add(true, "Parse", "3 segments, valid base64url and JSON");
+  var alg = h.obj.alg;
+  if(EXPECT.algs.indexOf(alg) < 0){ add(false, "Algorithm allowlist", "Rejected: alg \""+alg+"\" is not in ["+EXPECT.algs.join(", ")+"]"); return render(list, id); }
+  add(true, "Algorithm allowlist", "alg RS256 allowed");
+  if(h.obj.kid !== JWK.kid){ add(false, "Key lookup", "No key in JWKS with kid \""+h.obj.kid+"\""); return render(list, id); }
+  add(true, "Key lookup", "kid "+JWK.kid+" found in JWKS");
+
+  keyP.then(function(key){
+    return crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, b64d(S0), new TextEncoder().encode(h.seg+"."+p.seg));
+  }).then(function(ok){
+    if(id !== runId) return;
+    if(!ok){ add(false, "Signature", "Invalid signature: payload or header changed after signing"); return render(list, id); }
+    add(true, "Signature", "RS256 verified with the IdP's public key");
+    var c = p.obj;
+    if(typeof c.exp !== "number" || now - EXPECT.skew > c.exp) add(false, "Expiry", "Jwt expired at "+fmt(c.exp)+" (server time "+fmt(now)+")");
+    else add(true, "Expiry", (now > c.exp ? "Past exp by "+(now-c.exp)+" s, inside 60 s skew" : "Expires "+fmt(c.exp)));
+    if(typeof c.nbf === "number" && now + EXPECT.skew < c.nbf) add(false, "Not before", "Jwt used before "+fmt(c.nbf));
+    else add(true, "Not before", "nbf satisfied");
+    if(c.iss !== EXPECT.iss) add(false, "Issuer", "The iss claim is not valid: \""+c.iss+"\"");
+    else add(true, "Issuer", "iss matches configured issuer");
+    var aud = Array.isArray(c.aud) ? c.aud : [c.aud];
+    if(aud.indexOf(EXPECT.aud) < 0) add(false, "Audience", "The aud claim is not valid: expected "+EXPECT.aud);
+    else add(true, "Audience", "aud contains orders-api");
+    render(list, id, c);
+  }).catch(function(){
+    if(id !== runId) return;
+    add(false, "Signature", "This browser couldn't run Web Crypto verification");
+    render(list, id);
+  });
+}
+function render(list, id, claims){
+  if(id !== runId) return;
+  $("checks").innerHTML = list.map(function(c){
+    return '<li class="'+(c.ok?"y":"n")+'"><span class="i" aria-hidden="true">'+(c.ok?"✓":"✗")+'</span><span>'+esc(c.name)+'<span class="msg">'+esc(c.msg)+'</span></span></li>';
+  }).join("");
+  var bad = list.filter(function(c){return !c.ok;})[0];
+  var r = $("result"), d = $("resultDetail");
+  if(bad){ r.className = "result bad"; r.textContent = "401 Unauthorized"; d.textContent = 'WWW-Authenticate: Bearer error="invalid_token", error_description="'+bad.msg+'"'; }
+  else { r.className = "result ok"; r.textContent = "200 OK"; d.textContent = "Authenticated as "+(claims && claims.preferred_username || claims && claims.sub)+"; authorities: "+((claims && claims.scope)||"").split(" ").map(function(s){return "SCOPE_"+s;}).join(", "); }
+}
+hTA.addEventListener("input", run); pTA.addEventListener("input", run);
+$("clock").addEventListener("change", run);
+$("resetBtn").addEventListener("click", reset);
+reset();
+
+/* ---------- sequence diagrams ---------- */
+var LINE = 14;
+function seq(elId, parts, msgs, colW){
+  colW = colW || 190;
+  var padL = 80, padR = 280, top = 56;
+  var x = function(i){ return padL + i*colW; };
+  var W = padL + colW*(parts.length-1) + padR;
+  var y = top + 26, rows = [];
+  msgs.forEach(function(m){
+    var lines = m[2].split("\n");
+    var self = m[0] === m[1];
+    var h = Math.max(self ? 44 : 34, lines.length*LINE + (self ? 26 : 22));
+    rows.push({m:m, y:y + lines.length*LINE, lines:lines, self:self});
+    y += h;
+  });
+  var H = y + 16;
+  var mid = "mk-"+elId;
+  var s = '<svg class="seq" viewBox="0 0 '+W+' '+H+'" style="min-width:'+Math.min(W, 960)+'px" role="img" aria-label="Sequence diagram">';
+  s += '<defs><marker id="'+mid+'" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" style="fill:var(--ink2)"/></marker></defs>';
+  parts.forEach(function(p,i){ s += '<line class="life" x1="'+x(i)+'" y1="'+top+'" x2="'+x(i)+'" y2="'+(H-6)+'"/>'; });
+  parts.forEach(function(p,i){
+    s += '<g class="t-'+p[1]+'"><rect class="bx" x="'+(x(i)-68)+'" y="10" width="136" height="38" rx="6"/></g>';
+    s += '<text class="pn" x="'+x(i)+'" y="34" text-anchor="middle">'+esc(p[0])+'</text>';
+  });
+  rows.forEach(function(r, k){
+    var m = r.m, ret = m[3] === "r", cls = "msg"+(ret?" ret":"");
+    var num = '<tspan class="n">'+(k+1)+'</tspan>  ';
+    if(r.self){
+      var sx = x(m[0]), sy = r.y - 6;
+      s += '<path class="'+cls+'" d="M'+sx+' '+sy+' h30 v16 h-28" marker-end="url(#'+mid+')"/>';
+      r.lines.forEach(function(l, j){
+        s += '<text class="ml" x="'+(sx+38)+'" y="'+(sy - (r.lines.length-1-j)*LINE + 12 - (r.lines.length-1)*0)+'">'+(j===0?num:'<tspan dx="0">   </tspan>')+esc(l)+'</text>';
+      });
+    } else {
+      var x1 = x(m[0]), x2 = x(m[1]), dir = x2 > x1 ? 1 : -1;
+      s += '<line class="'+cls+'" x1="'+x1+'" y1="'+r.y+'" x2="'+(x2 - dir*2)+'" y2="'+r.y+'" marker-end="url(#'+mid+')"/>';
+      var lx = Math.min(x1,x2) + 10;
+      r.lines.forEach(function(l, j){
+        var ly = r.y - 6 - (r.lines.length-1-j)*LINE;
+        s += '<text class="ml'+(ret?" ret":"")+'" x="'+lx+'" y="'+ly+'">'+(j===0?num:'   ')+esc(l)+'</text>';
+      });
+    }
+  });
+  s += '</svg>';
+  $(elId).innerHTML = s;
+}
+
+seq("seq-a",
+  [["User","ext"],["Browser","client"],["BFF","svc"],["Identity provider","sec"],["Orders API","svc"]],
+  [[0,1,"click Log in"],
+   [2,2,"create code_verifier, state, nonce\nchallenge = BASE64URL(SHA-256(verifier))"],
+   [2,1,"302 to IdP /authorize","r"],
+   [1,3,"GET /authorize?response_type=code&client_id=orders-web\n&scope=openid orders.read&code_challenge=…&state=…"],
+   [3,0,"login page, MFA, consent"],
+   [3,1,"302 /callback?code=…&state=…","r"],
+   [1,2,"GET /callback?code=…&state=…"],
+   [2,2,"state matches the one we stored?"],
+   [2,3,"POST /token  code + code_verifier + client auth"],
+   [3,3,"SHA-256(verifier) == challenge?"],
+   [3,2,"access_token, id_token, refresh_token","r"],
+   [2,2,"validate id_token (sig, iss, aud, nonce)\nkeep tokens server-side"],
+   [2,1,"Set-Cookie: session (HttpOnly)","r"],
+   [1,2,"GET /api/orders  (cookie)"],
+   [2,4,"GET /orders  Authorization: Bearer <access>"],
+   [4,4,"validate JWT (see pipeline)"],
+   [4,2,"200 [orders]","r"],
+   [2,1,"200 [orders]","r"]]);
+
+seq("seq-b",
+  [["Batch job","svc"],["Identity provider","sec"],["Orders API","svc"]],
+  [[0,0,"cached token missing, or expiring in < 60 s?"],
+   [0,1,"POST /token  grant_type=client_credentials\nscope=orders.write  + client authentication"],
+   [1,1,"authenticate client: secret,\nprivate_key_jwt or mTLS"],
+   [1,0,"access_token (sub = client id), no refresh token","r"],
+   [0,0,"cache until exp − 60 s"],
+   [0,2,"POST /orders  Authorization: Bearer <access>"],
+   [2,2,"validate JWT, require SCOPE_orders.write"],
+   [2,0,"201 Created","r"]], 260);
+
+seq("seq-c",
+  [["Client / BFF","client"],["Orders API","svc"],["Identity provider","sec"],["Attacker","ext"]],
+  [[0,1,"GET /orders  Bearer AT1 (expired)"],
+   [1,0,"401  WWW-Authenticate: Bearer error=\"invalid_token\"","r"],
+   [0,2,"POST /token  grant_type=refresh_token  RT1"],
+   [2,2,"RT1 valid and unused: mark used"],
+   [2,0,"AT2 + RT2 (rotated)","r"],
+   [0,1,"retry  Bearer AT2"],
+   [1,0,"200","r"],
+   [3,2,"POST /token  RT1 (stolen copy)"],
+   [2,2,"RT1 already used: reuse detected\nrevoke the whole family, RT2 included"],
+   [2,3,"400 invalid_grant","r"]], 220);
+
+seq("seq-d",
+  [["Client","client"],["Orders API","svc"],["Identity provider","sec"],["Payments API","svc"]],
+  [[0,1,"POST /orders  Bearer (aud = orders-api)"],
+   [1,1,"validate; needs to charge the user"],
+   [1,2,"POST /token  grant_type=urn:…:token-exchange\nsubject_token=<user token>&audience=payments-api"],
+   [2,2,"policy: may orders-api act for this user?"],
+   [2,1,"JWT: sub = user, aud = payments-api,\nact = { sub: orders-api }","r"],
+   [1,3,"POST /payments  Bearer <exchanged token>"],
+   [3,3,"validate, aud = payments-api"],
+   [3,1,"201","r"],
+   [1,0,"201 order created","r"]], 220);
+
+seq("seq-e",
+  [["User","ext"],["Client / BFF","client"],["Identity provider","sec"],["Orders API","svc"],["Denylist","cache"]],
+  [[0,1,"click Log out"],
+   [1,2,"POST /revoke  token=<refresh token>"],
+   [1,4,"SET deny:<jti>  EX (exp − now)   (optional)"],
+   [1,0,"clear session cookie, redirect","r"],
+   [0,2,"GET end_session_endpoint\n?id_token_hint=…&post_logout_redirect_uri=…"],
+   [2,2,"end SSO session; back-channel\nlogout to other clients"],
+   [1,3,"later: request with the old access token"],
+   [3,3,"signature and exp still valid"],
+   [3,4,"EXISTS deny:<jti>"],
+   [4,3,"1","r"],
+   [3,1,"401","r"]]);
+
+/* ---------- tabs ---------- */
+var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+function select(tab){
+  tabs.forEach(function(t){ var on = t === tab; t.setAttribute("aria-selected", on); t.tabIndex = on ? 0 : -1; $(t.getAttribute("aria-controls")).hidden = !on; });
+}
+tabs.forEach(function(t, i){
+  t.addEventListener("click", function(){ select(t); });
+  t.addEventListener("keydown", function(e){
+    var j = e.key === "ArrowRight" ? i+1 : e.key === "ArrowLeft" ? i-1 : null;
+    if(j === null) return; j = (j + tabs.length) % tabs.length; select(tabs[j]); tabs[j].focus(); e.preventDefault();
+  });
+});
+select(tabs[0]);
+
+/* ---------- issue filter ---------- */
+var issues = Array.prototype.slice.call(document.querySelectorAll("details.issue"));
+$("filter").addEventListener("input", function(){
+  var q = this.value.trim().toLowerCase(), shown = 0;
+  issues.forEach(function(d){ var hit = !q || d.textContent.toLowerCase().indexOf(q) >= 0; d.style.display = hit ? "" : "none"; if(hit) shown++; });
+  $("empty").style.display = shown ? "none" : "block";
+});
+
+/* ---------- checklist ---------- */
+var ITEMS = [
+  "Only asymmetric algorithms between services; explicit allowlist configured on the API",
+  "Signing keys come from the issuer's JWKS, never from token headers (jku, x5u, jwk)",
+  "iss, aud, exp and nbf validated on every API, with skew of 60 s or less",
+  "ID tokens and refresh tokens can't be used as access tokens",
+  "Access tokens live 15 minutes or less; refresh tokens rotate with reuse detection",
+  "Browser apps use Authorization Code + PKCE, ideally behind a BFF with HttpOnly cookies",
+  "No tokens in URLs, logs, error messages or analytics",
+  "No sensitive personal data in claims (they are readable by anyone holding the token)",
+  "Roles and scopes mapped explicitly; object-level ownership checked in the service",
+  "Gateway strips inbound identity headers; every service validates the JWT itself",
+  "Downstream calls use token exchange or client credentials, not blind token relay",
+  "Key rotation rehearsed: publish, wait, sign, retire; signing keys persisted",
+  "Revocation story defined: refresh-token revoke on logout, denylist or introspection where needed",
+  "Clocks synced with NTP across IdP, gateways and services",
+  "Corporate CA and proxy configured so the API can reach discovery and JWKS"
+];
+var saved = {};
+try{ saved = JSON.parse(localStorage.getItem("jwt-checklist") || "{}"); }catch(e){ saved = {}; }
+$("checkList").innerHTML = ITEMS.map(function(t, i){
+  return '<li><label><input type="checkbox" data-i="'+i+'"'+(saved[i]?" checked":"")+'><span>'+esc(t)+'</span></label></li>';
+}).join("");
+$("checkList").addEventListener("change", function(e){
+  var i = e.target.getAttribute("data-i"); if(i === null) return;
+  saved[i] = e.target.checked;
+  try{ localStorage.setItem("jwt-checklist", JSON.stringify(saved)); }catch(err){}
+});
+
+/* ---------- toc highlight ---------- */
+var links = Array.prototype.slice.call(document.querySelectorAll("nav.toc a"));
+if("IntersectionObserver" in window){
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(en){ if(en.isIntersecting){ links.forEach(function(a){ a.classList.toggle("on", a.getAttribute("href") === "#"+en.target.id); }); } });
+  }, {rootMargin:"-30% 0px -65% 0px"});
+  document.querySelectorAll("main section").forEach(function(s){ io.observe(s); });
+}
+})();
+</script>
+</body>
+</html>

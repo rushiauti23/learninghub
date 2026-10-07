@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>One web request through the TCP/IP stack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+  --paper:#E7ECEF; --panel:#F6F8F9; --ink:#17222B; --muted:#53626E; --rule:#BCC7CF; --focus:#1A5FD0;
+  --app:#8A3FB5; --app-bg:#EBDDF4; --app-fg:#59207B;
+  --tr:#0C7C8C;  --tr-bg:#CFEBEE;  --tr-fg:#06525C;
+  --ip:#B87300;  --ip-bg:#F8E3B8;  --ip-fg:#684000;
+  --link:#2E7D4F;--link-bg:#D3EBDB;--link-fg:#1B5133;
+  --phy:#5B6773; --phy-bg:#D9DFE4; --phy-fg:#38434D;
+  --bad:#C0283B; --bad-bg:#F6D5DA; --ok:#1F7A45;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#10171C; --panel:#182027; --ink:#E4EBF0; --muted:#9AA9B5; --rule:#34434E; --focus:#7DB0FF;
+    --app:#C48BE6; --app-bg:#31213D; --app-fg:#E3C4F5;
+    --tr:#4CC3D3;  --tr-bg:#12353B;  --tr-fg:#A8E6EE;
+    --ip:#E8A93A;  --ip-bg:#3D2E0E;  --ip-fg:#F6D58E;
+    --link:#5FC088;--link-bg:#173526;--link-fg:#B0E5C6;
+    --phy:#9AA9B5; --phy-bg:#27323A; --phy-fg:#C5D0D8;
+    --bad:#FF7A8A; --bad-bg:#46202A; --ok:#6BD39A;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#10171C; --panel:#182027; --ink:#E4EBF0; --muted:#9AA9B5; --rule:#34434E; --focus:#7DB0FF;
+  --app:#C48BE6; --app-bg:#31213D; --app-fg:#E3C4F5;
+  --tr:#4CC3D3;  --tr-bg:#12353B;  --tr-fg:#A8E6EE;
+  --ip:#E8A93A;  --ip-bg:#3D2E0E;  --ip-fg:#F6D58E;
+  --link:#5FC088;--link-bg:#173526;--link-fg:#B0E5C6;
+  --phy:#9AA9B5; --phy-bg:#27323A; --phy-fg:#C5D0D8;
+  --bad:#FF7A8A; --bad-bg:#46202A; --ok:#6BD39A;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 1rem/1.55 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-optical-sizing:auto}
+code,.mono,.b,.cv,.crlf,pre,input,.ruler{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+button{font:inherit;color:inherit}
+
+.t-app{--c:var(--app);--cb:var(--app-bg);--cf:var(--app-fg)}
+.t-tr{--c:var(--tr);--cb:var(--tr-bg);--cf:var(--tr-fg)}
+.t-ip{--c:var(--ip);--cb:var(--ip-bg);--cf:var(--ip-fg)}
+.t-link{--c:var(--link);--cb:var(--link-bg);--cf:var(--link-fg)}
+.t-phy{--c:var(--phy);--cb:var(--phy-bg);--cf:var(--phy-fg)}
+
+.wrap{max-width:1200px;margin:0 auto;padding:32px clamp(16px,4vw,40px) 72px}
+h1{font-size:clamp(2rem,1.1rem + 3.2vw,3.4rem);line-height:1.04;letter-spacing:-.025em;font-weight:650;margin:0;max-width:22ch}
+.intro{max-width:64ch;color:var(--muted);font-size:1.125rem;line-height:1.5;margin:16px 0 0}
+
+/* staircase */
+.anat{margin-top:28px;border:1px solid var(--rule);background:var(--panel);border-radius:12px;padding:18px;overflow-x:auto}
+.agrid{display:grid;gap:6px;min-width:680px;align-items:stretch}
+.arow{display:contents}
+.alabel{display:flex;flex-direction:column;justify-content:center;font-weight:600;padding-left:12px;border-left:4px solid transparent;line-height:1.2}
+.alabel small{font-weight:400;color:var(--muted);font-size:.8125rem}
+.alabel.on{border-left-color:var(--c)}
+.ac{min-height:42px;border-radius:5px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:.8125rem;padding:0 4px;white-space:nowrap;overflow:hidden}
+.ac b{font-weight:600}
+.ac.own{background:var(--cb);color:var(--cf);border:2px solid var(--c)}
+.ac.inner{background:var(--cb);color:var(--cf);opacity:.5;border:2px solid transparent}
+.ac.ghost{border:1px dashed var(--rule);color:transparent}
+.acap{margin:12px 0 0;color:var(--muted);font-size:.9375rem}
+
+/* scenario */
+.scenario{display:grid;grid-template-columns:minmax(260px,1fr) minmax(300px,1.3fr);gap:20px 40px;margin:28px 0 8px;padding:20px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.scenario fieldset{border:0;margin:0;padding:0;min-width:0}
+.scenario label,.scenario legend{font-weight:600;display:block;margin-bottom:8px;padding:0}
+.dst-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+input[type=text]{font-size:.9375rem;padding:8px 10px;width:11.5em;border:1px solid var(--ink);border-radius:6px;background:var(--panel);color:var(--ink)}
+input[aria-invalid=true]{border-color:var(--bad);box-shadow:0 0 0 2px var(--bad-bg)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.pill{border:1px solid var(--rule);background:transparent;border-radius:999px;padding:6px 12px;font-size:.875rem;cursor:pointer}
+.pill[aria-pressed=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.pill:disabled{opacity:.45;cursor:not-allowed}
+.hint{margin:8px 0 0;font-size:.875rem;color:var(--muted);min-height:1.4em}
+.hint.err{color:var(--bad)}
+.hint.warn{color:var(--ink)}
+.me{grid-column:1/-1;margin:0;font-size:.875rem;color:var(--muted)}
+
+/* layout */
+.layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:40px;margin-top:28px}
+.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);align-self:start}
+.rail h3{font-size:.875rem;color:var(--muted);font-weight:600;margin:20px 0 6px;padding-left:14px}
+.rail h3:first-child{margin-top:0}
+.rs{display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;border-left:4px solid var(--c);padding:8px 10px;cursor:pointer;border-radius:0 8px 8px 0}
+.rs:hover{background:var(--cb)}
+.rs .n{width:24px;height:24px;border-radius:50%;background:var(--cb);color:var(--cf);display:grid;place-items:center;font:600 .75rem "JetBrains Mono",monospace;border:1px solid var(--c)}
+.rs[aria-current=step]{background:var(--cb)}
+.rs[aria-current=step] .n{background:var(--c);color:var(--paper)}
+.rs .t{display:block;font-weight:600;line-height:1.2}
+.rs .s{display:block;font-size:.8125rem;color:var(--muted);line-height:1.3}
+.rs.drop .s{color:var(--bad);font-weight:600}
+.rs.after{opacity:.5}
+
+.stage{min-width:0;animation:in .18s ease-out}
+@keyframes in{from{opacity:.0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.sh{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+h2{font-size:clamp(1.5rem,1.2rem + 1.2vw,2rem);letter-spacing:-.015em;font-weight:650;margin:0;line-height:1.15}
+h2:focus{outline:none}
+.chip{font-size:.8125rem;font-weight:600;padding:3px 11px;border-radius:999px;background:var(--cb);color:var(--cf);border:1px solid var(--c)}
+.lede{font-size:1.1875rem;line-height:1.4;max-width:58ch;margin:12px 0 16px}
+.stage p{max-width:68ch;margin:0 0 12px}
+.stage h3{font-size:1.0625rem;font-weight:650;margin:26px 0 8px}
+.note{color:var(--muted);font-size:.9375rem}
+code{font-size:.875em;background:var(--phy-bg);color:var(--phy-fg);padding:1px 5px;border-radius:4px}
+.panel{border:1px solid var(--rule);background:var(--panel);border-radius:10px;padding:16px;margin:10px 0 4px;overflow-x:auto}
+
+/* diagram */
+.diagram{min-width:560px}
+.ruler{display:flex;font-size:.6875rem;color:var(--muted);margin-bottom:3px}
+.ruler span{flex:1 1 0;border-left:1px solid var(--rule);padding-left:3px;line-height:1.2}
+.drow{display:flex}
+.cell{flex:var(--bits) 1 0;min-width:0;min-height:56px;margin:-1px 0 0 -1px;padding:6px 8px;border:1px solid var(--c);background:var(--cb);color:var(--cf);text-align:left;cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:2px;overflow:hidden}
+.cell .cn{font-size:.75rem;font-weight:600;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cell .cv{font-size:.8125rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cell.hl,.line.hl{background:var(--c);color:var(--paper)}
+.spacer{flex:var(--bits) 1 0;min-width:0;margin:-1px 0 0 -1px;border:1px dashed var(--rule);display:grid;place-items:center;font-size:.75rem;color:var(--muted);padding:4px;text-align:center}
+
+/* inspector + dump */
+.insp{border-left:4px solid var(--c,var(--rule));background:var(--panel);padding:10px 14px;margin:18px 0 8px;border-radius:0 8px 8px 0;min-height:4.4em}
+.insp .nm{font-weight:650}
+.insp .meta{font-family:"JetBrains Mono",monospace;font-size:.8125rem;color:var(--muted);margin-left:8px}
+.insp p{margin:4px 0 0!important;font-size:.9375rem}
+.dump{border:1px solid var(--rule);background:var(--panel);border-radius:10px;padding:12px 14px;overflow-x:auto}
+.dr{display:flex;gap:18px;white-space:nowrap;line-height:2}
+.off{color:var(--muted);font-size:.75rem;width:2.8em;flex:none}
+.hexg{flex:none}
+.b{display:inline-block;font-size:.78125rem;padding:0 3px;margin-right:3px;border-radius:3px;background:var(--cb);color:var(--cf);cursor:default}
+.b.gap{margin-left:8px}
+.b.hl{background:var(--c);color:var(--paper)}
+.b.chg{outline:1.5px dashed var(--ink);outline-offset:0}
+.b.bad{background:var(--bad);color:var(--paper)}
+.asc{flex:none;font-size:.78125rem}
+.asc .b{margin:0;padding:0 1px;border-radius:0;background:transparent}
+.asc .b.hl{background:var(--c)}
+.asc .b.bad{background:var(--bad)}
+.dump-cap{margin:0 0 6px;font-size:.875rem;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8125rem;margin:0 0 10px;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;background:var(--c);margin-right:5px;vertical-align:-1px}
+.empty{color:var(--muted);padding:8px 0}
+
+/* http lines */
+.lines{display:grid;gap:6px;margin:6px 0 4px}
+.line{display:flex;justify-content:space-between;gap:16px;align-items:baseline;flex-wrap:wrap;text-align:left;width:100%;border:1px solid var(--c);background:var(--cb);color:var(--cf);padding:8px 12px;border-radius:6px;cursor:pointer}
+.line code{background:none;color:inherit;padding:0;font-size:.875rem;white-space:pre-wrap;word-break:break-all}
+.line .lm{font-size:.8125rem;opacity:.85}
+.crlf{opacity:.55}
+
+/* tables */
+table{border-collapse:collapse;width:100%;font-size:.9375rem;min-width:520px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:.8125rem}
+td.m{font-family:"JetBrains Mono",monospace;font-size:.8125rem;word-break:break-all}
+tr.hit td{background:var(--ip-bg);color:var(--ip-fg);font-weight:600}
+.tag{display:inline-block;font-size:.75rem;font-weight:600;padding:1px 8px;border-radius:999px;border:1px solid var(--rule)}
+.tag.chg{background:var(--ip-bg);color:var(--ip-fg);border-color:var(--ip)}
+.tag.same{background:var(--link-bg);color:var(--link-fg);border-color:var(--link)}
+.tag.dmg{background:var(--bad);color:var(--paper);border-color:var(--bad)}
+.bin{font-family:"JetBrains Mono",monospace;font-size:.8125rem;line-height:1.9;white-space:nowrap}
+.bin .k{display:inline-block;width:8.5em;color:var(--muted);font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:.875rem}
+.bin .dec{margin-left:14px;color:var(--muted)}
+.bin .r{font-weight:700;color:var(--ink)}
+
+/* checks */
+.checks{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}
+.checks li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+.ic{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.8125rem;margin-top:1px}
+.ic.ok{background:var(--link-bg);color:var(--ok);border:1px solid var(--ok)}
+.ic.no{background:var(--bad);color:var(--paper)}
+.ic.skip{border:1px dashed var(--muted);color:var(--muted)}
+.checks .w{font-weight:600}
+.checks .d{display:block;color:var(--muted);font-size:.875rem;font-family:"JetBrains Mono",monospace;word-break:break-word}
+.banner{border-left:4px solid var(--c,var(--rule));background:var(--panel);padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+.banner.bad{border-left-color:var(--bad);background:var(--bad-bg)}
+.banner p{margin:0!important}
+.banner strong{font-weight:650}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.nav{display:flex;justify-content:space-between;gap:12px;margin-top:28px;flex-wrap:wrap}
+.btn{font-weight:600;padding:10px 18px;border-radius:8px;border:1px solid var(--ink);background:transparent;cursor:pointer}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+svg text{fill:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif}
+svg .m{font-family:"JetBrains Mono",ui-monospace,monospace;fill:var(--muted)}
+.wf-pre{stroke:var(--phy)}.wf-mac{stroke:var(--link)}
+foot,.foot{display:block;margin-top:56px;padding-top:20px;border-top:1px solid var(--rule);color:var(--muted);font-size:.9375rem;max-width:80ch}
+.foot p{margin:0 0 10px}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:20px}
+  .scenario{grid-template-columns:1fr}
+  .rail{position:static;display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x proximity}
+  .rail h3{display:none}
+  .rs{min-width:150px;scroll-snap-align:start;border-left:0;border-bottom:4px solid var(--c);border-radius:8px 8px 0 0;width:auto}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Follow one web request down the TCP/IP stack and back up</h1>
+  <p class="intro">Your computer sends a single HTTP request. Each layer wraps it in its own header, a router rewrites part of it, and the receiver unwraps it layer by layer. Every byte, checksum and address on this page is computed in your browser.</p>
+
+  <section class="anat" aria-label="How the layers nest">
+    <div id="anat"></div>
+    <p class="acap" id="acap"></p>
+  </section>
+
+  <section class="scenario" aria-label="Scenario">
+    <div>
+      <label for="dst">Destination address</label>
+      <div class="dst-row">
+        <input id="dst" type="text" value="203.0.113.80" inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="dst-msg">
+        <div class="chips" id="presets" role="group" aria-label="Preset destinations"></div>
+      </div>
+      <p class="hint" id="dst-msg"></p>
+    </div>
+    <fieldset>
+      <legend>Damage in transit</legend>
+      <div class="chips" id="modes" role="group" aria-label="Damage in transit"></div>
+      <p class="hint" id="dmg-msg"></p>
+    </fieldset>
+    <p class="me">Your computer is 192.168.1.20 on 192.168.1.0/24, with a gateway at 192.168.1.1.</p>
+  </section>
+
+  <div class="layout">
+    <nav class="rail" id="rail" aria-label="Steps"></nav>
+    <main class="stage" id="stage"></main>
+  </div>
+
+  <div class="foot">
+    <p><strong>How this maps to other models.</strong> The TCP/IP model has four layers. In the seven-layer OSI model, Application covers layers 5 to 7, Transport is layer 4, Internet is Network (layer 3), and Link covers Data link (layer 2) and Physical (layer 1). The wire step is drawn separately here because it is easy to overlook.</p>
+    <p><strong>What is simplified.</strong> One router sits between you and the server. There is no TLS or NAT, the link is wired Ethernet rather than Wi-Fi, and the TCP handshake is shown as a diagram rather than as bytes. The addresses 203.0.113.0/24 are reserved for documentation, so no real server answers there.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- constants & helpers ---------- */
+var NET={srcIp:'192.168.1.20',net:'192.168.1.0',maskBits:24,gw:'192.168.1.1',
+  srcMac:'3c:22:fb:0a:91:7e',gwMac:'94:83:c4:1d:5a:20',routerMac:'00:1b:21:3a:c8:44'};
+var ISNc=0x2F4A9C10, ISNs=0x7B1E0042;
+var PRESETS=[
+  {label:'Web server on the internet',ip:'203.0.113.80',host:'demo.example.net'},
+  {label:'Printer on your network',ip:'192.168.1.50',host:'printer.local'}
+];
+var MODES=[
+  {id:'none',label:'None'},
+  {id:'cable',label:'On the last cable'},
+  {id:'router-ip',label:'In a router, IP header',needsRouter:true},
+  {id:'router-payload',label:'In a router, payload',needsRouter:true}
+];
+var state={dst:'203.0.113.80',host:'demo.example.net',mode:'none',step:0};
+var M=null;
+
+function $(s,r){return (r||document).querySelector(s);}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function pad(s,n){s=String(s);while(s.length<n)s='0'+s;return s;}
+function hx(b,sep){return b.map(function(x){return pad(x.toString(16),2);}).join(sep===undefined?' ':sep);}
+function macStr(b){return hx(b,':');}
+function H(n,w){return '0x'+pad(n.toString(16).toUpperCase(),w);}
+function fmt(n){return n.toLocaleString('en-US');}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function u16(n){return [(n>>8)&255,n&255];}
+function u32(n){return [(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255];}
+function le32(n){return [n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255];}
+function ipB(s){return s.split('.').map(Number);}
+function macB(s){return s.split(':').map(function(h){return parseInt(h,16);});}
+function ip32(b){return ((b[0]<<24)|(b[1]<<16)|(b[2]<<8)|b[3])>>>0;}
+function bin8(n){return pad(n.toString(2),8);}
+function binIp(b){return b.map(bin8).join('.');}
+function onesSum(bytes){var s=0;for(var i=0;i<bytes.length;i+=2){s+=(bytes[i]<<8)|(i+1<bytes.length?bytes[i+1]:0);}while(s>>>16){s=(s&0xffff)+(s>>>16);}return s;}
+function csum(bytes){return (~onesSum(bytes))&0xffff;}
+var CRC_T=(function(){var t=[];for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++){c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);}t[n]=c>>>0;}return t;})();
+function crc32(b){var c=0xFFFFFFFF;for(var i=0;i<b.length;i++){c=CRC_T[(c^b[i])&255]^(c>>>8);}return (c^0xFFFFFFFF)>>>0;}
+function derivedMac(ip){return macStr([0x02,0x00].concat(ipB(ip)));}
+function maskInt(){return (0xFFFFFFFF<<(32-NET.maskBits))>>>0;}
+function onLink(ip){return ((ip32(ipB(ip))&maskInt())>>>0)===ip32(ipB(NET.net));}
+function eqBytes(a,b){if(a.length!==b.length)return false;for(var i=0;i<a.length;i++)if(a[i]!==b[i])return false;return true;}
+
+function validate(s){
+  var m=/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(s.trim());
+  if(!m)return 'Enter four numbers separated by dots, like 203.0.113.80.';
+  var o=m.slice(1).map(Number);
+  for(var i=0;i<4;i++)if(o[i]>255)return 'Each number must be between 0 and 255.';
+  var ip=o.join('.');
+  if(o[0]===0||o[0]===127)return 'Addresses starting with 0 or 127 never leave this computer.';
+  if(o[0]>=224)return 'Use a unicast address. 224 and above are multicast or reserved.';
+  if(ip===NET.srcIp)return 'That is this computer. Traffic to yourself uses loopback and skips the link layer.';
+  if(ip==='192.168.1.0'||ip==='192.168.1.255')return 'That is the network or broadcast address of your subnet, not a single host.';
+  return '';
+}
+
+/* ---------- packet model ---------- */
+function buildModel(){
+  var dst=state.dst,dstB=ipB(dst),srcB=ipB(NET.srcIp),onl=onLink(dst);
+  var http='GET /index.html HTTP/1.1\r\nHost: '+state.host+'\r\nConnection: close\r\n\r\n';
+  var payload=[];for(var i=0;i<http.length;i++)payload.push(http.charCodeAt(i));
+  var L=payload.length,dstMac=derivedMac(dst);
+  var nextHopIp=onl?dst:NET.gw, nextHopMac=onl?dstMac:NET.gwMac;
+
+  function tcpHdr(cs){return [].concat(u16(49152),u16(80),u32(ISNc+1),u32(ISNs+1),[0x50,0x18],u16(64240),u16(cs),[0,0]);}
+  function ipHdr(ttl,cs){return [].concat([0x45,0x00],u16(20+20+L),u16(0x1C46),[0x40,0x00,ttl,6],u16(cs),srcB,dstB);}
+  var pseudo=[].concat(srcB,dstB,[0,6],u16(20+L));
+  var tcpCs=csum(pseudo.concat(tcpHdr(0),payload));
+
+  function assemble(o){
+    var pl=payload.slice(); if(o.flipPayload)pl[5]^=1;
+    var tcp=tcpHdr(tcpCs);
+    var ip=ipHdr(o.ttl,csum(ipHdr(o.ttl,0))); if(o.flipIp)ip[5]^=1;
+    var eth=[].concat(macB(o.dstMac),macB(o.srcMac),[0x08,0x00]);
+    var fcs=le32(crc32([].concat(eth,ip,tcp,pl)));
+    var app=pl.slice(); if(o.flipCable)app[5]^=1;
+    return {eth:eth,ip:ip,tcp:tcp,app:app,fcs:fcs};
+  }
+  var a1={ttl:64,srcMac:NET.srcMac,dstMac:nextHopMac};
+  var a2={ttl:63,srcMac:NET.routerMac,dstMac:dstMac};
+  var F1=assemble(a1);
+  var F2=onl?F1:assemble({ttl:63,srcMac:NET.routerMac,dstMac:dstMac,flipIp:state.mode==='router-ip',flipPayload:state.mode==='router-payload'});
+  var RX=state.mode==='cable'?assemble((function(b){var o={};for(var k in b)o[k]=b[k];o.flipCable=true;return o;})(onl?a1:a2)):F2;
+
+  var fcsRx=((RX.fcs[0]|(RX.fcs[1]<<8)|(RX.fcs[2]<<16)|(RX.fcs[3]<<24))>>>0);
+  var fcsCalc=crc32([].concat(RX.eth,RX.ip,RX.tcp,RX.app));
+  var ipSum=onesSum(RX.ip);
+  var tl=(RX.ip[2]<<8)|RX.ip[3];
+  var psR=[].concat(RX.ip.slice(12,20),[0,RX.ip[9]],u16(tl-(RX.ip[0]&15)*4));
+  var tcpSum=onesSum(psR.concat(RX.tcp,RX.app));
+  var failAt=null;
+  if(fcsRx!==fcsCalc)failAt=6;else if(ipSum!==0xFFFF)failAt=7;else if(tcpSum!==0xFFFF)failAt=8;
+  var damage=null;
+  if(state.mode==='cable')damage={layer:'app',i:5};
+  if(state.mode==='router-ip')damage={layer:'ip',i:5};
+  if(state.mode==='router-payload')damage={layer:'app',i:5};
+
+  return {dst:dst,dstB:dstB,srcB:srcB,onl:onl,http:http,payload:payload,L:L,dstMac:dstMac,
+    nextHopIp:nextHopIp,nextHopMac:nextHopMac,F1:F1,F2:F2,RX:RX,
+    fcsRx:fcsRx,fcsCalc:fcsCalc,ipSum:ipSum,tcpSum:tcpSum,failAt:failAt,damage:damage,
+    total:14+20+20+L+4,over:14+20+20+4};
+}
+
+/* ---------- field parsing (works on any bytes, including damaged ones) ---------- */
+function fld(id,layer,name,off,len,bits,short,disp,why){return {id:id,layer:layer,name:name,off:off,len:len,bits:bits,short:short,disp:disp===undefined?short:disp,why:why};}
+function parseEth(b){
+  var t=(b[12]<<8)|b[13];
+  return [
+    fld('eth.dst','eth','Destination MAC',0,6,48,macStr(b.slice(0,6)),undefined,'Hardware address of the next device on this link. It is not the final destination.'),
+    fld('eth.src','eth','Source MAC',6,6,48,macStr(b.slice(6,12)),undefined,'Hardware address of the network card that is sending this frame.'),
+    fld('eth.type','eth','EtherType',12,2,16,H(t,4),H(t,4)+(t===0x800?' (IPv4)':t===0x806?' (ARP)':t===0x86DD?' (IPv6)':''),'Which protocol is inside. 0x0800 is IPv4, 0x0806 is ARP and 0x86DD is IPv6.')
+  ];
+}
+function parseFcs(b){
+  var v=((b[0]|(b[1]<<8)|(b[2]<<16)|(b[3]<<24))>>>0);
+  return [fld('fcs.crc','fcs','Frame check sequence',0,4,32,H(v,8),undefined,'A CRC-32 over the whole frame. The receiver recomputes it and drops the frame if it differs, which catches bits flipped on the cable.')];
+}
+function parseIp(b){
+  var len=(b[2]<<8)|b[3],id=(b[4]<<8)|b[5],ff=(b[6]<<8)|b[7],fl=ff>>13,fr=ff&0x1fff,cs=(b[10]<<8)|b[11];
+  var f=[];if(fl&2)f.push('DF');if(fl&1)f.push('MF');
+  return [
+    fld('ip.ver','ip','Version',0,1,4,String(b[0]>>4),undefined,'4 means IPv4.'),
+    fld('ip.ihl','ip','Header length',0,1,4,String(b[0]&15),(b[0]&15)+' words = '+(b[0]&15)*4+' bytes','Header length in 4-byte words. 5 words is 20 bytes, so there are no options.'),
+    fld('ip.tos','ip','DSCP / ECN',1,1,8,String(b[1]),undefined,'Hints for queueing priority and congestion signalling. 0 is the default.'),
+    fld('ip.len','ip','Total length',2,2,16,String(len),len+' bytes','Header plus data. Here: 20 for IP, 20 for TCP and '+(len-40)+' for the HTTP message.'),
+    fld('ip.id','ip','Identification',4,2,16,H(id,4),undefined,'A label that lets the pieces of a packet be matched up if it is ever fragmented.'),
+    fld('ip.flags','ip','Flags',6,2,3,f.join(' ')||'none',f.join(' ')||'none','DF means "don\'t fragment": a router that cannot fit the packet must drop it and report back instead of splitting it.'),
+    fld('ip.frag','ip','Fragment offset',6,2,13,String(fr),undefined,'Where this piece sits in the original packet. 0 because the packet is not fragmented.'),
+    fld('ip.ttl','ip','Time to live',8,1,8,String(b[8]),undefined,'Every router subtracts 1. When it reaches 0 the packet is discarded, which stops routing loops.'),
+    fld('ip.proto','ip','Protocol',9,1,8,String(b[9]),b[9]+(b[9]===6?' (TCP)':b[9]===17?' (UDP)':b[9]===1?' (ICMP)':''),'Which protocol is inside the packet. 6 is TCP, 17 is UDP and 1 is ICMP.'),
+    fld('ip.csum','ip','Header checksum',10,2,16,H(cs,4),undefined,'Covers the IP header only. Routers recompute it at every hop because the TTL changes.'),
+    fld('ip.src','ip','Source address',12,4,32,b.slice(12,16).join('.'),undefined,'Who sent the packet. It stays the same for the whole trip.'),
+    fld('ip.dst','ip','Destination address',16,4,32,b.slice(16,20).join('.'),undefined,'Where the packet is going. Routers use this to choose the next hop.')
+  ];
+}
+function parseTcp(b){
+  var sp=(b[0]<<8)|b[1],dp=(b[2]<<8)|b[3];
+  var seq=((b[4]<<24)|(b[5]<<16)|(b[6]<<8)|b[7])>>>0,ack=((b[8]<<24)|(b[9]<<16)|(b[10]<<8)|b[11])>>>0;
+  var off=b[12]>>4,rsv=b[12]&15,fl=b[13],win=(b[14]<<8)|b[15],cs=(b[16]<<8)|b[17],urg=(b[18]<<8)|b[19];
+  var nm=['FIN','SYN','RST','PSH','ACK','URG','ECE','CWR'],set=[];
+  for(var i=0;i<8;i++)if(fl&(1<<i))set.push(nm[i]);
+  return [
+    fld('tcp.sp','tcp','Source port',0,2,16,String(sp),undefined,'Which port on the sender this conversation uses. The operating system picks a temporary one, usually 49152 or higher, for each connection.'),
+    fld('tcp.dp','tcp','Destination port',2,2,16,String(dp),dp+(dp===80?' (HTTP)':''),'Which service on the receiver should get the data. 80 is the default port for HTTP.'),
+    fld('tcp.seq','tcp','Sequence number',4,4,32,fmt(seq),undefined,'Position, in the sender\'s byte stream, of the first data byte in this segment. It started at a random number during the handshake.'),
+    fld('tcp.ack','tcp','Acknowledgment number',8,4,32,fmt(ack),undefined,'The next byte the sender expects from the other side. It confirms everything the server sent so far.'),
+    fld('tcp.off','tcp','Data offset',12,1,4,String(off),off+' words = '+off*4+' bytes','Header length in 4-byte words. 5 words is 20 bytes, so there are no options.'),
+    fld('tcp.rsv','tcp','Reserved',12,1,4,String(rsv),undefined,'Unused bits, kept at 0.'),
+    fld('tcp.flags','tcp','Flags',13,1,8,set.join(' ')||'none',set.join(', ')||'none','Control bits. SYN opens a connection, ACK confirms received data, PSH asks the receiver to pass data up now, FIN closes and RST aborts. Set here: '+(set.join(', ')||'none')+'.'),
+    fld('tcp.win','tcp','Window',14,2,16,String(win),win+' bytes','How many more bytes the sender of this segment can buffer. This is how TCP does flow control.'),
+    fld('tcp.csum','tcp','Checksum',16,2,16,H(cs,4),undefined,'Covers the TCP header, the data and a pseudo-header holding both IP addresses, so a segment that reaches the wrong host is also caught.'),
+    fld('tcp.urg','tcp','Urgent pointer',18,2,16,String(urg),undefined,'Only used when the URG flag is set. Rarely seen today.')
+  ];
+}
+var HDR_WHY={host:'Which website you want. Many sites share one IP address, so the server needs this to pick the right one.',connection:'"close" asks the server to close the TCP connection once it has answered.'};
+function parseApp(p){
+  var txt='';for(var i=0;i<p.length;i++)txt+=String.fromCharCode(p[i]);
+  var out=[],off=0,n=0;
+  while(off<p.length){
+    var e=txt.indexOf('\r\n',off),len,line,crlf=false;
+    if(e<0){line=txt.slice(off);len=p.length-off;}else{line=txt.slice(off,e);len=e+2-off;crlf=true;}
+    var name,why;
+    if(n===0){name='Request line';why='Method, path and HTTP version. GET asks for a resource without changing anything.';}
+    else if(line===''){name='End of headers';why='An empty line ends the headers. A GET has no body, so the message ends here.';}
+    else{var h=line.split(':')[0];name=h+' header';why=HDR_WHY[h.toLowerCase()]||'A header field.';}
+    var f=fld('app.l'+n,'app',name,off,len,len*8,line,line,why);f.crlf=crlf;out.push(f);
+    off+=len;n++;
+  }
+  return out;
+}
+var PRE_FIELDS=[
+  fld('pre.pre','pre','Preamble',0,7,56,'7 x 0x55',undefined,'Alternating 1s and 0s so the receiver can lock its clock onto the sender\'s.'),
+  fld('pre.sfd','pre','Start frame delimiter',7,1,8,'0xD5',undefined,'Ends in two 1s. The very next bit is the first bit of the frame.')
+];
+function parseLayer(layer,b){
+  if(layer==='eth')return parseEth(b);if(layer==='ip')return parseIp(b);if(layer==='tcp')return parseTcp(b);
+  if(layer==='app')return parseApp(b);if(layer==='fcs')return parseFcs(b);if(layer==='pre')return PRE_FIELDS;return [];
+}
+
+/* ---------- steps ---------- */
+var STEPS=[
+  {id:'app-out',cls:'t-app',layer:'Application',short:'Application',title:'Write the request',grp:0,row:0,
+   lede:'The application decides what to say. Every layer below only carries those bytes.'},
+  {id:'tr-out',cls:'t-tr',layer:'Transport',short:'Transport',title:'Wrap it in TCP',grp:0,row:1,
+   lede:'TCP cuts the data into numbered segments and makes sure every one arrives, in order.'},
+  {id:'ip-out',cls:'t-ip',layer:'Internet',short:'Internet',title:'Wrap it in IP',grp:0,row:2,
+   lede:'IP adds a source and destination address, so routers know where the packet is going.'},
+  {id:'link-out',cls:'t-link',layer:'Link',short:'Link',title:'Wrap it in an Ethernet frame',grp:0,row:3,
+   lede:'The link layer moves a frame across one network: to the next device, and no further.'},
+  {id:'wire',cls:'t-phy',layer:'Physical signal',short:'Wire',title:'Send it as bits',grp:1,row:3,
+   lede:'The network card turns bytes into voltage, light or radio. Nothing here understands what the bits mean.'},
+  {id:'router',cls:'t-ip',layer:'Internet',short:'Router',title:'Re-wrap it for the next hop',grp:1,row:2,
+   lede:'A router reads as far as the IP header, then builds a fresh frame for the next link.'},
+  {id:'link-in',cls:'t-link',layer:'Link',short:'Link',title:'Check the frame',grp:2,row:3,
+   lede:'The receiving card verifies the frame before any other layer sees it.'},
+  {id:'ip-in',cls:'t-ip',layer:'Internet',short:'Internet',title:'Check the packet',grp:2,row:2,
+   lede:'IP checks that the header is intact and the packet is meant for this machine.'},
+  {id:'tr-in',cls:'t-tr',layer:'Transport',short:'Transport',title:'Check the segment',grp:2,row:1,
+   lede:'TCP verifies the data, finds the right socket and acknowledges what arrived.'},
+  {id:'app-in',cls:'t-app',layer:'Application',short:'Application',title:'Read the request',grp:2,row:0,
+   lede:'The web server gets exactly the bytes the browser wrote.'}
+];
+var GROUPS=['Sender, building the packet','In transit','Receiver, unwrapping it'];
+var LAYERCLS={app:'t-app',tcp:'t-tr',ip:'t-ip',eth:'t-link',fcs:'t-link',pre:'t-phy'};
+
+/* ---------- staircase ---------- */
+var AROWS=[
+  {name:'Application',unit:'message',cols:['app'],own:['app'],cls:'t-app'},
+  {name:'Transport',unit:'segment',cols:['tcp','app'],own:['tcp'],cls:'t-tr'},
+  {name:'Internet',unit:'packet',cols:['ip','tcp','app'],own:['ip'],cls:'t-ip'},
+  {name:'Link',unit:'frame',cols:['eth','ip','tcp','app','fcs'],own:['eth','fcs'],cls:'t-link'}
+];
+var ACOLS=['eth','ip','tcp','app','fcs'];
+var ALABEL={eth:'Eth',ip:'IP',tcp:'TCP',app:'HTTP',fcs:'FCS'};
+function renderAnatomy(){
+  var s=STEPS[state.step],sizes={eth:14,ip:20,tcp:20,app:M.L,fcs:4};
+  var after=M.failAt!==null&&state.step>M.failAt;
+  var fill=after?-1:(s.id==='wire'?3:s.row);
+  var active=(s.id==='wire'||after)?-1:s.row;
+  var tpl='150px 14fr 20fr 20fr '+M.L+'fr minmax(48px,4fr)';
+  var h='<div class="agrid" style="grid-template-columns:'+tpl+'" role="img" aria-label="Layers nested inside each other: application message inside TCP segment inside IP packet inside Ethernet frame">';
+  AROWS.forEach(function(r,ri){
+    h+='<div class="arow"><div class="alabel '+r.cls+(ri===active?' on':'')+'">'+r.name+'<small>'+r.unit+'</small></div>';
+    ACOLS.forEach(function(c){
+      var inRow=r.cols.indexOf(c)>=0&&ri<=fill;
+      if(!inRow){h+='<div class="ac ghost">.</div>';return;}
+      var own=r.own.indexOf(c)>=0;
+      var lab=(c==='app'&&ri===0)?'HTTP request':ALABEL[c];
+      h+='<div class="ac '+LAYERCLS[c]+' '+(own?'own':'inner')+'" title="'+lab+', '+sizes[c]+' bytes"><b>'+lab+'</b><span>'+sizes[c]+'</span></div>';
+    });
+    h+='</div>';
+  });
+  h+='</div>';
+  $('#anat').innerHTML=h;
+  $('#acap').textContent='Frame on the wire: '+M.total+' bytes. '+M.over+' of them are headers and trailer. '+M.L+' are the message you wrote. Numbers inside the boxes are bytes.';
+}
+
+/* ---------- rail ---------- */
+function renderRail(){
+  var h='',g=-1;
+  STEPS.forEach(function(s,i){
+    if(s.grp!==g){g=s.grp;h+='<h3>'+GROUPS[g]+'</h3>';}
+    var drop=M.failAt===i,aft=M.failAt!==null&&i>M.failAt;
+    var sub=s.title;
+    if(s.id==='router'&&M.onl)sub='No router on this path';
+    if(drop)sub='Dropped here';
+    h+='<button class="rs '+s.cls+(drop?' drop':'')+(aft?' after':'')+'" data-step="'+i+'"'+(i===state.step?' aria-current="step"':'')+'><span class="n">'+(i+1)+'</span><span><span class="t">'+s.short+'</span><span class="s">'+sub+'</span></span></button>';
+  });
+  $('#rail').innerHTML=h;
+}
+
+/* ---------- segments, dump, inspector ---------- */
+function seg(layer,bytes,opt){return {layer:layer,bytes:bytes,chg:(opt&&opt.chg)||null,bad:(opt&&opt.bad)||null};}
+function segsFor(i){
+  var id=STEPS[i].id,F1=M.F1,F2=M.F2,RX=M.RX,d=M.damage;
+  function allOf(F,markFn){return [seg('eth',F.eth,markFn('eth')),seg('ip',F.ip,markFn('ip')),seg('tcp',F.tcp,markFn('tcp')),seg('app',F.app,markFn('app')),seg('fcs',F.fcs,markFn('fcs'))];}
+  var none=function(){return null;};
+  var badAt=function(l){return (d&&d.layer===l)?{bad:[d.i]}:null;};
+  if(id==='app-out')return [seg('app',F1.app)];
+  if(id==='tr-out')return [seg('tcp',F1.tcp),seg('app',F1.app)];
+  if(id==='ip-out')return [seg('ip',F1.ip),seg('tcp',F1.tcp),seg('app',F1.app)];
+  if(id==='link-out')return allOf(F1,none);
+  if(id==='wire')return [seg('pre',[0x55,0x55,0x55,0x55,0x55,0x55,0x55,0xD5])].concat(allOf(F1,none));
+  if(id==='router'){
+    if(M.onl)return allOf(F1,none);
+    var routerDamage=state.mode==='router-ip'||state.mode==='router-payload';
+    return allOf(F2,function(l){
+      var chg=[];F2[l].forEach(function(v,k){if(v!==F1[l][k])chg.push(k);});
+      var bad=(routerDamage&&d&&d.layer===l)?[d.i]:[];
+      chg=chg.filter(function(k){return bad.indexOf(k)<0;});
+      return {chg:chg,bad:bad};
+    });
+  }
+  if(M.failAt!==null&&i>M.failAt)return [];
+  if(id==='link-in')return allOf(RX,badAt);
+  if(id==='ip-in')return [seg('ip',RX.ip,badAt('ip')),seg('tcp',RX.tcp),seg('app',RX.app,badAt('app'))];
+  if(id==='tr-in')return [seg('tcp',RX.tcp),seg('app',RX.app,badAt('app'))];
+  if(id==='app-in')return [seg('app',RX.app)];
+  return [];
+}
+var REG=null;
+function buildReg(segs){
+  REG={byId:{},byLayer:{}};
+  segs.forEach(function(s){
+    var fs=parseLayer(s.layer,s.bytes);
+    REG.byLayer[s.layer]=fs;
+    fs.forEach(function(f){REG.byId[f.id]=f;});
+  });
+}
+function legendFor(segs){
+  var names={pre:'Preamble and start delimiter',eth:'Ethernet header',ip:'IP header',tcp:'TCP header',app:'HTTP message',fcs:'Ethernet trailer'};
+  return '<div class="legend">'+segs.map(function(s){return '<span class="'+LAYERCLS[s.layer]+'"><i></i>'+names[s.layer]+' ('+s.bytes.length+' bytes)</span>';}).join('')+'</div>';
+}
+function renderDump(segs,caption){
+  if(!segs.length)return '<div class="dump"><p class="empty">Nothing arrives at this layer. See the banner above.</p></div>';
+  var items=[];
+  segs.forEach(function(s){s.bytes.forEach(function(v,i){
+    var cl='b '+LAYERCLS[s.layer];
+    if(s.chg&&s.chg.indexOf(i)>=0)cl+=' chg';
+    if(s.bad&&s.bad.indexOf(i)>=0)cl+=' bad';
+    items.push({v:v,l:s.layer,i:i,cl:cl});
+  });});
+  var h='<div class="dump">'+(caption?'<p class="dump-cap">'+caption+'</p>':'')+legendFor(segs);
+  for(var r=0;r<items.length;r+=16){
+    var row=items.slice(r,r+16),hexs='',asc='';
+    row.forEach(function(it,k){
+      hexs+='<span class="'+it.cl+(k===8?' gap':'')+'" data-l="'+it.l+'" data-i="'+it.i+'">'+pad(it.v.toString(16),2)+'</span>';
+      var ch=(it.v>=32&&it.v<127)?esc(String.fromCharCode(it.v)):'.';
+      asc+='<span class="'+it.cl.replace(' chg','')+'" data-l="'+it.l+'" data-i="'+it.i+'">'+ch+'</span>';
+    });
+    h+='<div class="dr"><span class="off">'+pad(r.toString(16),4)+'</span><span class="hexg">'+hexs+'</span><span class="asc" aria-hidden="true">'+asc+'</span></div>';
+  }
+  return h+'</div>';
+}
+function inspector(){return '<div class="insp" id="insp" aria-live="polite"><span class="note">Hover, focus or tap a field above, or a byte below, to see what it means.</span></div>';}
+function findField(layer,i){
+  var fs=(REG&&REG.byLayer[layer])||[];
+  for(var k=0;k<fs.length;k++){if(i>=fs[k].off&&i<fs[k].off+fs[k].len)return fs[k];}
+  return null;
+}
+function focusField(f,rootEl){
+  $$('.hl',rootEl).forEach(function(e){e.classList.remove('hl');});
+  $$('[data-f="'+f.id+'"]',rootEl).forEach(function(e){e.classList.add('hl');});
+  $$('.b[data-l="'+f.layer+'"]',rootEl).forEach(function(e){var i=+e.getAttribute('data-i');if(i>=f.off&&i<f.off+f.len)e.classList.add('hl');});
+  var bytes=REG.byLayer[f.layer]?null:null;
+  var ins=$('#insp',rootEl);if(!ins)return;
+  ins.style.setProperty('--c','var(--'+({pre:'phy',eth:'link',fcs:'link',ip:'ip',tcp:'tr',app:'app'}[f.layer])+')');
+  var seg0=null;
+  var shown=(f.disp!==f.short&&f.disp!==undefined)?f.disp:f.short;
+  ins.innerHTML='<span class="nm">'+esc(f.name)+'</span><span class="meta">'+(f.layer==='app'?f.len+' bytes':(f.bits%8===0?f.bits/8+' bytes':f.bits+' bits'))+'</span><p><code>'+esc(shown)+'</code></p><p>'+esc(f.why)+'</p>';
+}
+
+/* ---------- diagrams ---------- */
+var ROWDEFS={
+  tcp:[['tcp.sp','tcp.dp'],['tcp.seq'],['tcp.ack'],['tcp.off','tcp.rsv','tcp.flags','tcp.win'],['tcp.csum','tcp.urg']],
+  ip:[['ip.ver','ip.ihl','ip.tos','ip.len'],['ip.id','ip.flags','ip.frag'],['ip.ttl','ip.proto','ip.csum'],['ip.src'],['ip.dst']],
+  eth:[['eth.dst'],['eth.src'],['eth.type',{sp:32,label:'IP packet, 46 to 1500 bytes'}],['fcs.crc',{sp:16,label:'trailer'}]]
+};
+function diagram(kind){
+  var rows=ROWDEFS[kind],cls=kind==='tcp'?'t-tr':kind==='ip'?'t-ip':'t-link';
+  var total=0;rows[0].forEach(function(x){total+=(typeof x==='string')?REG.byId[x].bits:x.sp;});
+  var ticks=total/8,rl='';for(var t=0;t<ticks;t++)rl+='<span>'+(t*8)+'</span>';
+  var h='<div class="panel"><div class="diagram '+cls+'"><div class="ruler" aria-hidden="true">'+rl+'</div>';
+  rows.forEach(function(r){
+    h+='<div class="drow">';
+    r.forEach(function(x){
+      if(typeof x!=='string'){h+='<div class="spacer" style="--bits:'+x.sp+'">'+x.label+'</div>';return;}
+      var f=REG.byId[x];
+      h+='<button type="button" class="cell '+LAYERCLS[f.layer]+'" style="--bits:'+f.bits+'" data-f="'+f.id+'" title="'+esc(f.name)+'"><span class="cn">'+esc(f.name)+'</span><span class="cv">'+esc(f.short)+'</span></button>';
+    });
+    h+='</div>';
+  });
+  return h+'</div></div>';
+}
+
+/* ---------- stage widgets ---------- */
+function handshakeSvg(){
+  var c=ISNc,s=ISNs,L=M.L,x1=120,x2=520;
+  var rows=[
+    {d:1,f:'SYN',t:'seq '+fmt(c)},
+    {d:-1,f:'SYN, ACK',t:'seq '+fmt(s)+'   ack '+fmt(c+1)},
+    {d:1,f:'ACK',t:'seq '+fmt(c+1)+'   ack '+fmt(s+1)},
+    {d:1,f:'PSH, ACK',t:'seq '+fmt(c+1)+'   ack '+fmt(s+1)+'   data '+L+' bytes',hot:true},
+    {d:-1,f:'ACK',t:'ack '+fmt(c+1+L)}
+  ];
+  var h='<svg viewBox="0 0 640 360" width="100%" style="min-width:560px;display:block" role="img" aria-label="TCP handshake: SYN, SYN-ACK, ACK, then the data segment and its acknowledgment">';
+  h+='<text x="'+x1+'" y="22" text-anchor="middle" font-size="14" font-weight="600">Your computer</text><text x="'+x2+'" y="22" text-anchor="middle" font-size="14" font-weight="600">Server</text>';
+  h+='<line x1="'+x1+'" y1="34" x2="'+x1+'" y2="350" stroke="var(--rule)" stroke-width="2"/><line x1="'+x2+'" y1="34" x2="'+x2+'" y2="350" stroke="var(--rule)" stroke-width="2"/>';
+  rows.forEach(function(r,i){
+    var y=78+i*56,ya=y,yb=y+16,xs=r.d>0?x1:x2,xe=r.d>0?x2:x1,col=r.hot?'var(--tr)':'var(--muted)',sw=r.hot?3:1.6;
+    var tx=xe-r.d*2;
+    h+='<line x1="'+xs+'" y1="'+ya+'" x2="'+xe+'" y2="'+yb+'" stroke="'+col+'" stroke-width="'+sw+'"/>';
+    h+='<polygon points="'+tx+','+yb+' '+(tx-r.d*11)+','+(yb-5.5)+' '+(tx-r.d*11)+','+(yb+5.5)+'" fill="'+col+'"/>';
+    h+='<text x="320" y="'+(y-22)+'" text-anchor="middle" font-size="14" font-weight="'+(r.hot?700:600)+'" style="fill:'+(r.hot?'var(--tr-fg)':'var(--ink)')+'">'+(i+1)+'. '+r.f+(r.hot?'  (this step)':'')+'</text>';
+    h+='<text class="m" x="320" y="'+(y-6)+'" text-anchor="middle" font-size="11.5">'+r.t+'</text>';
+  });
+  return h+'</svg>';
+}
+function waveSvg(){
+  var bytes=[0x55,0x55,0x55,0x55,0x55,0x55,0x55,0xD5].concat(M.F1.eth.slice(0,6));
+  var x0=12,bw=64,bit=8,yH=14,yL=54,pre='',mac='',prev=null,n=0;
+  bytes.forEach(function(b,bi){
+    for(var k=0;k<8;k++){
+      var v=(b>>k)&1,px=x0+n*bit,y=v?yH:yL,pv=prev===null?y:prev;
+      var seg='M'+px+','+pv+' L'+px+','+y+' L'+(px+bit)+','+y+' ';
+      if(bi<8)pre+=seg;else mac+=seg;
+      prev=y;n++;
+    }
+  });
+  var W=x0*2+bytes.length*bw,h='<svg viewBox="0 0 '+W+' 150" width="'+W+'" height="150" style="display:block;min-width:'+W+'px" role="img" aria-label="The first 14 bytes on the wire drawn as a high and low signal">';
+  for(var i=0;i<=bytes.length;i++)h+='<line x1="'+(x0+i*bw)+'" y1="4" x2="'+(x0+i*bw)+'" y2="64" stroke="var(--rule)" stroke-dasharray="2 4"/>';
+  h+='<path class="wf-pre" d="'+pre+'" fill="none" stroke-width="2.5" stroke-linejoin="miter"/><path class="wf-mac" d="'+mac+'" fill="none" stroke-width="2.5"/>';
+  bytes.forEach(function(b,i){h+='<text class="m" x="'+(x0+i*bw+bw/2)+'" y="84" text-anchor="middle" font-size="12">'+pad(b.toString(16),2)+'</text>';});
+  function br(a,b,label){var xa=x0+a*bw+4,xb=x0+b*bw-4;return '<path d="M'+xa+',96 L'+xa+',102 L'+xb+',102 L'+xb+',96" fill="none" stroke="var(--muted)"/><text x="'+((xa+xb)/2)+'" y="122" text-anchor="middle" font-size="13">'+label+'</text>';}
+  h+=br(0,7,'Preamble: 7 bytes of 10101010')+br(7,8,'SFD')+br(8,14,'Destination MAC');
+  return h+'</svg>';
+}
+function routeWidget(){
+  var d=M.dstB,mask=u32(maskInt()),res=[d[0]&mask[0],d[1]&mask[1],d[2]&mask[2],d[3]&mask[3]],nw=ipB(NET.net);
+  var same=M.onl;
+  var h='<div class="panel"><table><thead><tr><th>Destination</th><th>Gateway</th><th>Interface</th><th>Matches</th></tr></thead><tbody>'
+   +'<tr class="'+(same?'hit':'')+'"><td class="m">192.168.1.0/24</td><td class="m">none, on-link</td><td class="m">eth0</td><td>'+(same?'Yes, most specific':'No')+'</td></tr>'
+   +'<tr class="'+(same?'':'hit')+'"><td class="m">0.0.0.0/0 (default)</td><td class="m">192.168.1.1</td><td class="m">eth0</td><td>'+(same?'Yes, but less specific':'Yes, the only match')+'</td></tr></tbody></table></div>';
+  h+='<div class="panel bin"><div><span class="k">destination</span>'+binIp(d)+'<span class="dec">'+d.join('.')+'</span></div>'
+   +'<div><span class="k">subnet mask</span>'+binIp(mask)+'<span class="dec">'+mask.join('.')+'</span></div>'
+   +'<div class="r"><span class="k">AND, bit by bit</span>'+binIp(res)+'<span class="dec">'+res.join('.')+'</span></div>'
+   +'<div><span class="k">your subnet</span>'+binIp(nw)+'<span class="dec">'+nw.join('.')+'</span></div></div>';
+  h+='<div class="banner t-ip"><p>'+(same
+    ?'<strong>Same network.</strong> The destination is on your own subnet, so the packet is delivered directly. The next hop is <code>'+M.dst+'</code> itself.'
+    :'<strong>Different network.</strong> The result does not equal your subnet, so only the default route matches. The next hop is the gateway <code>'+NET.gw+'</code>, even though the packet is addressed to <code>'+M.dst+'</code>.')+'</p></div>';
+  return h;
+}
+function arpWidget(){
+  var h='<div class="panel"><table><thead><tr><th>Message</th><th>Sent to</th><th>Says</th></tr></thead><tbody>'
+   +'<tr><td>ARP request</td><td class="m">ff:ff:ff:ff:ff:ff (everyone)</td><td class="m">Who has '+M.nextHopIp+'? Tell '+NET.srcIp+'</td></tr>'
+   +'<tr><td>ARP reply</td><td class="m">'+NET.srcMac+'</td><td class="m">'+M.nextHopIp+' is at '+M.nextHopMac+'</td></tr></tbody></table></div>';
+  return h;
+}
+function changeRows(){
+  var a=M.F1,b=M.F2,d=M.damage;
+  function row(label,x,y,exp){var same=x===y;return {label:label,x:x,y:y,tag:same?'same':(exp?'chg':'dmg')};}
+  var csumOf=function(ip){return H((ip[10]<<8)|ip[11],4);};
+  var fp=function(F){return H(crc32([].concat(F.tcp,F.app)),8);};
+  var fcsOf=function(F){return H(((F.fcs[0]|(F.fcs[1]<<8)|(F.fcs[2]<<16)|(F.fcs[3]<<24))>>>0),8);};
+  return {
+    rew:[
+      row('Ethernet source MAC',macStr(a.eth.slice(6,12)),macStr(b.eth.slice(6,12)),true),
+      row('Ethernet destination MAC',macStr(a.eth.slice(0,6)),macStr(b.eth.slice(0,6)),true),
+      row('IP time to live',String(a.ip[8]),String(b.ip[8]),true),
+      row('IP header checksum',csumOf(a.ip),csumOf(b.ip),true),
+      row('Ethernet FCS',fcsOf(a),fcsOf(b),true)
+    ],
+    keep:[
+      row('IP source and destination',a.ip.slice(12,20).join('.'),b.ip.slice(12,20).join('.'),false),
+      row('IP identification',H((a.ip[4]<<8)|a.ip[5],4),H((b.ip[4]<<8)|b.ip[5],4),false),
+      row('TCP header and HTTP message ('+(a.tcp.length+a.app.length)+' bytes), CRC-32 fingerprint',fp(a),fp(b),false)
+    ]
+  };
+}
+function checks(list){
+  var failed=false,h='<ul class="checks">';
+  list.forEach(function(c){
+    var st=failed?'skip':(c.ok?'ok':'no');
+    if(!failed&&!c.ok)failed=true;
+    var sym=st==='ok'?'&#10003;':st==='no'?'&#10005;':'&ndash;';
+    var word=st==='ok'?'Pass':st==='no'?'Fail':'Not checked';
+    h+='<li><span class="ic '+st+'" aria-hidden="true">'+sym+'</span><span><span class="vh">'+word+': </span><span class="w">'+c.t+'</span><span class="d">'+(st==='skip'?'Skipped because the frame was already dropped.':c.d)+'</span></span></li>';
+  });
+  return h+'</ul>';
+}
+function notReached(i){
+  var f=STEPS[M.failAt];
+  return '<div class="banner bad"><p><strong>This layer never sees the data.</strong> It was dropped at step '+(M.failAt+1)+', the '+f.short.toLowerCase()+' layer.</p></div><p><button type="button" class="btn" data-go="'+M.failAt+'">Go to step '+(M.failAt+1)+'</button></p>';
+}
+
+/* ---------- stage rendering ---------- */
+function head(i){
+  var s=STEPS[i];
+  return '<div id="stage-top"></div><div class="sh"><h2 id="stage-h" tabindex="-1">'+s.title+'</h2><span class="chip '+s.cls+'">'+s.layer+' layer</span></div><p class="lede">'+s.lede+'</p>';
+}
+function navHtml(i){
+  var p=STEPS[i-1],n=STEPS[i+1];
+  return '<div class="nav"><button type="button" class="btn" data-go="'+(i-1)+'"'+(p?'':' disabled')+'>'+(p?'Back: '+p.title:'Back')+'</button>'
+   +(n?'<button type="button" class="btn primary" data-go="'+(i+1)+'">Next: '+n.title+'</button>':'<button type="button" class="btn primary" data-go="0">Start over</button>')+'</div>';
+}
+function dumpSection(i,cap){var segs=segsFor(i);buildReg(segs);return {segs:segs,html:renderDump(segs,cap)};}
+
+function stageBody(i){
+  var id=STEPS[i].id,F1=M.F1,body='',d;
+  if(id==='app-out'){
+    d=dumpSection(i,'The message as bytes. Each pair of digits is one byte, and the right-hand column shows it as text.');
+    var dns=state.host!==state.dst?'DNS has already turned <code>'+esc(state.host)+'</code> into <code>'+state.dst+'</code>. ':'You typed an address, so no DNS lookup was needed. ';
+    var lines=REG.byLayer.app.map(function(f){
+      return '<button type="button" class="line t-app" data-f="'+f.id+'"><code>'+esc(f.short)+(f.crlf?'<span class="crlf">\\r\\n</span>':'')+'</code><span class="lm">'+esc(f.name)+', '+f.len+' bytes</span></button>';
+    }).join('');
+    body='<p>'+dns+'The browser then writes an HTTP request as plain text and hands it to the operating system through a socket. It knows nothing about IP addresses, MAC addresses or cables.</p>'
+     +'<h3>The message, line by line</h3><div class="lines">'+lines+'</div>'
+     +'<p class="note" style="margin-top:12px">On the real web, TLS would encrypt this text before it goes down. The layers below would then see only scrambled bytes, and the rest of this page would look the same.</p>'
+     +inspector()+d.html;
+  }else if(id==='tr-out'){
+    d=dumpSection(i,'The TCP header (teal) now sits in front of the message (plum).');
+    body='<p>TCP adds two <strong>port numbers</strong>. Port 80 tells the receiver which program should get the data. Port 49152 was picked by your operating system for this one connection, so replies find their way back to the right program.</p>'
+     +'<p>It also adds <strong>sequence and acknowledgment numbers</strong>. These are how lost or reordered segments are noticed and repaired. Before any data moves, both sides agree on starting numbers with a three-way handshake. The segment built here is the fourth packet of the conversation.</p>'
+     +'<h3>The conversation so far</h3><div class="panel">'+handshakeSvg()+'</div>'
+     +'<h3>The TCP header</h3>'+diagram('tcp')+inspector()+d.html;
+  }else if(id==='ip-out'){
+    d=dumpSection(i,'The IP header (amber) is added in front of the TCP segment.');
+    body='<p>IP addresses are <strong>end to end</strong>: they stay the same for the whole trip. The sender only has to answer one routing question: is the destination on my own subnet, or do I hand the packet to a gateway?</p>'
+     +'<h3>Routing decision</h3>'+routeWidget()
+     +'<h3>The IP header</h3>'+diagram('ip')
+     +'<p class="note" style="margin-top:12px">The packet is '+(20+20+M.L)+' bytes. That fits Ethernet&rsquo;s 1,500-byte limit, so the Don&rsquo;t Fragment flag is harmless here. A TTL of 64 allows 64 router hops.</p>'
+     +inspector()+d.html;
+  }else if(id==='link-out'){
+    d=dumpSection(i,'The Ethernet header goes in front and a 4-byte check sequence goes at the end. This is the complete frame.');
+    body='<p>Ethernet delivers to <strong>MAC addresses</strong>, not IP addresses. The sender wants to reach <code>'+M.nextHopIp+'</code>, so it uses ARP to ask the local network which card owns that address'+(M.onl?'.':'. Because the destination is off-subnet, this is the gateway&rsquo;s MAC, not the server&rsquo;s.')+'</p>'
+     +'<h3>Finding the next hop&rsquo;s MAC address</h3>'+arpWidget()
+     +'<h3>The Ethernet frame</h3>'+diagram('eth')
+     +'<p class="note" style="margin-top:12px">The frame is '+M.total+' bytes. The check sequence is a CRC-32 over everything before it.</p>'
+     +inspector()+d.html;
+  }else if(id==='wire'){
+    d=dumpSection(i,'What the card sends: an 8-byte lead-in (slate), then the frame.');
+    body='<p>The card first sends a lead-in of 8 bytes so the receiver can lock onto the clock. Then every byte goes out <strong>least-significant bit first</strong>. The first 14 bytes are drawn below as a high and low signal.</p>'
+     +'<div class="panel">'+waveSvg()+'</div>'
+     +'<p class="note">Drawn as simple high and low levels. Real links use line codes: 10BASE-T uses Manchester encoding, gigabit copper uses five-level PAM, and fibre uses light pulses. In the TCP/IP model this belongs to the Link layer.</p>'
+     +inspector()+d.html;
+  }else if(id==='router'){
+    d=dumpSection(i,M.onl?'The frame is unchanged because no router touches it.':'The frame after the router. Dashed outlines mark bytes the router rewrote.');
+    if(M.onl){
+      body='<div class="banner t-ip"><p><strong>No router on this path.</strong> <code>'+M.dst+'</code> is on your own subnet, so the frame already went straight to its MAC address and nothing is rewritten. Choose the internet preset to see a router at work.</p></div>'+inspector()+d.html;
+    }else{
+      var cr=changeRows(),rm=state.mode==='router-ip'||state.mode==='router-payload';
+      var tb=function(rs){return '<tbody>'+rs.map(function(r){return '<tr><td>'+r.label+'</td><td class="m">'+esc(r.x)+'</td><td class="m">'+esc(r.y)+'</td><td><span class="tag '+r.tag+'">'+(r.tag==='same'?'Same':r.tag==='chg'?'Rewritten':'Damaged')+'</span></td></tr>';}).join('')+'</tbody>';};
+      body='<p>Link addresses describe <strong>one hop</strong>, and IP addresses describe <strong>the whole trip</strong>. That is why the MAC addresses change at every router while the IP addresses do not. The router strips the Ethernet header, looks at the IP header, subtracts 1 from the TTL, recomputes the IP checksum and wraps the packet in a new frame.</p>'
+       +(rm?'<div class="banner bad"><p><strong>Damage.</strong> While the packet sat in the router&rsquo;s memory, one bit flipped in the '+(state.mode==='router-ip'?'IP header':'HTTP message')+'. The router then computed a fresh, valid FCS over the damaged bytes, so the link layer will not notice.</p></div>':'')
+       +'<h3>Rewritten for the new hop</h3><div class="panel"><table><thead><tr><th>Field</th><th>Before</th><th>After</th><th>Result</th></tr></thead>'+tb(cr.rew)+'</table></div>'
+       +'<h3>Carried through untouched</h3><div class="panel"><table><thead><tr><th>Field</th><th>Before</th><th>After</th><th>Result</th></tr></thead>'+tb(cr.keep)+'</table></div>'
+       +'<p class="note" style="margin-top:12px">A real path crosses many routers and each one repeats this step. This demo uses one.</p>'
+       +inspector()+d.html;
+    }
+  }else if(id==='link-in'){
+    d=dumpSection(i,M.damage?'The received frame. The red byte is the one that was damaged.':'The received frame.');
+    var RX=M.RX;
+    var li=checks([
+      {t:'The destination MAC is mine',d:macStr(RX.eth.slice(0,6))+' matches this network card.',ok:true},
+      {t:'The frame check sequence matches',d:'Computed '+H(M.fcsCalc,8)+', received '+H(M.fcsRx,8)+'.',ok:M.fcsCalc===M.fcsRx},
+      {t:'EtherType says what is inside',d:H((RX.eth[12]<<8)|RX.eth[13],4)+' means IPv4. The 14-byte header and 4-byte FCS are removed and the '+(RX.ip.length+RX.tcp.length+RX.app.length)+' bytes go up to IP.',ok:true}
+    ]);
+    body='<p>The card checks the frame in hardware before the operating system sees it.</p>'+li
+     +(M.failAt===6?'<div class="banner bad"><p><strong>Frame dropped.</strong> Ethernet has no way to ask for a resend. The sender&rsquo;s TCP will notice that no acknowledgment arrives and retransmit.</p></div>':'')
+     +inspector()+d.html;
+  }else if(id==='ip-in'){
+    if(M.failAt!==null&&i>M.failAt){body=notReached(i)+d_empty(i);}
+    else{
+      d=dumpSection(i,M.damage&&M.damage.layer==='ip'?'The received packet. The red byte is the one that was damaged.':'The packet handed up by the link layer.');
+      var R=M.RX,ip=R.ip;
+      var c2=checks([
+        {t:'Version is 4 and the header is 20 bytes',d:'Version '+(ip[0]>>4)+', header length '+(ip[0]&15)*4+' bytes.',ok:true},
+        {t:'The header checksum verifies',d:'Adding every 16-bit word of the header gives '+H(M.ipSum,4)+'. A valid header gives 0xFFFF.',ok:M.ipSum===0xFFFF},
+        {t:'The destination address is mine',d:ip.slice(16,20).join('.')+' is the address of this machine.',ok:true},
+        {t:'The TTL is above 0',d:'TTL is '+ip[8]+(M.onl?'. No router touched it.':', one less than the sender wrote.'),ok:ip[8]>0},
+        {t:'The protocol field says what is inside',d:ip[9]+' means TCP. The 20-byte IP header is removed and the segment goes up to TCP.',ok:true}
+      ]);
+      body='<p>IP trusts nothing in a header it cannot verify, because even the destination address might be wrong.</p>'+c2
+       +(M.failAt===7?'<div class="banner bad"><p><strong>Packet dropped.</strong> The frame check passed, because the router computed it after the damage. The IP checksum is the second line of defense and it caught the flipped bit. Nothing is sent back, and TCP on the sender will retransmit.</p></div>':'')
+       +inspector()+d.html;
+    }
+  }else if(id==='tr-in'){
+    if(M.failAt!==null&&i>M.failAt){body=notReached(i)+d_empty(i);}
+    else{
+      d=dumpSection(i,M.damage&&M.damage.layer==='app'?'The received segment. The red byte is the one that was damaged.':'The segment handed up by IP.');
+      var T=M.RX.tcp;
+      var c3=checks([
+        {t:'The checksum verifies against the pseudo-header',d:'Adding the pseudo-header, header and data gives '+H(M.tcpSum,4)+'. A valid segment gives 0xFFFF.',ok:M.tcpSum===0xFFFF},
+        {t:'Something is listening on port 80',d:'A web server has a socket bound to port '+((T[2]<<8)|T[3])+'.',ok:true},
+        {t:'The sequence number is the one expected',d:'Sequence '+fmt(((T[4]<<24)|(T[5]<<16)|(T[6]<<8)|T[7])>>>0)+' is the next byte after the handshake, so the data is in order.',ok:true}
+      ]);
+      body='<p>TCP uses the destination port to find the right socket, and the sequence number to place the data in order.</p>'+c3
+       +(M.failAt===8?'<div class="banner bad"><p><strong>Segment dropped.</strong> The link and IP checks both passed, because the damage is in the data. Only the TCP checksum covers the data end to end. The server sends no acknowledgment, the sender&rsquo;s retransmission timer expires, and the segment goes out again.</p></div>'
+        :'<div class="banner t-tr"><p><strong>Acknowledged.</strong> The server replies with an ACK carrying acknowledgment number '+fmt(ISNc+1+M.L)+', which is the sequence number plus the '+M.L+' bytes received. The message goes up to the web server.</p></div>')
+       +inspector()+d.html;
+    }
+  }else if(id==='app-in'){
+    if(M.failAt!==null){body=notReached(i)+d_empty(i);}
+    else{
+      d=dumpSection(i,'The bytes the web server reads. They match what the browser wrote.');
+      body='<p>The web server&rsquo;s <code>read()</code> call returns exactly the '+M.L+' bytes the browser wrote. It parses the request line, finds <code>GET /index.html</code> and starts building a response. That response travels back through the same four layers in reverse, with the addresses and ports swapped.</p>'
+       +'<div class="panel"><pre style="margin:0;white-space:pre-wrap;word-break:break-word;font-size:.875rem">'+esc(M.http.replace(/\r\n/g,'\\r\\n\n'))+'</pre></div>'
+       +'<div class="banner t-app"><p><strong>Delivered.</strong> '+M.total+' bytes crossed the wire to carry '+M.L+' bytes of message. The other '+M.over+' bytes were the cost of reaching the right program on the right machine over an unreliable network.</p></div>'
+       +inspector()+d.html;
+    }
+  }
+  return body;
+}
+function d_empty(i){buildReg([]);return '<div class="dump"><p class="empty">Nothing arrives at this layer.</p></div>';}
+
+function renderStage(opts){
+  var i=state.step,el=$('#stage');
+  el.style.animation='none';void el.offsetWidth;el.style.animation='';
+  el.innerHTML=head(i)+stageBody(i)+navHtml(i);
+  if(opts&&opts.focus){var h=$('#stage-h');if(h){h.focus({preventScroll:true});}var top=$('#stage-top');if(top&&top.scrollIntoView)top.scrollIntoView({block:'start'});}
+}
+
+/* ---------- controls ---------- */
+function renderControls(){
+  $('#presets').innerHTML=PRESETS.map(function(p){return '<button type="button" class="pill" data-preset="'+p.ip+'" aria-pressed="'+(state.dst===p.ip)+'">'+p.label+'</button>';}).join('');
+  $('#modes').innerHTML=MODES.map(function(m){var dis=m.needsRouter&&M.onl;return '<button type="button" class="pill" data-mode="'+m.id+'" aria-pressed="'+(state.mode===m.id)+'"'+(dis?' disabled title="Needs a router in the path"':'')+'>'+m.label+'</button>';}).join('');
+  var msg={
+    none:'Nothing goes wrong. Pick a kind of damage to see which layer catches it.',
+    cable:'One bit flips on the last cable, after the frame check was written. Expect the link layer to catch it at step 7.',
+    'router-ip':'One bit flips in an IP header inside a router, before the frame check is written. Expect the Internet layer to catch it at step 8.',
+    'router-payload':'One bit flips in the HTTP message inside a router. Expect the Transport layer to catch it at step 9.'
+  }[state.mode];
+  if(M.onl)msg+=' Router damage is unavailable because there is no router on this path.';
+  $('#dmg-msg').textContent=msg;
+}
+function renderAll(opts){
+  M=buildModel();
+  renderControls();renderAnatomy();renderRail();renderStage(opts);
+}
+function go(i,focus){
+  if(i<0||i>=STEPS.length)return;
+  state.step=i;renderAnatomy();renderRail();renderStage({focus:focus});
+}
+function setDst(ip){
+  var p=PRESETS.filter(function(x){return x.ip===ip;})[0];
+  state.dst=ip;state.host=p?p.host:ip;
+  var m=MODES.filter(function(x){return x.id===state.mode;})[0];
+  if(m&&m.needsRouter&&onLink(ip))state.mode='none';
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-step],[data-go],[data-preset],[data-mode]');
+  if(!t)return;
+  if(t.hasAttribute('data-step')){go(+t.getAttribute('data-step'),true);return;}
+  if(t.hasAttribute('data-go')){go(+t.getAttribute('data-go'),true);return;}
+  if(t.hasAttribute('data-preset')){
+    setDst(t.getAttribute('data-preset'));$('#dst').value=state.dst;$('#dst').setAttribute('aria-invalid','false');$('#dst-msg').textContent='';$('#dst-msg').className='hint';
+    renderAll();return;
+  }
+  if(t.hasAttribute('data-mode')&&!t.disabled){state.mode=t.getAttribute('data-mode');renderAll();return;}
+});
+$('#dst').addEventListener('input',function(){
+  var v=this.value.trim(),err=validate(v),msg=$('#dst-msg');
+  if(err){this.setAttribute('aria-invalid','true');msg.textContent=err+' Showing the last valid address ('+state.dst+').';msg.className='hint err';return;}
+  this.setAttribute('aria-invalid','false');msg.textContent='';msg.className='hint';
+  setDst(v);renderAll();
+});
+var stageEl=$('#stage');
+function hoverTarget(e){
+  var t=e.target.closest('[data-f],[data-l]');if(!t||!stageEl.contains(t)||!REG)return;
+  var f=t.hasAttribute('data-f')?REG.byId[t.getAttribute('data-f')]:findField(t.getAttribute('data-l'),+t.getAttribute('data-i'));
+  if(f)focusField(f,stageEl);
+}
+stageEl.addEventListener('mouseover',hoverTarget);
+stageEl.addEventListener('focusin',hoverTarget);
+stageEl.addEventListener('click',hoverTarget);
+document.addEventListener('keydown',function(e){
+  if(e.target.closest&&e.target.closest('input,textarea,select'))return;
+  if(e.altKey||e.ctrlKey||e.metaKey)return;
+  if(e.key==='ArrowRight'){go(Math.min(state.step+1,STEPS.length-1),false);}
+  else if(e.key==='ArrowLeft'){go(Math.max(state.step-1,0),false);}
+});
+
+renderAll();
+})();
+</script>
+</body>
+</html>

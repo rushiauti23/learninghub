@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tenancy — multi-tenant architecture simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E8EDF1; --panel:#F6F8FA; --panel-2:#FFFFFF;
+  --ink:#16202B; --ink-2:#4A5A6B; --ink-3:#7D8D9C;
+  --rule:#C6D0D9; --rule-2:#AEBBC7;
+  --ok:#157F5B; --warn:#B8730A; --fail:#B9332B;
+  --ok-bg:#DCEDE5; --warn-bg:#F6E8CE; --fail-bg:#F6DCDA;
+  --accent:#2A5CA8; --accent-bg:#DEE7F4;
+  --grid:rgba(42,92,168,.07);
+  --r:3px;
+}
+[data-theme="dark"]{
+  --paper:#101519; --panel:#171E24; --panel-2:#1D262E;
+  --ink:#DDE5EC; --ink-2:#9BAAB8; --ink-3:#6B7C8B;
+  --rule:#2B363F; --rule-2:#3C4A56;
+  --ok:#49BC8E; --warn:#D9A13D; --fail:#E0685E;
+  --ok-bg:#15312A; --warn-bg:#352B17; --fail-bg:#36201E;
+  --accent:#6E9BE0; --accent-bg:#1B2838;
+  --grid:rgba(110,155,224,.07);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:14px; line-height:1.55;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+h1,h2,h3{font-weight:600;margin:0}
+button{font-family:inherit;font-size:13px;color:var(--ink);background:var(--panel-2);border:1px solid var(--rule-2);border-radius:var(--r);padding:6px 11px;cursor:pointer}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button[disabled]{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{opacity:.88;color:#fff}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select{font-family:inherit;font-size:13px;padding:5px 7px;background:var(--panel-2);color:var(--ink);border:1px solid var(--rule-2);border-radius:var(--r);width:100%}
+a{color:var(--accent)}
+
+/* shell */
+.wrap{max-width:1320px;margin:0 auto;padding:18px 20px 60px}
+.topbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--rule);padding-bottom:12px;margin-bottom:16px}
+.brand{display:flex;flex-direction:column;margin-right:auto}
+.brand h1{font-size:19px;letter-spacing:-.01em}
+.brand p{margin:1px 0 0;font-size:12.5px;color:var(--ink-3)}
+.readouts{display:flex;gap:0;border:1px solid var(--rule-2);border-radius:var(--r);overflow:hidden;background:var(--panel-2)}
+.ro{padding:5px 13px;border-right:1px solid var(--rule);min-width:76px}
+.ro:last-child{border-right:0}
+.ro span{display:block;font-size:10.5px;color:var(--ink-3);letter-spacing:.02em}
+.ro b{font-size:15px;font-weight:500}
+.runbar{display:flex;gap:7px;align-items:center}
+
+/* layout */
+.cols{display:grid;grid-template-columns:276px minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:900px){.cols{grid-template-columns:1fr}}
+.rail{background:var(--panel);border:1px solid var(--rule);border-radius:var(--r);position:sticky;top:12px}
+.rail-h{padding:9px 13px;border-bottom:1px solid var(--rule);font-size:12.5px;color:var(--ink-2);display:flex;justify-content:space-between;align-items:center}
+.grp{border-bottom:1px solid var(--rule);padding:11px 13px}
+.grp:last-child{border-bottom:0}
+.grp>h3{font-size:12.5px;color:var(--ink-3);font-weight:500;margin-bottom:8px}
+.ctl{display:flex;align-items:flex-start;gap:8px;padding:3px 0;cursor:pointer}
+.ctl input{margin:3px 0 0;accent-color:var(--accent);flex:none}
+.ctl .lab{font-size:13px;line-height:1.35}
+.ctl .sub{font-size:11.5px;color:var(--ink-3);display:block}
+.slider{margin:9px 0 3px}
+.slider .row{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2);margin-bottom:3px}
+
+/* schematic */
+.board{background:var(--panel-2);border:1px solid var(--rule);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
+.board-h{display:flex;align-items:center;gap:10px;padding:7px 12px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.board-h h2{font-size:13px;font-weight:500;color:var(--ink-2);margin-right:auto}
+.legend{display:flex;gap:11px;font-size:11.5px;color:var(--ink-3);align-items:center}
+.legend i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:4px;vertical-align:-1px}
+svg{display:block;width:100%;height:auto}
+.node{cursor:pointer}
+.node:hover .nbox{stroke-width:2}
+.nbox{fill:var(--panel-2);stroke:var(--rule-2);stroke-width:1.2}
+.ntitle{font-size:11.5px;font-weight:500;fill:var(--ink)}
+.nsub{font-size:9.5px;fill:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+.edge{stroke:var(--rule-2);stroke-width:1.3;fill:none}
+.elabel{font-size:9px;fill:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+.util-bar-bg{fill:var(--rule)}
+.off{opacity:.3}
+
+/* tabs */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--rule);margin-bottom:14px;overflow-x:auto}
+.tab{border:0;border-bottom:2px solid transparent;background:none;padding:8px 13px;font-size:13.5px;color:var(--ink-3);border-radius:0;white-space:nowrap}
+.tab:hover{color:var(--ink);border-color:transparent}
+.tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent);font-weight:500}
+.panel{display:none}
+.panel.on{display:block}
+
+.card{background:var(--panel-2);border:1px solid var(--rule);border-radius:var(--r);padding:13px 15px;margin-bottom:12px}
+.card h3{font-size:14px;margin-bottom:3px}
+.card p.desc{margin:0 0 10px;font-size:12.8px;color:var(--ink-2)}
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(252px,1fr));gap:12px}
+.chartbox{background:var(--panel-2);border:1px solid var(--rule);border-radius:var(--r);padding:10px 12px}
+.chartbox h4{margin:0 0 2px;font-size:12px;font-weight:500;color:var(--ink-2)}
+canvas{display:block;width:100%;height:112px}
+table{width:100%;border-collapse:collapse;font-size:12.8px}
+th{text-align:left;font-weight:500;color:var(--ink-3);font-size:11.5px;padding:5px 8px;border-bottom:1px solid var(--rule)}
+td{padding:5px 8px;border-bottom:1px solid var(--rule)}
+tr:last-child td{border-bottom:0}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;border:1px solid transparent}
+.p-ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.p-warn{background:var(--warn-bg);color:var(--warn);border-color:var(--warn)}
+.p-fail{background:var(--fail-bg);color:var(--fail);border-color:var(--fail)}
+.p-mute{background:var(--panel);color:var(--ink-3);border-color:var(--rule-2)}
+.note{border-left:2px solid var(--accent);padding:2px 0 2px 11px;margin:9px 0;font-size:12.8px;color:var(--ink-2)}
+.note.bad{border-color:var(--fail)}
+.note.good{border-color:var(--ok)}
+.empty{color:var(--ink-3);font-size:13px;padding:18px 0;text-align:center}
+.inspector{font-size:12.8px}
+.inspector dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0 0 9px}
+.inspector dt{color:var(--ink-3)}
+.inspector dd{margin:0;text-align:right}
+.logline{border-bottom:1px solid var(--rule);padding:8px 0;font-size:12.8px}
+.logline:last-child{border-bottom:0}
+.logline time{color:var(--ink-3);font-size:11.5px;margin-right:8px}
+.scen{border:1px solid var(--rule);border-radius:var(--r);padding:11px 13px}
+.scen.active{border-color:var(--accent);background:var(--accent-bg)}
+.scen h4{margin:0 0 3px;font-size:13.5px;font-weight:500}
+.scen p{margin:0 0 9px;font-size:12.5px;color:var(--ink-2)}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+details summary{cursor:pointer;font-size:13px;color:var(--accent);padding:3px 0}
+code{font-family:"IBM Plex Mono",monospace;font-size:12px;background:var(--panel);padding:1px 4px;border-radius:2px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:var(--r);padding:10px 12px;overflow-x:auto;font-size:12px;font-family:"IBM Plex Mono",monospace}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="topbar">
+  <div class="brand">
+    <h1>Tenancy</h1>
+    <p>Build a multi-tenant backend, put load through it, watch where it breaks.</p>
+  </div>
+  <div class="readouts mono">
+    <div class="ro"><span>clock</span><b id="ro-clock">0:00</b></div>
+    <div class="ro"><span>load</span><b id="ro-rps">0</b></div>
+    <div class="ro"><span>p99</span><b id="ro-p99">—</b></div>
+    <div class="ro"><span>errors</span><b id="ro-err">0%</b></div>
+    <div class="ro"><span>€ / month</span><b id="ro-cost">0</b></div>
+  </div>
+  <div class="runbar">
+    <button id="btn-run" class="primary">Start traffic</button>
+    <button id="btn-reset">Reset</button>
+    <select id="speed" style="width:auto" aria-label="Simulation speed">
+      <option value="1">1×</option><option value="2" selected>2×</option><option value="4">4×</option>
+    </select>
+    <button id="btn-theme" aria-label="Switch theme">Dark</button>
+  </div>
+</div>
+
+<div class="cols">
+
+  <!-- ARCHITECTURE RAIL -->
+  <aside class="rail">
+    <div class="rail-h"><span>Architecture</span><button id="btn-save" style="padding:2px 7px;font-size:11.5px">Save</button></div>
+
+    <div class="grp">
+      <h3>Tenant isolation</h3>
+      <select id="dbMode">
+        <option value="shared">One database, row-level security</option>
+        <option value="hybrid">Shared pool, enterprise on its own</option>
+        <option value="pertenant">A database per tenant</option>
+      </select>
+      <div class="slider">
+        <div class="row"><label for="dbPool">Connection pool</label><span class="mono" id="v-dbPool">50</span></div>
+        <input type="range" id="dbPool" min="10" max="400" step="10" value="50">
+      </div>
+      <div class="slider">
+        <div class="row"><label for="dbQuery">Mean query time</label><span class="mono" id="v-dbQuery">8 ms</span></div>
+        <input type="range" id="dbQuery" min="2" max="40" step="1" value="8">
+      </div>
+      <label class="ctl"><input type="checkbox" id="replicas"><span class="lab">Read replicas ×2<span class="sub">Reads scale out, writes don't. Replica lag appears.</span></span></label>
+    </div>
+
+    <div class="grp">
+      <h3>Application tier</h3>
+      <div class="slider">
+        <div class="row"><label for="instances">Instances</label><span class="mono" id="v-instances">2</span></div>
+        <input type="range" id="instances" min="1" max="24" step="1" value="2">
+      </div>
+      <div class="slider">
+        <div class="row"><label for="threads">Threads per instance</label><span class="mono" id="v-threads">50</span></div>
+        <input type="range" id="threads" min="10" max="400" step="10" value="50">
+      </div>
+      <label class="ctl"><input type="checkbox" id="autoscale"><span class="lab">Autoscaling<span class="sub">Adds instances above 70% busy, 45s to warm up.</span></span></label>
+    </div>
+
+    <div class="grp">
+      <h3>Read path</h3>
+      <label class="ctl"><input type="checkbox" id="cache"><span class="lab">Redis cache<span class="sub">+€800/mo. Absorbs repeat reads.</span></span></label>
+      <div class="slider">
+        <div class="row"><label for="hit">Hit rate</label><span class="mono" id="v-hit">70%</span></div>
+        <input type="range" id="hit" min="0" max="95" step="5" value="70">
+      </div>
+      <label class="ctl"><input type="checkbox" id="cdn"><span class="lab">CDN in front<span class="sub">+€200/mo. Serves static and cacheable GETs.</span></span></label>
+    </div>
+
+    <div class="grp">
+      <h3>Write path</h3>
+      <label class="ctl"><input type="checkbox" id="queue"><span class="lab">Queue + workers<span class="sub">+€600/mo. Moves slow work off the request.</span></span></label>
+      <div class="slider">
+        <div class="row"><label for="workers">Workers</label><span class="mono" id="v-workers">3</span></div>
+        <input type="range" id="workers" min="1" max="40" step="1" value="3">
+      </div>
+    </div>
+
+    <div class="grp">
+      <h3>Protection</h3>
+      <label class="ctl"><input type="checkbox" id="ratelimit"><span class="lab">Per-tenant rate limit<span class="sub">Caps any one tenant's share.</span></span></label>
+      <div class="slider">
+        <div class="row"><label for="rlimit">Ceiling per tenant</label><span class="mono" id="v-rlimit">600/s</span></div>
+        <input type="range" id="rlimit" min="100" max="4000" step="100" value="600">
+      </div>
+      <label class="ctl"><input type="checkbox" id="breaker"><span class="lab">Circuit breaker<span class="sub">Fails fast when the database is drowning.</span></span></label>
+      <label class="ctl"><input type="checkbox" id="multiregion"><span class="lab">Second region<span class="sub">+€3000/mo. Halves regional load, adds replication lag.</span></span></label>
+    </div>
+
+    <div class="grp">
+      <h3>Code quality</h3>
+      <label class="ctl"><input type="checkbox" id="nplus1" checked><span class="lab">N+1 queries in the hot path<span class="sub">Each list request fans out to ~9 queries. On by default — this is the bug you'll find.</span></span></label>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+    <div class="board">
+      <div class="board-h">
+        <h2>Request path</h2>
+        <div class="legend">
+          <span><i style="background:var(--ok)"></i>under 60%</span>
+          <span><i style="background:var(--warn)"></i>60–85%</span>
+          <span><i style="background:var(--fail)"></i>saturated</span>
+          <span style="color:var(--ink-3)">click a component</span>
+        </div>
+      </div>
+      <svg id="schematic" viewBox="0 0 1040 400" role="img" aria-label="Live schematic of the request path through the system">
+        <g id="edges"></g>
+        <g id="packets"></g>
+        <g id="nodes"></g>
+      </svg>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-p="live">Live</button>
+      <button class="tab" role="tab" aria-selected="false" data-p="scenarios">Scenarios</button>
+      <button class="tab" role="tab" aria-selected="false" data-p="loadtest">Load test</button>
+      <button class="tab" role="tab" aria-selected="false" data-p="tenants">Tenants</button>
+      <button class="tab" role="tab" aria-selected="false" data-p="journal">Journal</button>
+      <button class="tab" role="tab" aria-selected="false" data-p="deploy">Deploy</button>
+    </div>
+
+    <!-- LIVE -->
+    <section class="panel on" id="p-live">
+      <div class="cardgrid" style="margin-bottom:12px">
+        <div class="chartbox"><h4>Latency — p50 / p95 / p99 (ms)</h4><canvas id="c-lat"></canvas></div>
+        <div class="chartbox"><h4>Offered vs served (req/s)</h4><canvas id="c-thr"></canvas></div>
+        <div class="chartbox"><h4>Failures (% of offered)</h4><canvas id="c-err"></canvas></div>
+        <div class="chartbox"><h4>Queue depth (requests waiting)</h4><canvas id="c-q"></canvas></div>
+      </div>
+      <div class="cardgrid">
+        <div class="card inspector" id="inspector">
+          <h3>Component</h3>
+          <p class="desc">Pick something in the schematic to see what it's doing.</p>
+        </div>
+        <div class="card">
+          <h3>What's limiting you</h3>
+          <p class="desc" id="diagnosis">Start traffic to get a reading.</p>
+          <div id="advice"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCENARIOS -->
+    <section class="panel" id="p-scenarios">
+      <div class="cardgrid" id="scenlist"></div>
+      <div class="card" id="scen-report" style="display:none">
+        <h3 id="scen-title"></h3>
+        <p class="desc" id="scen-desc"></p>
+        <div id="scen-body"></div>
+      </div>
+    </section>
+
+    <!-- LOAD TEST -->
+    <section class="panel" id="p-loadtest">
+      <div class="card">
+        <h3>Ramp to failure</h3>
+        <p class="desc">Steps the load up and holds at each step long enough to settle. The knee is where latency starts climbing faster than throughput.</p>
+        <div class="cardgrid" style="margin-bottom:10px">
+          <div class="slider"><div class="row"><label for="lt-from">Start at</label><span class="mono" id="v-ltfrom">200/s</span></div><input type="range" id="lt-from" min="100" max="3000" step="100" value="200"></div>
+          <div class="slider"><div class="row"><label for="lt-to">Finish at</label><span class="mono" id="v-ltto">6000/s</span></div><input type="range" id="lt-to" min="500" max="30000" step="500" value="6000"></div>
+          <div class="slider"><div class="row"><label for="lt-steps">Steps</label><span class="mono" id="v-ltsteps">10</span></div><input type="range" id="lt-steps" min="4" max="20" step="1" value="10"></div>
+        </div>
+        <div class="inline">
+          <label class="ctl" style="padding:0"><input type="checkbox" id="lt-skew"><span class="lab">Skewed — one tenant takes 70% of it</span></label>
+          <button id="btn-lt" class="primary">Run ramp</button>
+          <span id="lt-status" class="mono" style="font-size:12px;color:var(--ink-3)"></span>
+        </div>
+      </div>
+      <div class="cardgrid">
+        <div class="chartbox"><h4>Latency against offered load</h4><canvas id="c-lt" style="height:168px"></canvas></div>
+        <div class="card" style="margin:0"><h3 style="margin-bottom:8px">Results</h3><div id="lt-table"><p class="empty">No run yet.</p></div></div>
+      </div>
+    </section>
+
+    <!-- TENANTS -->
+    <section class="panel" id="p-tenants">
+      <div class="card">
+        <h3>Who's on the platform</h3>
+        <p class="desc">Each tenant has its own appetite. Drag the sliders while traffic is running — shared infrastructure will show you exactly who pays for whose spike.</p>
+        <div id="tenant-ctls"></div>
+      </div>
+      <div class="card">
+        <h3>Per-tenant experience</h3>
+        <p class="desc">The same system, seen from three different seats.</p>
+        <div id="tenant-table"></div>
+      </div>
+    </section>
+
+    <!-- JOURNAL -->
+    <section class="panel" id="p-journal">
+      <div class="card">
+        <h3>Incident log</h3>
+        <p class="desc">Written automatically when something crosses a line, and when you change the architecture. This is the part worth keeping.</p>
+        <div class="inline" style="margin-bottom:10px">
+          <button id="btn-export">Download as Markdown</button>
+          <button id="btn-clearlog">Clear</button>
+        </div>
+        <div id="journal"><p class="empty">Nothing logged yet.</p></div>
+      </div>
+    </section>
+
+    <!-- DEPLOY -->
+    <section class="panel" id="p-deploy">
+      <div class="card">
+        <h3>Putting this on GitHub Pages</h3>
+        <p class="desc">This whole simulator is one file with no build step and no server, so Pages can host it as-is.</p>
+        <pre>git init
+git add index.html
+git commit -m "Architecture simulator"
+git branch -M main
+git remote add origin https://github.com/&lt;you&gt;/tenancy.git
+git push -u origin main</pre>
+        <p class="desc">Then in the repository: <strong>Settings → Pages → Source: Deploy from a branch → main / (root) → Save.</strong> It goes live at <code>https://&lt;you&gt;.github.io/tenancy/</code> within a minute or two.</p>
+        <div class="note">The file must be named <code>index.html</code> and sit at the repository root, otherwise Pages serves a 404 at the root URL.</div>
+        <details>
+          <summary>Deploying from a subfolder or with Actions</summary>
+          <p class="desc" style="margin-top:8px">If you'd rather keep it in <code>docs/</code>, pick that folder in the same Pages setting. For a workflow-based deploy, add <code>.github/workflows/pages.yml</code>:</p>
+          <pre>name: Deploy
+on:
+  push: { branches: [main] }
+permissions: { pages: write, id-token: write, contents: read }
+jobs:
+  deploy:
+    environment: github-pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: '.' }
+      - uses: actions/deploy-pages@v4</pre>
+        </details>
+        <div class="note good">Your architecture is kept in <code>localStorage</code>, so a visitor's setup survives a reload without any backend.</div>
+      </div>
+      <div class="card">
+        <h3>How the numbers are produced</h3>
+        <p class="desc">Each tier is modelled as a queue with a finite service rate. Capacity is concurrency divided by service time; anything arriving faster than that accumulates as backlog, and backlog is what you feel as latency. Requests waiting longer than the 2-second timeout are abandoned and counted as failures. It's an approximation, not a replica of any real stack — but the shapes it produces (the knee, the cliff, the cascade) are the ones you'll meet in production.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+</div>
+
+<script>
+"use strict";
+
+/* ---------- state ---------- */
+const A = {
+  dbMode:"shared", dbPool:50, dbQuery:8, replicas:false,
+  instances:2, threads:50, autoscale:false,
+  cache:false, hit:70, cdn:false,
+  queue:false, workers:3,
+  ratelimit:false, rlimit:600, breaker:false, multiregion:false,
+  nplus1:true
+};
+const TENANTS = [
+  {id:"northwind", name:"Northwind", tier:"enterprise", rps:400, color:"var(--accent)"},
+  {id:"kessel",    name:"Kessel",    tier:"standard",   rps:500, color:"var(--ok)"},
+  {id:"tinyco",    name:"Tinyco",    tier:"free",       rps:250, color:"var(--warn)"}
+];
+const S = {
+  running:false, t:0, speed:2, scenario:null, scenT:0,
+  effInstances:2, warming:0, breakerOpen:false, breakerT:0,
+  back:{gw:0,app:0,db:0,q:0},
+  hist:{p50:[],p95:[],p99:[],off:[],srv:[],err:[],q:[]},
+  tenantStats:{}, nodes:{}, selected:"db", log:[], lt:null
+};
+TENANTS.forEach(t=>S.tenantStats[t.id]={off:0,served:0,shed:0,failed:0,p99:0});
+
+const TIMEOUT = 2.0;
+const $ = s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const fmt=n=>n>=10000?Math.round(n/1000)+"k":n>=1000?(n/1000).toFixed(1)+"k":Math.round(n).toString();
+
+/* ---------- cost ---------- */
+function cost(){
+  let c = 900;
+  c += A.instances*180;
+  c += A.dbMode==="pertenant"?2400:A.dbMode==="hybrid"?1400:700;
+  c += A.replicas?900:0;
+  c += A.cache?800:0;
+  c += A.cdn?200:0;
+  c += A.queue?600+A.workers*60:0;
+  c += A.multiregion?3000:0;
+  return c;
+}
+
+/* ---------- tier queue model ---------- */
+function tier(key, lambda, mu, dt){
+  const b = S.back[key];
+  const arrive = lambda*dt;
+  const capacity = mu*dt;
+  let total = b + arrive;
+  const served = Math.min(total, capacity);
+  let backlog = total - served;
+  let dropped = 0;
+  const maxHold = mu*TIMEOUT;
+  if(backlog > maxHold){ dropped = backlog - maxHold; backlog = maxHold; }
+  S.back[key] = backlog;
+  const wait = mu>0 ? backlog/mu : TIMEOUT;
+  return { served:served/dt, dropped:dropped/dt, wait, util: mu>0?lambda/mu:2, backlog };
+}
+
+/* ---------- one simulation step ---------- */
+function step(dt){
+  // offered load, per tenant, with scenario modifiers
+  let offered = 0, perTenant = {};
+  for(const t of TENANTS){
+    let r = t.rps;
+    if(S.scenario) r = S.scenario.load(r, t, S.scenT);
+    perTenant[t.id] = r; offered += r;
+  }
+
+  // rate limiting sheds the excess before it enters the system
+  let admitted = 0, shed = 0;
+  for(const t of TENANTS){
+    let r = perTenant[t.id];
+    if(A.ratelimit && r > A.rlimit){ shed += r-A.rlimit; r = A.rlimit; }
+    perTenant[t.id] = r; admitted += r;
+  }
+
+  // CDN takes a slice off the top
+  const cdnAbsorb = A.cdn ? admitted*0.22 : 0;
+  let entering = admitted - cdnAbsorb;
+
+  // second region halves what this one carries
+  const regionFactor = A.multiregion ? 0.5 : 1;
+  entering *= regionFactor;
+
+  // gateway
+  const gw = tier("gw", entering, 14000, dt);
+
+  // app tier — autoscaling
+  if(A.autoscale){
+    const busy = S.lastAppUtil||0;
+    if(busy>0.7 && S.effInstances<24 && S.warming<=0){ S.warming = 45; }
+    if(S.warming>0){ S.warming-=dt; if(S.warming<=0){ S.effInstances=Math.min(24,S.effInstances+2); } }
+    if(busy<0.3 && S.effInstances>A.instances) S.effInstances-=dt*0.05;
+  } else S.effInstances = A.instances;
+  const concurrency = Math.round(S.effInstances)*A.threads;
+  const appService = 0.006;
+  const muApp = concurrency/appService;
+  const app = tier("app", gw.served, muApp, dt);
+  S.lastAppUtil = app.util;
+
+  // how much work reaches the database
+  const queriesPer = A.nplus1 ? 9.5 : 1.4;
+  const hit = A.cache ? A.hit/100 : 0;
+  const asyncShare = A.queue ? 0.35 : 0;
+  const syncReq = app.served*(1-asyncShare);
+  let dbQps = syncReq*queriesPer*(1-hit);
+
+  // circuit breaker sheds database work when things are bad
+  let breakerShed = 0;
+  if(A.breaker){
+    if(S.breakerOpen){
+      S.breakerT -= dt;
+      breakerShed = dbQps*0.75; dbQps -= breakerShed;
+      if(S.breakerT<=0) S.breakerOpen = false;
+    }
+  }
+
+  // database capacity — isolation changes the shape
+  const svc = A.dbQuery/1000;
+  const readMult = A.replicas ? 2.4 : 1;
+  let muDb = (A.dbPool/svc)*readMult;
+  if(A.dbMode==="pertenant") muDb *= 2.6;        // each tenant gets its own pool
+  else if(A.dbMode==="hybrid") muDb *= 1.5;
+  const db = tier("db", dbQps, muDb, dt);
+
+  if(A.breaker && !S.breakerOpen && db.util>1.25){ S.breakerOpen = true; S.breakerT = 10; }
+
+  // background workers
+  let qInfo = {backlog:0, wait:0, util:0};
+  if(A.queue){
+    const muW = A.workers*14;
+    qInfo = tier("q", app.served*asyncShare, muW, dt);
+  } else S.back.q = 0;
+
+  // latency assembly
+  const base = 0.004 + appService + (A.cache?0.001:0) + (A.multiregion?0.004:0);
+  const dbTime = (dbQps>0? queriesPer*(1-hit)*svc : 0);
+  const waitTotal = gw.wait + app.wait + db.wait;
+  const p50 = (base + dbTime*0.8 + waitTotal*0.35)*1000;
+  const p95 = (base*1.9 + dbTime*1.6 + waitTotal*1.5)*1000;
+  const p99 = (base*2.8 + dbTime*2.6 + waitTotal*2.3)*1000;
+
+  // failures
+  const failed = gw.dropped + app.dropped + (db.dropped/Math.max(queriesPer*(1-hit),0.2)) + breakerShed/Math.max(queriesPer*(1-hit),0.2);
+  const served = Math.max(0, app.served - failed);
+  const errPct = offered>0 ? ((failed+shed)/offered)*100 : 0;
+
+  // per-tenant view
+  const shareBase = Object.values(perTenant).reduce((a,b)=>a+b,0)||1;
+  for(const t of TENANTS){
+    const sh = perTenant[t.id]/shareBase;
+    const st = S.tenantStats[t.id];
+    st.off = S.scenario? S.scenario.load(t.rps,t,S.scenT) : t.rps;
+    st.shed = A.ratelimit? Math.max(0, st.off-A.rlimit) : 0;
+    st.failed = failed*sh;
+    st.served = Math.max(0, served*sh);
+    // isolation decides whether a neighbour's queue is also yours
+    const isolation = A.dbMode==="pertenant"?0.12 : A.dbMode==="hybrid"? (t.tier==="enterprise"?0.2:0.8) : 1;
+    st.p99 = base*2800 + dbTime*2600 + waitTotal*2300*isolation;
+  }
+
+  const push=(k,v)=>{const h=S.hist[k];h.push(v);if(h.length>150)h.shift();};
+  push("p50",p50);push("p95",p95);push("p99",p99);
+  push("off",offered);push("srv",served);push("err",clamp(errPct,0,100));
+  push("q",S.back.db+S.back.app+S.back.q);
+
+  S.live = {offered,admitted,entering,gw,app,db,qInfo,p50,p95,p99,errPct,served,shed,
+            muApp,muDb,concurrency,dbQps,queriesPer,hit,breakerShed};
+
+  watch();
+}
+
+/* ---------- automatic incident log ---------- */
+const flags = {};
+function watch(){
+  const L = S.live; if(!L) return;
+  const once=(key,sev,txt)=>{ if(flags[key])return; flags[key]=true; logit(sev,txt); };
+  if(L.db.util>1) once("dbsat","fail",`Database saturated — arriving work is ${(L.db.util*100).toFixed(0)}% of what the pool can serve. Backlog is building, so latency will keep climbing until load drops.`);
+  if(L.app.util>1) once("appsat","fail",`Application tier saturated at ${Math.round(S.effInstances)} instances × ${A.threads} threads. Requests are waiting for a thread before they even reach the database.`);
+  if(L.p99>1000) once("p99","warn",`p99 crossed one second (${Math.round(L.p99)} ms). The queue, not the query, is most of that number now.`);
+  if(L.errPct>5) once("err","fail",`Failure rate above 5% (${L.errPct.toFixed(1)}%). Requests are being abandoned at the 2-second timeout.`);
+  if(S.breakerOpen) once("brk","warn","Circuit breaker opened. Most database calls are now failing immediately instead of waiting — the system stays responsive while shedding work.");
+}
+function logit(sev,text){
+  S.log.unshift({t:S.t, sev, text});
+  if(S.log.length>140) S.log.pop();
+  if(curTab==="journal") renderJournal();
+}
+function clock(sec){const m=Math.floor(sec/60),s=Math.floor(sec%60);return m+":"+String(s).padStart(2,"0");}
+
+/* ---------- schematic ---------- */
+const NODES = {
+  clients:{x:30,y:150,w:104,h:100,title:"Tenants",sub:()=>fmt(S.live?S.live.offered:totalRps())+" req/s",always:true},
+  cdn:    {x:168,y:70, w:100,h:52, title:"CDN",      sub:()=>A.cdn?"−22% origin":"off", on:()=>A.cdn},
+  gw:     {x:168,y:174,w:100,h:52, title:"Gateway",  sub:()=>A.ratelimit?"limit "+A.rlimit+"/s":"no limit", always:true, util:()=>S.live?S.live.gw.util:0},
+  app:    {x:310,y:160,w:128,h:80, title:"App tier", sub:()=>Math.round(S.effInstances)+"×"+A.threads+" threads", always:true, util:()=>S.live?S.live.app.util:0},
+  cache:  {x:480,y:62, w:112,h:56, title:"Cache",    sub:()=>A.hit+"% hit", on:()=>A.cache},
+  db:     {x:650,y:160,w:150,h:88, title:()=>A.dbMode==="pertenant"?"Database per tenant":A.dbMode==="hybrid"?"Pool + enterprise":"Shared database", sub:()=>A.dbPool+" conns · "+A.dbQuery+"ms", always:true, util:()=>S.live?S.live.db.util:0},
+  replica:{x:650,y:62, w:150,h:56, title:"Read replicas", sub:()=>"×2", on:()=>A.replicas},
+  queue:  {x:480,y:292,w:112,h:56, title:"Queue",    sub:()=>fmt(S.back.q)+" waiting", on:()=>A.queue},
+  workers:{x:650,y:292,w:150,h:56, title:"Workers",  sub:()=>A.workers+" consumers", on:()=>A.queue},
+  region: {x:860,y:160,w:148,h:88, title:"Region B", sub:()=>"carries 50%", on:()=>A.multiregion}
+};
+const EDGES = [
+  ["clients","cdn",()=>A.cdn],["clients","gw",()=>true],["cdn","gw",()=>A.cdn],
+  ["gw","app",()=>true],["app","cache",()=>A.cache],["cache","db",()=>A.cache],
+  ["app","db",()=>true],["app","queue",()=>A.queue],["queue","workers",()=>A.queue],
+  ["workers","db",()=>A.queue],["db","replica",()=>A.replicas],["app","region",()=>A.multiregion]
+];
+const SVGNS="http://www.w3.org/2000/svg";
+function el(n,a){const e=document.createElementNS(SVGNS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+function utilColor(u){return u>=0.85?"var(--fail)":u>=0.6?"var(--warn)":"var(--ok)";}
+function centre(id){const n=NODES[id];return{x:n.x+n.w/2,y:n.y+n.h/2};}
+
+function buildSchematic(){
+  const gE=$("#edges"), gN=$("#nodes");
+  gE.textContent=""; gN.textContent="";
+  for(const [a,b,test] of EDGES){
+    const p1=centre(a),p2=centre(b);
+    const live=test();
+    const mx=(p1.x+p2.x)/2;
+    const d=`M${p1.x},${p1.y} C${mx},${p1.y} ${mx},${p2.y} ${p2.x},${p2.y}`;
+    const path=el("path",{d,class:"edge"+(live?"":" off"),id:`e-${a}-${b}`});
+    gE.appendChild(path);
+  }
+  for(const id in NODES){
+    const n=NODES[id];
+    const on = n.always||n.on();
+    const g=el("g",{class:"node"+(on?"":" off"),"data-id":id,tabindex:"0",role:"button"});
+    g.appendChild(el("rect",{x:n.x,y:n.y,width:n.w,height:n.h,rx:3,class:"nbox",id:`box-${id}`}));
+    const title=el("text",{x:n.x+10,y:n.y+19,class:"ntitle"}); title.textContent=typeof n.title==="function"?n.title():n.title;
+    g.appendChild(title);
+    const sub=el("text",{x:n.x+10,y:n.y+33,class:"nsub",id:`sub-${id}`}); sub.textContent=n.sub();
+    g.appendChild(sub);
+    if(n.util){
+      g.appendChild(el("rect",{x:n.x+10,y:n.y+n.h-14,width:n.w-20,height:5,rx:2,class:"util-bar-bg"}));
+      g.appendChild(el("rect",{x:n.x+10,y:n.y+n.h-14,width:0,height:5,rx:2,id:`bar-${id}`,fill:"var(--ok)"}));
+      const pc=el("text",{x:n.x+n.w-10,y:n.y+n.h-20,class:"nsub","text-anchor":"end",id:`pc-${id}`}); pc.textContent="0%";
+      g.appendChild(pc);
+    }
+    g.addEventListener("click",()=>select(id));
+    g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();select(id);}});
+    gN.appendChild(g);
+  }
+  // tenant strips inside the clients box
+  const c=NODES.clients;
+  TENANTS.forEach((t,i)=>{
+    const y=c.y+40+i*19;
+    const r=el("rect",{x:c.x+10,y:y-9,width:0,height:11,rx:2,fill:t.color,id:`tb-${t.id}`,opacity:".55"});
+    $("#nodes").appendChild(r);
+    const tx=el("text",{x:c.x+10,y:y,class:"nsub"}); tx.textContent=t.name;
+    $("#nodes").appendChild(tx);
+  });
+  paintSchematic();
+}
+function paintSchematic(){
+  for(const id in NODES){
+    const n=NODES[id], on=n.always||n.on();
+    const g=document.querySelector(`[data-id="${id}"]`);
+    if(g) g.setAttribute("class","node"+(on?"":" off"));
+    const sub=document.getElementById(`sub-${id}`); if(sub) sub.textContent=n.sub();
+    if(n.util){
+      const u=clamp(n.util(),0,1.6);
+      const bar=document.getElementById(`bar-${id}`), pc=document.getElementById(`pc-${id}`);
+      if(bar){bar.setAttribute("width",(n.w-20)*clamp(u,0,1));bar.setAttribute("fill",utilColor(u));}
+      if(pc){pc.textContent=Math.round(u*100)+"%";pc.setAttribute("fill",u>=0.85?"var(--fail)":"var(--ink-3)");}
+      const box=document.getElementById(`box-${id}`);
+      if(box) box.setAttribute("stroke", u>=0.85?"var(--fail)":u>=0.6?"var(--warn)":"var(--rule-2)");
+    }
+  }
+  const title=document.querySelector('[data-id="db"] .ntitle');
+  if(title) title.textContent=NODES.db.title();
+  for(const [a,b,test] of EDGES){
+    const p=document.getElementById(`e-${a}-${b}`);
+    if(p) p.setAttribute("class","edge"+(test()?"":" off"));
+  }
+  const maxR=Math.max(...TENANTS.map(t=>S.tenantStats[t.id].off||t.rps),1);
+  TENANTS.forEach(t=>{
+    const r=document.getElementById(`tb-${t.id}`);
+    if(r) r.setAttribute("width", 84*((S.tenantStats[t.id].off||t.rps)/maxR));
+  });
+}
+
+/* ---------- packets ---------- */
+let packets=[];
+function routeFor(){
+  const r=["clients","gw","app"];
+  if(A.cache && Math.random()<A.hit/100) r.push("cache");
+  else r.push("db");
+  return r;
+}
+function spawnPackets(){
+  if(!S.running||!S.live) return;
+  const want=clamp(Math.round(S.live.served/160),0,26);
+  while(packets.length<want){
+    const route=routeFor();
+    const fail=Math.random()<(S.live.errPct/100);
+    packets.push({route,i:0,p:0,speed:0.9+Math.random()*0.6,fail,
+      slow:S.live.p99>700});
+  }
+}
+function drawPackets(){
+  const g=$("#packets"); g.textContent="";
+  for(const pk of packets){
+    const a=centre(pk.route[pk.i]), b=centre(pk.route[pk.i+1]||pk.route[pk.i]);
+    const x=a.x+(b.x-a.x)*pk.p, y=a.y+(b.y-a.y)*pk.p;
+    g.appendChild(el("circle",{cx:x,cy:y,r:pk.fail?3.4:2.6,
+      fill:pk.fail?"var(--fail)":pk.slow?"var(--warn)":"var(--accent)",opacity:pk.fail?".95":".75"}));
+  }
+}
+function advancePackets(dt){
+  const rate = S.live && S.live.p99>700 ? 0.55 : 1.4;
+  for(const pk of packets){
+    pk.p += dt*rate*pk.speed*2.4;
+    if(pk.p>=1){ pk.p=0; pk.i++; }
+  }
+  packets = packets.filter(pk=>pk.i < pk.route.length-1);
+  spawnPackets();
+}
+
+/* ---------- charts ---------- */
+function line(canvas, series, opts={}){
+  const c=canvas, ctx=c.getContext("2d");
+  const dpr=window.devicePixelRatio||1;
+  const w=c.clientWidth, h=c.clientHeight;
+  c.width=w*dpr; c.height=h*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+  const cs=getComputedStyle(document.body);
+  const rule=cs.getPropertyValue("--rule").trim(), ink3=cs.getPropertyValue("--ink-3").trim();
+  let max=opts.max||0;
+  series.forEach(s=>s.data.forEach(v=>{if(v>max)max=v;}));
+  max=max||1; max*=1.12;
+  ctx.strokeStyle=rule; ctx.lineWidth=1;
+  for(let i=0;i<=3;i++){const y=h-6-(h-22)*(i/3);ctx.beginPath();ctx.moveTo(32,y);ctx.lineTo(w,y);ctx.stroke();
+    ctx.fillStyle=ink3;ctx.font='10px "IBM Plex Mono", monospace';ctx.textAlign="right";
+    ctx.fillText(opts.fmt?opts.fmt(max*i/3):Math.round(max*i/3),28,y+3);}
+  const n=Math.max(series[0].data.length,2);
+  series.forEach(s=>{
+    ctx.strokeStyle=cs.getPropertyValue(s.varName).trim()||s.varName;
+    ctx.lineWidth=s.w||1.6; ctx.beginPath();
+    s.data.forEach((v,i)=>{
+      const x=32+(w-36)*(i/(n-1||1)), y=h-6-(h-22)*clamp(v/max,0,1);
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    });
+    ctx.stroke();
+  });
+  if(opts.labels){
+    ctx.font='10px "IBM Plex Sans", sans-serif'; ctx.textAlign="left";
+    let x=36;
+    series.forEach(s=>{ctx.fillStyle=cs.getPropertyValue(s.varName).trim()||s.varName;
+      ctx.fillText(s.name,x,11); x+=ctx.measureText(s.name).width+12;});
+  }
+}
+function drawCharts(){
+  const H=S.hist;
+  line($("#c-lat"),[
+    {name:"p50",data:H.p50,varName:"--ok"},
+    {name:"p95",data:H.p95,varName:"--warn"},
+    {name:"p99",data:H.p99,varName:"--fail"}
+  ],{labels:true,fmt:v=>Math.round(v)});
+  line($("#c-thr"),[
+    {name:"offered",data:H.off,varName:"--ink-3"},
+    {name:"served",data:H.srv,varName:"--accent"}
+  ],{labels:true,fmt:fmt});
+  line($("#c-err"),[{name:"failures",data:H.err,varName:"--fail"}],{max:10,fmt:v=>v.toFixed(0)+"%"});
+  line($("#c-q"),[{name:"waiting",data:H.q,varName:"--warn"}],{fmt:fmt});
+}
+
+/* ---------- inspector + diagnosis ---------- */
+const NODE_TEXT = {
+  gw:"Every request lands here first. The rate limiter, if you've switched it on, decides which tenants get through before anything expensive happens.",
+  app:"Concurrency lives here: instances × threads. A thread is held for the whole request, so a slow database query ties up application capacity too.",
+  db:"Usually the real ceiling. Throughput is the connection pool divided by query time — 50 connections at 8 ms is about 6,250 queries a second, and no more.",
+  cache:"Absorbs repeat reads before they reach the database. The hit rate is the whole story: 70% hit means the database only sees 30% of reads.",
+  queue:"Takes slow work off the request path. The request returns quickly; the work still has to happen, so watch the backlog.",
+  workers:"Drains the queue. Too few and the backlog grows without bound even though your API looks healthy.",
+  clients:"Three tenants with different appetites. On shared infrastructure, their queues are the same queue.",
+  cdn:"Serves cacheable responses without touching your origin at all.",
+  replica:"Reads scale out across replicas. Writes still go to the primary, and replicas lag.",
+  region:"A second region halves what this one carries, at the cost of cross-region replication."
+};
+function select(id){ S.selected=id; renderInspector(); }
+function renderInspector(){
+  const id=S.selected, n=NODES[id], L=S.live;
+  const box=$("#inspector");
+  let rows="";
+  if(L){
+    if(id==="db") rows=`<dt>Arriving</dt><dd class="mono">${fmt(L.dbQps)} q/s</dd>
+      <dt>Capacity</dt><dd class="mono">${fmt(L.muDb)} q/s</dd>
+      <dt>Busy</dt><dd class="mono">${Math.round(L.db.util*100)}%</dd>
+      <dt>Waiting</dt><dd class="mono">${fmt(S.back.db)}</dd>
+      <dt>Queue delay</dt><dd class="mono">${Math.round(L.db.wait*1000)} ms</dd>
+      <dt>Queries per request</dt><dd class="mono">${(L.queriesPer*(1-L.hit)).toFixed(1)}</dd>`;
+    else if(id==="app") rows=`<dt>Arriving</dt><dd class="mono">${fmt(L.gw.served)} req/s</dd>
+      <dt>Concurrency</dt><dd class="mono">${L.concurrency}</dd>
+      <dt>Capacity</dt><dd class="mono">${fmt(L.muApp)} req/s</dd>
+      <dt>Busy</dt><dd class="mono">${Math.round(L.app.util*100)}%</dd>
+      <dt>Queue delay</dt><dd class="mono">${Math.round(L.app.wait*1000)} ms</dd>`;
+    else if(id==="gw") rows=`<dt>Offered</dt><dd class="mono">${fmt(L.offered)} req/s</dd>
+      <dt>Shed by limiter</dt><dd class="mono">${fmt(L.shed)} req/s</dd>
+      <dt>Entering region</dt><dd class="mono">${fmt(L.entering)} req/s</dd>`;
+    else if(id==="cache") rows=`<dt>Hit rate</dt><dd class="mono">${A.hit}%</dd>
+      <dt>Reads absorbed</dt><dd class="mono">${fmt(L.app.served*L.queriesPer*L.hit)} q/s</dd>`;
+    else if(id==="queue"||id==="workers") rows=`<dt>Backlog</dt><dd class="mono">${fmt(S.back.q)}</dd>
+      <dt>Drain rate</dt><dd class="mono">${fmt(A.workers*14)}/s</dd>
+      <dt>Busy</dt><dd class="mono">${Math.round(L.qInfo.util*100)}%</dd>`;
+    else if(id==="clients") rows=TENANTS.map(t=>`<dt>${t.name}</dt><dd class="mono">${fmt(S.tenantStats[t.id].off)} req/s</dd>`).join("");
+  }
+  box.innerHTML=`<h3>${typeof n.title==="function"?n.title():n.title}</h3>
+    <p class="desc">${NODE_TEXT[id]||""}</p>
+    ${rows?`<dl>${rows}</dl>`:'<p class="desc" style="color:var(--ink-3)">Start traffic for live figures.</p>'}`;
+}
+function renderDiagnosis(){
+  const L=S.live; if(!L) return;
+  const parts=[
+    {k:"the database",u:L.db.util,fix:[
+      !A.cache?"Switch on the cache — at a 70% hit rate the database sees less than a third of the reads it does now.":null,
+      A.nplus1?"Turn off the N+1 queries. One request is currently costing about 9.5 round trips; collapsing that into a join is the single biggest win available.":null,
+      L.db.util>1&&A.dbPool<200?"Raise the connection pool, but only if the database itself has headroom — a bigger pool against a busy database just moves the queue.":null,
+      !A.replicas?"Add read replicas if the workload is read-heavy.":null,
+      A.dbMode==="shared"?"Consider moving the loudest tenant onto its own database so its queue stops being everyone's queue.":null
+    ]},
+    {k:"the application tier",u:L.app.util,fix:[
+      "Add instances, or raise threads per instance.",
+      !A.autoscale?"Switch on autoscaling so this responds without you watching it.":null,
+      !A.queue?"Move slow work to a queue so threads are released sooner.":null
+    ]},
+    {k:"the gateway",u:L.gw.util,fix:["Scale the gateway out."]}
+  ].sort((a,b)=>b.u-a.u);
+  const top=parts[0];
+  let txt;
+  if(top.u<0.6) txt=`Nothing is close to its ceiling — the busiest part is ${top.k} at ${Math.round(top.u*100)}%. Push more load through, or run a scenario.`;
+  else if(top.u<1) txt=`${top.k[0].toUpperCase()+top.k.slice(1)} is at ${Math.round(top.u*100)}% and is setting your latency. Queue delay grows sharply from here — the last 15% of capacity costs more than the first 85%.`;
+  else txt=`${top.k[0].toUpperCase()+top.k.slice(1)} is over capacity at ${Math.round(top.u*100)}%. Work is arriving faster than it can be served, so the backlog and the latency will both keep growing until the load drops.`;
+  $("#diagnosis").textContent=txt;
+  const fixes=top.fix.filter(Boolean);
+  $("#advice").innerHTML = top.u<0.6 ? "" : fixes.map(f=>`<div class="note">${f}</div>`).join("");
+}
+
+/* ---------- scenarios ---------- */
+const SCENARIOS=[
+  {id:"spike",name:"Monday morning",dur:70,
+   desc:"Everyone logs in at once. Load climbs to six times normal over thirty seconds, holds, then falls away.",
+   load:(r,t,s)=>{const m=s<30?1+5*(s/30):s<50?6:Math.max(1,6-5*((s-50)/20));return r*m;},
+   lesson:"A spike doesn't break a system at the moment it arrives — it breaks it once the backlog from the first few seconds never gets a chance to drain. Watch whether your queue depth returns to zero after the load drops. If it doesn't, you were already over capacity."},
+  {id:"noisy",name:"Noisy neighbour",dur:70,
+   desc:"Kessel starts a bulk export and sends 8,000 requests a second. Nobody else changed anything.",
+   load:(r,t,s)=>t.id==="kessel"&&s>8&&s<55?8000:r,
+   lesson:"On shared infrastructure, one tenant's bad afternoon is everyone's outage. Rate limiting fixes the symptom cheaply; isolation fixes the cause expensively. Compare the per-tenant table under both and you'll see exactly what you're buying."},
+  {id:"slowq",name:"A missing index",dur:70,
+   desc:"A deploy drops an index. Mean query time rises from 8 ms to 35 ms with no change in traffic.",
+   setup:()=>{S._savedQ=A.dbQuery; set("dbQuery",35);},
+   teardown:()=>{if(S._savedQ) set("dbQuery",S._savedQ);},
+   load:(r)=>r,
+   lesson:"Database capacity is pool ÷ query time, so quadrupling query time quarters your throughput ceiling without a single extra request arriving. Latency problems that appear with flat traffic are nearly always a change in service time, not demand."},
+  {id:"cascade",name:"Dependency slows down",dur:70,
+   desc:"A downstream payment service degrades. Calls that took 40 ms now take two seconds, and threads are held the whole time.",
+   setup:()=>{S._savedT=A.threads; set("threads",Math.max(10,Math.round(A.threads*0.25)));},
+   teardown:()=>{if(S._savedT) set("threads",S._savedT);},
+   load:(r)=>r,
+   lesson:"The failure spreads through thread occupancy, not through errors. Every request waiting on the slow dependency holds capacity that healthy requests needed, so an unrelated endpoint goes down too. A circuit breaker and a timeout are what stop a slow dependency from becoming your outage."},
+  {id:"growth",name:"Six months of growth",dur:90,
+   desc:"Traffic triples steadily and never comes back down. This is the one that finds your architectural ceiling rather than your burst capacity.",
+   load:(r,t,s)=>r*(1+2*clamp(s/70,0,1)),
+   lesson:"Burst capacity and sustained capacity are different numbers. A system that survives a spike can still fail at a permanently higher baseline, because nothing ever gets the quiet period it was using to catch up."}
+];
+function renderScenarios(){
+  $("#scenlist").innerHTML=SCENARIOS.map(s=>`
+    <div class="scen${S.scenario&&S.scenario.id===s.id?" active":""}" id="sc-${s.id}">
+      <h4>${s.name}</h4><p>${s.desc}</p>
+      <button data-sc="${s.id}">${S.scenario&&S.scenario.id===s.id?"Running…":"Run"}</button>
+    </div>`).join("");
+  $("#scenlist").querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>runScenario(b.dataset.sc));
+}
+function runScenario(id){
+  const s=SCENARIOS.find(x=>x.id===id); if(!s) return;
+  if(S.scenario&&S.scenario.teardown) S.scenario.teardown();
+  S.scenario=s; S.scenT=0; S.scenPeak={p99:0,err:0,q:0,dbu:0};
+  if(s.setup) s.setup();
+  if(!S.running) toggleRun(true);
+  logit("info",`Scenario started — ${s.name}.`);
+  renderScenarios();
+  $("#scen-report").style.display="block";
+  $("#scen-title").textContent=s.name;
+  $("#scen-desc").textContent=s.desc;
+  $("#scen-body").innerHTML=`<p class="desc">Running. Watch the schematic.</p>`;
+}
+function endScenario(){
+  const s=S.scenario; if(!s) return;
+  const pk=S.scenPeak;
+  const survived = pk.err<2 && pk.p99<800;
+  const partial = !survived && pk.err<12;
+  if(s.teardown) s.teardown();
+  S.scenario=null;
+  logit(survived?"ok":"fail",`Scenario finished — ${s.name}. Peak p99 ${Math.round(pk.p99)} ms, peak failures ${pk.err.toFixed(1)}%.`);
+  renderScenarios();
+  $("#scen-body").innerHTML=`
+    <div class="inline" style="margin-bottom:10px">
+      <span class="pill ${survived?"p-ok":partial?"p-warn":"p-fail"}">${survived?"Held up":partial?"Degraded":"Broke"}</span>
+      <span class="mono" style="font-size:12px;color:var(--ink-2)">peak p99 ${Math.round(pk.p99)} ms · peak failures ${pk.err.toFixed(1)}% · peak backlog ${fmt(pk.q)} · database peaked at ${Math.round(pk.dbu*100)}%</span>
+    </div>
+    <div class="note ${survived?"good":"bad"}">${s.lesson}</div>
+    <p class="desc" style="margin-top:10px">Change something in the architecture panel and run it again — the comparison is where the learning is.</p>`;
+  $("#scen-report").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+/* ---------- load test ---------- */
+function runLoadTest(){
+  const from=+$("#lt-from").value, to=+$("#lt-to").value, steps=+$("#lt-steps").value;
+  const skew=$("#lt-skew").checked;
+  const saved=TENANTS.map(t=>t.rps);
+  const results=[];
+  const savedBack={...S.back}, savedEff=S.effInstances;
+  for(let i=0;i<steps;i++){
+    const target=from+(to-from)*(i/(steps-1||1));
+    if(skew){ TENANTS[0].rps=target*0.15; TENANTS[1].rps=target*0.70; TENANTS[2].rps=target*0.15; }
+    else TENANTS.forEach(t=>t.rps=target/3);
+    S.back={gw:0,app:0,db:0,q:0}; S.effInstances=A.instances; S.breakerOpen=false;
+    for(let k=0;k<90;k++) step(0.1);   // settle
+    const L=S.live;
+    results.push({target, p50:L.p50, p95:L.p95, p99:L.p99, served:L.served, err:L.errPct, dbu:L.db.util});
+  }
+  TENANTS.forEach((t,i)=>t.rps=saved[i]);
+  S.back=savedBack; S.effInstances=savedEff;
+  S.lt=results;
+  // knee: first step where p99 more than triples the baseline
+  const baseP99=results[0].p99;
+  const knee=results.find(r=>r.p99>baseP99*3)||null;
+  $("#lt-status").textContent=`done — ${steps} steps`;
+  $("#lt-table").innerHTML=`<table><thead><tr><th>Offered</th><th>Served</th><th>p99</th><th>Fail</th><th>DB</th></tr></thead><tbody>${
+    results.map(r=>`<tr><td class="mono">${fmt(r.target)}</td><td class="mono">${fmt(r.served)}</td>
+      <td class="mono" style="color:${r.p99>1000?"var(--fail)":r.p99>400?"var(--warn)":"inherit"}">${Math.round(r.p99)} ms</td>
+      <td class="mono">${r.err.toFixed(1)}%</td>
+      <td class="mono" style="color:${r.dbu>=1?"var(--fail)":r.dbu>=.6?"var(--warn)":"inherit"}">${Math.round(r.dbu*100)}%</td></tr>`).join("")
+  }</tbody></table>${knee?`<div class="note bad" style="margin-top:10px">The knee is around <strong>${fmt(knee.target)} req/s</strong> — past this point latency rises much faster than throughput, so adding load buys you nothing but queue. That's your usable ceiling, not the point where it falls over.</div>`:`<div class="note good" style="margin-top:10px">No knee inside this range. Raise the finish value until you find one.</div>`}`;
+  drawLT();
+  logit("info",`Ramp test: ${fmt(from)} → ${fmt(to)} req/s. ${knee?"Knee at ~"+fmt(knee.target)+" req/s.":"No knee found in range."}`);
+}
+function drawLT(){
+  if(!S.lt) return;
+  const c=$("#c-lt"),ctx=c.getContext("2d");
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
+  c.width=w*dpr;c.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const cs=getComputedStyle(document.body);
+  const maxY=Math.max(...S.lt.map(r=>r.p99))*1.1||1;
+  const maxX=Math.max(...S.lt.map(r=>r.target));
+  ctx.strokeStyle=cs.getPropertyValue("--rule").trim();
+  for(let i=0;i<=3;i++){const y=h-18-(h-32)*(i/3);ctx.beginPath();ctx.moveTo(40,y);ctx.lineTo(w,y);ctx.stroke();
+    ctx.fillStyle=cs.getPropertyValue("--ink-3").trim();ctx.font='10px "IBM Plex Mono",monospace';ctx.textAlign="right";
+    ctx.fillText(Math.round(maxY*i/3)+"",36,y+3);}
+  const px=r=>40+(w-46)*(r.target/maxX), py=v=>h-18-(h-32)*clamp(v/maxY,0,1);
+  [["p50","--ok"],["p95","--warn"],["p99","--fail"]].forEach(([k,v])=>{
+    ctx.strokeStyle=cs.getPropertyValue(v).trim();ctx.lineWidth=1.8;ctx.beginPath();
+    S.lt.forEach((r,i)=>{const x=px(r),y=py(r[k]);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+    ctx.stroke();
+    S.lt.forEach(r=>{ctx.fillStyle=cs.getPropertyValue(v).trim();ctx.beginPath();ctx.arc(px(r),py(r[k]),2.4,0,7);ctx.fill();});
+  });
+  ctx.fillStyle=cs.getPropertyValue("--ink-3").trim();ctx.textAlign="center";ctx.font='10px "IBM Plex Mono",monospace';
+  S.lt.forEach((r,i)=>{if(i%2===0)ctx.fillText(fmt(r.target),px(r),h-5);});
+}
+
+/* ---------- tenants ---------- */
+function renderTenantCtls(){
+  $("#tenant-ctls").innerHTML=TENANTS.map(t=>`
+    <div class="slider">
+      <div class="row"><label for="tr-${t.id}">${t.name} <span class="pill p-mute">${t.tier}</span></label><span class="mono" id="v-tr-${t.id}">${t.rps}/s</span></div>
+      <input type="range" id="tr-${t.id}" min="0" max="6000" step="50" value="${t.rps}">
+    </div>`).join("");
+  TENANTS.forEach(t=>{
+    const i=document.getElementById("tr-"+t.id);
+    i.oninput=()=>{t.rps=+i.value;document.getElementById("v-tr-"+t.id).textContent=i.value+"/s";paintSchematic();};
+  });
+}
+function renderTenantTable(){
+  const rows=TENANTS.map(t=>{
+    const s=S.tenantStats[t.id];
+    const bad=s.p99>1000, warn=s.p99>400;
+    return `<tr><td>${t.name}<br><span class="pill p-mute">${t.tier}</span></td>
+      <td class="mono">${fmt(s.off)}</td>
+      <td class="mono">${fmt(s.served)}</td>
+      <td class="mono">${fmt(s.shed)}</td>
+      <td class="mono" style="color:${bad?"var(--fail)":warn?"var(--warn)":"inherit"}">${Math.round(s.p99)} ms</td>
+      <td><span class="pill ${bad?"p-fail":warn?"p-warn":"p-ok"}">${bad?"breached":warn?"strained":"within SLA"}</span></td></tr>`;
+  }).join("");
+  $("#tenant-table").innerHTML=`<table><thead><tr><th>Tenant</th><th>Offered</th><th>Served</th><th>Shed</th><th>p99</th><th>SLA</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="note">${A.dbMode==="pertenant"?"With a database each, one tenant's load barely touches another's latency — look at how close these three numbers are.":A.dbMode==="hybrid"?"Enterprise sits on its own database and is largely protected; the other two still share a queue.":"All three share one database, so all three share one queue — which is why their p99 numbers move together."}</div>`;
+}
+
+/* ---------- journal ---------- */
+function renderJournal(){
+  const j=$("#journal");
+  if(!S.log.length){j.innerHTML='<p class="empty">Nothing logged yet.</p>';return;}
+  j.innerHTML=S.log.map(e=>`<div class="logline">
+    <time class="mono">${clock(e.t)}</time>
+    <span class="pill ${e.sev==="fail"?"p-fail":e.sev==="warn"?"p-warn":e.sev==="ok"?"p-ok":"p-mute"}">${e.sev}</span>
+    ${e.text}</div>`).join("");
+}
+function exportLog(){
+  const lines=["# Architecture simulator — journal","",
+    "## Architecture at export","",
+    "| Setting | Value |","| --- | --- |",
+    `| Isolation | ${A.dbMode} |`,`| Connection pool | ${A.dbPool} |`,`| Query time | ${A.dbQuery} ms |`,
+    `| Instances × threads | ${A.instances} × ${A.threads} |`,`| Cache | ${A.cache?A.hit+"% hit":"off"} |`,
+    `| Queue | ${A.queue?A.workers+" workers":"off"} |`,`| Rate limit | ${A.ratelimit?A.rlimit+"/s":"off"} |`,
+    `| Circuit breaker | ${A.breaker?"on":"off"} |`,`| N+1 queries | ${A.nplus1?"present":"fixed"} |`,
+    `| Monthly cost | €${cost().toLocaleString()} |`,"","## Log",""];
+  S.log.slice().reverse().forEach(e=>lines.push(`- \`${clock(e.t)}\` **${e.sev}** — ${e.text}`));
+  const blob=new Blob([lines.join("\n")],{type:"text/markdown"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="architecture-journal.md"; a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ---------- controls wiring ---------- */
+function set(key,val){
+  A[key]=val;
+  const node=document.getElementById(key);
+  if(node){ if(node.type==="checkbox") node.checked=val; else node.value=val; }
+  syncLabels(); paintSchematic(); updateCost();
+}
+function syncLabels(){
+  $("#v-dbPool").textContent=A.dbPool;
+  $("#v-dbQuery").textContent=A.dbQuery+" ms";
+  $("#v-instances").textContent=A.instances;
+  $("#v-threads").textContent=A.threads;
+  $("#v-hit").textContent=A.hit+"%";
+  $("#v-workers").textContent=A.workers;
+  $("#v-rlimit").textContent=A.rlimit+"/s";
+}
+function updateCost(){ $("#ro-cost").textContent=cost().toLocaleString(); }
+function totalRps(){ return TENANTS.reduce((a,t)=>a+t.rps,0); }
+
+const bindings=[
+  ["dbMode","value",v=>v],["dbPool","value",Number],["dbQuery","value",Number],["replicas","checked",Boolean],
+  ["instances","value",Number],["threads","value",Number],["autoscale","checked",Boolean],
+  ["cache","checked",Boolean],["hit","value",Number],["cdn","checked",Boolean],
+  ["queue","checked",Boolean],["workers","value",Number],
+  ["ratelimit","checked",Boolean],["rlimit","value",Number],["breaker","checked",Boolean],["multiregion","checked",Boolean],
+  ["nplus1","checked",Boolean]
+];
+const LABELS={dbMode:"Isolation",dbPool:"Connection pool",dbQuery:"Query time",replicas:"Read replicas",
+  instances:"Instances",threads:"Threads",autoscale:"Autoscaling",cache:"Cache",hit:"Cache hit rate",cdn:"CDN",
+  queue:"Queue",workers:"Workers",ratelimit:"Rate limit",rlimit:"Rate limit ceiling",breaker:"Circuit breaker",
+  multiregion:"Second region",nplus1:"N+1 queries"};
+bindings.forEach(([id,prop,cast])=>{
+  const n=document.getElementById(id);
+  const handler=()=>{
+    const old=A[id];
+    A[id]=cast(n[prop]);
+    if(id==="instances") S.effInstances=A.instances;
+    syncLabels(); paintSchematic(); updateCost(); renderInspector();
+    if(old!==A[id]) logit("info",`Changed ${LABELS[id]}: ${old} → ${A[id]}.`);
+    Object.keys(flags).forEach(k=>delete flags[k]);
+  };
+  n.addEventListener("change",handler);
+  if(n.type==="range") n.addEventListener("input",()=>{A[id]=cast(n.value);syncLabels();paintSchematic();updateCost();});
+});
+
+["lt-from","lt-to","lt-steps"].forEach(id=>{
+  const n=document.getElementById(id), out=document.getElementById("v-"+id.replace("-",""));
+  n.addEventListener("input",()=>{out.textContent=id==="lt-steps"?n.value:n.value+"/s";});
+});
+
+/* tabs */
+let curTab="live";
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected","false"));
+  b.setAttribute("aria-selected","true");
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("on"));
+  curTab=b.dataset.p;
+  document.getElementById("p-"+curTab).classList.add("on");
+  if(curTab==="journal") renderJournal();
+  if(curTab==="tenants"){renderTenantCtls();renderTenantTable();}
+  if(curTab==="loadtest") drawLT();
+  if(curTab==="live") drawCharts();
+});
+
+$("#btn-run").onclick=()=>toggleRun();
+function toggleRun(force){
+  S.running = force!==undefined?force:!S.running;
+  $("#btn-run").textContent = S.running?"Pause":"Start traffic";
+  $("#btn-run").className = S.running?"":"primary";
+}
+$("#btn-reset").onclick=()=>{
+  S.t=0; S.back={gw:0,app:0,db:0,q:0}; S.breakerOpen=false; S.effInstances=A.instances;
+  Object.keys(S.hist).forEach(k=>S.hist[k]=[]);
+  if(S.scenario&&S.scenario.teardown)S.scenario.teardown();
+  S.scenario=null; packets=[]; S.live=null;
+  Object.keys(flags).forEach(k=>delete flags[k]);
+  toggleRun(false); renderScenarios(); drawCharts(); paintSchematic();
+  $("#ro-clock").textContent="0:00";$("#ro-p99").textContent="—";$("#ro-err").textContent="0%";$("#ro-rps").textContent="0";
+};
+$("#speed").onchange=e=>S.speed=+e.target.value;
+$("#btn-lt").onclick=()=>{$("#lt-status").textContent="running…";setTimeout(runLoadTest,20);};
+$("#btn-export").onclick=exportLog;
+$("#btn-clearlog").onclick=()=>{S.log=[];renderJournal();};
+const store={
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
+};
+$("#btn-theme").onclick=()=>{
+  const d=document.documentElement.getAttribute("data-theme")==="dark";
+  document.documentElement.setAttribute("data-theme",d?"light":"dark");
+  $("#btn-theme").textContent=d?"Dark":"Light";
+  store.set("tenancy-theme",d?"light":"dark");
+  drawCharts(); drawLT(); paintSchematic();
+};
+$("#btn-save").onclick=()=>{
+  const ok=store.set("tenancy-arch",JSON.stringify(A));
+  $("#btn-save").textContent=ok?"Saved":"Unavailable";
+  setTimeout(()=>$("#btn-save").textContent="Save",1400);
+};
+function restore(){
+  const th=store.get("tenancy-theme");
+  if(th){document.documentElement.setAttribute("data-theme",th);$("#btn-theme").textContent=th==="dark"?"Light":"Dark";}
+  const saved=store.get("tenancy-arch");
+  if(saved){try{Object.assign(A,JSON.parse(saved));}catch(e){}}
+  bindings.forEach(([id,prop])=>{const n=document.getElementById(id);if(n)n[prop]=A[id];});
+  S.effInstances=A.instances;
+}
+
+/* ---------- main loop ---------- */
+let last=performance.now(), acc=0;
+function frame(now){
+  const real=Math.min((now-last)/1000,0.1); last=now;
+  if(S.running){
+    acc+=real*S.speed;
+    if(!S.live) step(0.1);
+    while(acc>=0.1){ step(0.1); S.t+=0.1; if(S.scenario){S.scenT+=0.1;} acc-=0.1; }
+    const L=S.live;
+    if(S.scenario && S.scenPeak){
+      const pk=S.scenPeak;
+      pk.p99=Math.max(pk.p99,L.p99); pk.err=Math.max(pk.err,L.errPct);
+      pk.q=Math.max(pk.q,S.back.db+S.back.app); pk.dbu=Math.max(pk.dbu,L.db.util);
+      if(S.scenT>=S.scenario.dur) endScenario();
+    }
+    advancePackets(real);
+    $("#ro-clock").textContent=clock(S.t);
+    $("#ro-rps").textContent=fmt(L.offered);
+    $("#ro-p99").textContent=Math.round(L.p99)+"ms";
+    $("#ro-p99").style.color=L.p99>1000?"var(--fail)":L.p99>400?"var(--warn)":"inherit";
+    $("#ro-err").textContent=L.errPct.toFixed(1)+"%";
+    $("#ro-err").style.color=L.errPct>5?"var(--fail)":L.errPct>1?"var(--warn)":"inherit";
+    paintSchematic();
+  }
+  drawPackets();
+  if(now-(frame.lastHeavy||0)>250){
+    frame.lastHeavy=now;
+    if(curTab==="live"){drawCharts();renderInspector();renderDiagnosis();}
+    if(curTab==="tenants")renderTenantTable();
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- boot ---------- */
+restore(); syncLabels(); updateCost(); buildSchematic();
+renderScenarios(); renderTenantCtls(); renderInspector(); drawCharts();
+select("db");
+window.addEventListener("resize",()=>{drawCharts();drawLT();});
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
