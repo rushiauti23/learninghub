@@ -88,7 +88,7 @@ const TOPICS = [
   {
     id: "jvm-internals-lab",
     title: "JVM Internals Lab",
-    summary: "31 questions on Java 8 to 21, threads, the JVM and Spring Boot, explained in plain language. Each answer has a one-line version, an explanation of why it happens, and code you can run.",
+    summary: "New to JVM memory? Open Start here first. Each tab steps through a program one line at a time while the panels on the right show what changes in memory. Arrows are references.",
     tags: ["jvm", "java_memory"],
     file: "topics/JVM_Internals_Lab.html"
   }
