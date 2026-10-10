@@ -77,6 +77,20 @@ const TOPICS = [
     summary: "31 questions on Java 8 to 21, threads, the JVM and Spring Boot, explained in plain language. Each answer has a one-line version, an explanation of why it happens, and code you can run.",
     tags: ["backend-qa", "java8"],
     file: "topics/java-backend-qa.html"
+  },
+  {
+    id: "aws-dev-associate",
+    title: "AWS Developer Associate Exam Guide",
+    summary: "Learn the DVA-C02 blueprint by watching it work.",
+    tags: ["aws", "aws-da02-exam"],
+    file: "topics/DVA-C02_Study_Atlas.html"
+  },
+  {
+    id: "jvm-internals-lab",
+    title: "JVM Internals Lab",
+    summary: "31 questions on Java 8 to 21, threads, the JVM and Spring Boot, explained in plain language. Each answer has a one-line version, an explanation of why it happens, and code you can run.",
+    tags: ["jvm", "java_memory"],
+    file: "topics/JVM_Internals_Lab.html"
   }
 ];
 
