@@ -71,13 +71,13 @@ const TOPICS = [
     tags: ["backend", "architecture", "tenancy"],
     file: "topics/tenancy.html"
   },
-   {
+  {
     id: "java-backend-qa",
     title: "Java Backend QA",
-    summary: "Build a multi-tenant backend, put load through it, watch where it breaks.",
-    tags: ["backend", "architecture", "tenancy"],
+    summary: "31 questions on Java 8 to 21, threads, the JVM and Spring Boot, explained in plain language. Each answer has a one-line version, an explanation of why it happens, and code you can run.",
+    tags: ["backend-qa", "java8"],
     file: "topics/java-backend-qa.html"
-   }   
+  }
 ];
 
 /* ------------------------------------------------------------
