@@ -1,0 +1,1498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Java Backend Q&amp;A</title>
+<meta name="description" content="31 first-principles questions and answers on Java 8 to 21, concurrency, the JVM and Spring Boot, with code.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* Layout: sticky question index on wide screens; on phones a sticky bar of section chips above one reading column. */
+:root{
+  --paper:#E9EEEC; --sheet:#F7F9F8; --ink:#17201E; --muted:#56635F; --rule:#CCD5D2;
+  --accent:#0C6A61; --accent-soft:#D3E8E3; --warn:#8C5200; --warn-soft:#F4E6CF;
+  --code-bg:#16201E; --code-fg:#DCE6E2; --code-dim:#7F948E;
+  --c-kw:#7FD3C6; --c-str:#E8C27A; --c-com:#8FA49E; --c-ann:#C9A6F2; --c-num:#F29B85; --c-type:#A9CCF5;
+  --f-ui:"IBM Plex Sans", "Segoe UI", Roboto, system-ui, sans-serif;
+  --f-read:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-code:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --gutter:clamp(16px, 4vw, 40px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0F1513; --sheet:#151D1B; --ink:#E3EBE8; --muted:#97A9A4; --rule:#2A3633;
+  --accent:#5CC4B6; --accent-soft:#183A35; --warn:#E3A84E; --warn-soft:#33270F;
+  --code-bg:#0A0F0E; --code-fg:#DCE6E2; --code-dim:#7A8F89; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --paper:#0F1513; --sheet:#151D1B; --ink:#E3EBE8; --muted:#97A9A4; --rule:#2A3633;
+  --accent:#5CC4B6; --accent-soft:#183A35; --warn:#E3A84E; --warn-soft:#33270F;
+  --code-bg:#0A0F0E; --code-fg:#DCE6E2; --code-dim:#7A8F89; color-scheme:dark; }
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-padding-top:72px}
+body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--f-ui); font-size:16px; line-height:1.5;
+  padding-left:env(safe-area-inset-left,0px); padding-right:env(safe-area-inset-right,0px)}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+[hidden]{display:none!important}
+
+/* ---------- top ---------- */
+.masthead{padding:calc(28px + env(safe-area-inset-top,0px)) var(--gutter) 20px; max-width:1240px; margin:0 auto}
+.masthead h1{font-size:clamp(1.8rem, 1.2rem + 2.6vw, 2.8rem); line-height:1.08; letter-spacing:-.025em; margin:0 0 10px; text-wrap:balance}
+.masthead p{font-family:var(--f-read); font-size:clamp(1.02rem, .95rem + .4vw, 1.2rem); color:var(--muted); max-width:44rem; margin:0}
+
+.bar{position:sticky; top:0; z-index:20; background:var(--paper); border-bottom:1px solid var(--rule);
+  padding:calc(10px + env(safe-area-inset-top,0px)) var(--gutter) 10px}
+.bar-inner{max-width:1240px; margin:0 auto; display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center}
+.search{position:relative; flex:1 1 260px; min-width:0}
+.search input{width:100%; font:inherit; font-size:16px; padding:9px 12px 9px 36px; border:1px solid var(--rule); border-radius:8px; background:var(--sheet); color:var(--ink)}
+.search svg{position:absolute; left:12px; top:50%; transform:translateY(-50%); width:15px; height:15px; stroke:var(--muted); fill:none}
+.controls{display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px}
+.switch{display:inline-flex; align-items:center; gap:8px; font-size:.92rem; cursor:pointer; user-select:none}
+.switch input{appearance:none; -webkit-appearance:none; width:38px; height:22px; border-radius:11px; background:var(--rule); position:relative; cursor:pointer; margin:0; transition:background .15s}
+.switch input::after{content:""; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:var(--sheet); transition:transform .15s}
+.switch input:checked{background:var(--accent)}
+.switch input:checked::after{transform:translateX(16px)}
+.count{font-size:.85rem; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap}
+.chips{display:none; gap:6px; overflow-x:auto; scrollbar-width:none; width:100%; padding-bottom:2px; -webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none; font-size:.84rem; font-weight:500; padding:5px 11px; border-radius:999px; border:1px solid var(--rule); background:var(--sheet); color:var(--ink); text-decoration:none; white-space:nowrap}
+.chip.on{background:var(--accent); border-color:var(--accent); color:var(--sheet)}
+
+/* ---------- layout ---------- */
+.layout{max-width:1240px; margin:0 auto; padding:24px var(--gutter) 80px; display:grid; grid-template-columns:280px minmax(0,1fr); gap:40px}
+.toc{position:sticky; top:84px; align-self:start; max-height:calc(100vh - 100px); overflow-y:auto; font-size:.86rem; padding-right:6px}
+.toc ol{list-style:none; margin:0; padding:0}
+.toc > ol > li{margin-bottom:14px}
+.toc-sec{display:flex; justify-content:space-between; gap:8px; font-weight:600; color:var(--ink); text-decoration:none; padding:2px 0 6px; border-bottom:1px solid var(--rule); margin-bottom:4px}
+.toc-sec span{font-weight:400; color:var(--muted); font-variant-numeric:tabular-nums}
+.toc li li a{display:flex; gap:8px; padding:4px 6px; border-radius:5px; color:var(--ink); text-decoration:none; line-height:1.35}
+.toc li li a:hover{background:var(--sheet)}
+.toc li li a.on{background:var(--accent-soft)}
+.toc .n{flex:none; width:2.4em; color:var(--muted); font-variant-numeric:tabular-nums; font-weight:500}
+.toc .tx{min-width:0; overflow-wrap:anywhere}
+.toc code{font-family:var(--f-code); font-size:.86em}
+.toc li.dim{opacity:.35}
+main{min-width:0}
+
+/* ---------- sections & cards ---------- */
+.sec{margin-bottom:44px}
+.sec > h2{font-size:clamp(1.35rem, 1.1rem + 1vw, 1.75rem); letter-spacing:-.015em; margin:0 0 16px; padding-bottom:8px; border-bottom:2px solid var(--ink)}
+.qa{background:var(--sheet); border:1px solid var(--rule); border-radius:10px; padding:clamp(16px, 3vw, 28px); margin-bottom:18px; min-width:0}
+.qa-head{display:flex; gap:14px; align-items:flex-start}
+.qnum{flex:none; min-width:46px; text-align:center; font-weight:700; font-size:.9rem; font-variant-numeric:tabular-nums; color:var(--accent); border:1.5px solid var(--accent); border-radius:6px; padding:3px 6px; margin-top:3px}
+.qa-title{min-width:0}
+.topic{display:block; font-size:.8rem; color:var(--muted); margin-bottom:3px}
+.qa h3{margin:0; font-size:clamp(1.08rem, 1rem + .45vw, 1.28rem); line-height:1.35; text-wrap:balance; font-weight:600}
+.qa h3 code{font-family:var(--f-code); font-size:.84em; background:var(--accent-soft); padding:1px 5px; border-radius:4px; overflow-wrap:anywhere}
+
+.answer{font-family:var(--f-read); font-size:clamp(1rem, .96rem + .2vw, 1.08rem); line-height:1.68; margin-top:16px}
+.answer > *{max-width:44rem}
+.answer > pre, .answer > figure{max-width:none}
+.answer p{margin:0 0 .9em}
+.answer strong{font-weight:600}
+.answer p.short{font-family:var(--f-ui); font-size:1rem; line-height:1.55; background:var(--accent-soft); border-left:3px solid var(--accent); padding:12px 16px; border-radius:0 6px 6px 0; margin-bottom:1.1em}
+.answer p.why strong{font-family:var(--f-ui)}
+.answer ol, .answer ul{padding-left:1.4em; margin:0 0 1em}
+.answer li{margin:.3em 0}
+.answer :not(pre) > code{font-family:var(--f-code); font-size:.84em; background:var(--accent-soft); padding:1px 5px; border-radius:4px; overflow-wrap:anywhere}
+
+/* code */
+.code{position:relative; margin:1.1em 0 1.3em; background:var(--code-bg); border-radius:8px; overflow:hidden}
+.code-head{display:flex; justify-content:space-between; align-items:center; padding:6px 8px 6px 14px; border-bottom:1px solid rgba(127,148,142,.22); font-family:var(--f-ui); font-size:.75rem; color:var(--code-dim)}
+.copy{font:inherit; font-size:.75rem; color:var(--code-fg); background:transparent; border:1px solid rgba(127,148,142,.45); border-radius:4px; padding:4px 10px; cursor:pointer; min-height:28px}
+.copy:hover{border-color:var(--c-kw)}
+.code pre{margin:0; padding:14px 16px 16px; overflow-x:auto; -webkit-overflow-scrolling:touch; color:var(--code-fg); font-family:var(--f-code); font-size:clamp(.74rem, .7rem + .2vw, .84rem); line-height:1.6; tab-size:4}
+.code pre code{font:inherit}
+.k{color:var(--c-kw)} .s{color:var(--c-str)} .c{color:var(--c-com); font-style:italic} .a{color:var(--c-ann)} .nm{color:var(--c-num)} .t{color:var(--c-type)}
+
+/* sawtooth figure */
+.saw{display:flex; flex-wrap:wrap; gap:14px; margin:1.2em 0 1.4em; font-family:var(--f-ui)}
+.saw-panel{flex:1 1 220px; min-width:0; background:var(--paper); border:1px solid var(--rule); border-radius:8px; padding:12px}
+.saw svg{display:block; width:100%; height:auto}
+.saw .ax{stroke:var(--muted); stroke-width:1}
+.saw .heap{fill:none; stroke:var(--accent); stroke-width:2; stroke-linejoin:round}
+.saw .heap.leak{stroke:var(--warn)}
+.saw .floor{fill:none; stroke:var(--accent); stroke-width:1.2; stroke-dasharray:4 4; opacity:.8}
+.saw .floor.leak{stroke:var(--warn)}
+.saw .lbl{font-size:10px; fill:var(--muted); text-anchor:middle}
+.saw figcaption{font-size:.85rem; color:var(--muted); margin-top:6px}
+.saw figcaption b{color:var(--ink)}
+
+/* quiz mode */
+.reveal{display:none; margin-top:16px; font:inherit; font-weight:600; font-size:.92rem; padding:9px 16px; border-radius:6px; border:1.5px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; min-height:40px}
+body.quiz .reveal{display:inline-block}
+body.quiz .qa:not(.open) .answer{display:none}
+body.quiz .qa.open .reveal{background:var(--accent); color:var(--sheet)}
+
+.empty{padding:28px; text-align:center; color:var(--muted); background:var(--sheet); border:1px dashed var(--rule); border-radius:10px}
+.top{position:fixed; right:calc(16px + env(safe-area-inset-right,0px)); bottom:calc(16px + env(safe-area-inset-bottom,0px)); z-index:15; font:inherit; font-size:.85rem; font-weight:600; padding:9px 14px; border-radius:999px; border:1px solid var(--rule); background:var(--sheet); color:var(--ink); text-decoration:none; box-shadow:0 2px 10px rgba(0,0,0,.12)}
+footer{max-width:1240px; margin:0 auto; padding:0 var(--gutter) 40px; font-size:.82rem; color:var(--muted)}
+
+/* ---------- breakpoints ---------- */
+@media (max-width: 960px){
+  .layout{grid-template-columns:minmax(0,1fr); gap:0; padding-top:18px}
+  .toc{display:none}
+  .chips{display:flex}
+  html{scroll-padding-top:128px}
+}
+@media (max-width: 480px){
+  .qa-head{gap:10px}
+  .qnum{min-width:40px; font-size:.82rem}
+  .answer p.short{padding:10px 12px}
+  .code pre{padding:12px}
+  .controls{width:100%; justify-content:space-between}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important; scroll-behavior:auto!important} }
+@media print{
+  .bar, .toc, .top, .reveal{display:none!important}
+  body.quiz .qa .answer{display:block!important}
+  .layout{display:block}
+  .qa{break-inside:avoid-page; border-color:#bbb}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <h1>Java Backend Q&amp;A</h1>
+  <p>31 questions on Java 8 to 21, threads, the JVM and Spring Boot, explained in plain language. Each answer has a one-line version, an explanation of why it happens, and code you can run.</p>
+</header>
+
+<div class="bar">
+  <div class="bar-inner">
+    <label class="search"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" stroke-width="1.6"/><path d="M11 11 L15 15" stroke-width="1.6"/></svg>
+      <input id="q" type="search" placeholder="Search questions and answers" aria-label="Search questions and answers" autocomplete="off"></label>
+    <div class="controls">
+      <label class="switch"><input type="checkbox" id="quiz"> Quiz mode</label>
+      <span class="count" id="count">31 questions</span>
+    </div>
+    <nav class="chips" aria-label="Sections"><a class="chip" href="#java-8">Java 8</a><a class="chip" href="#java-9-to-17">Java 9 to 17</a><a class="chip" href="#java-21">Java 21</a><a class="chip" href="#threads-and-concurrency">Threads and concurrency</a><a class="chip" href="#the-jvm">The JVM</a><a class="chip" href="#spring-boot">Spring Boot</a></nav>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="toc" aria-label="All questions"><ol><li><a class="toc-sec" href="#java-8">Java 8 <span>Q1–Q21</span></a><ol><li><a href="#q1" data-q="1"><span class="n">Q1</span><span class="tx">Why must local variables used inside a lambda never change, while fields can be changed freely?</span></a></li><li><a href="#q2" data-q="2"><span class="n">Q2</span><span class="tx"><code>Comparator</code> declares two methods, <code>compare</code> and <code>equals</code>. Is it still a functional interface?</span></a></li><li><a href="#q3" data-q="3"><span class="n">Q3</span><span class="tx">Why does <code>Predicate.not</code> exist when <code>negate()</code> already does the same thing?</span></a></li><li><a href="#q4" data-q="4"><span class="n">Q4</span><span class="tx"><code>p = a.and(b).or(c)</code>. For an item where a is true, b is false and c is true, which tests run, and what is the result?</span></a></li><li><a href="#q5" data-q="5"><span class="n">Q5</span><span class="tx">Why does <code>and</code> call <code>Objects.requireNonNull(other)</code> immediately, instead of letting <code>other.test</code> crash later?</span></a></li><li><a href="#q6" data-q="6"><span class="n">Q6</span><span class="tx">What does <code>allMatch</code> return on an empty stream, and why is that the logical answer?</span></a></li><li><a href="#q7" data-q="7"><span class="n">Q7</span><span class="tx">Why does <code>isEqual</code> check for null once, when the test is built, instead of using <code>t -&gt; Objects.equals(targetRef, t)</code>?</span></a></li><li><a href="#q8" data-q="8"><span class="n">Q8</span><span class="tx">Why does <code>Stream.iterate(1, x -&gt; x + 1).sorted().findFirst()</code> never finish?</span></a></li><li><a href="#q9" data-q="9"><span class="n">Q9</span><span class="tx">Why should you not use <code>reduce</code> to build a list?</span></a></li><li><a href="#q10" data-q="10"><span class="n">Q10</span><span class="tx">With <code>filter(x -&gt; x &gt; 4).map(x -&gt; x * 10).limit(2).toList()</code> on <code>[3, 8, 1, 12, 5, 9, 4, 15]</code>, how many numbers are read from the source, and how many times does the map lambda run?</span></a></li><li><a href="#q11" data-q="11"><span class="n">Q11</span><span class="tx">Add <code>sorted()</code> before <code>limit(2)</code>. How many numbers are read now, and why?</span></a></li><li><a href="#q12" data-q="12"><span class="n">Q12</span><span class="tx">In a for-each loop over an <code>ArrayList</code> you call <code>list.remove(x)</code>. Why does that throw <code>ConcurrentModificationException</code>, while <code>it.remove()</code> does not?</span></a></li><li><a href="#q13" data-q="13"><span class="n">Q13</span><span class="tx">Why can a stream run in parallel, but an <code>Iterator</code> cannot?</span></a></li><li><a href="#q14" data-q="14"><span class="n">Q14</span><span class="tx">Your <code>map</code> lambda needs to call a method that throws <code>IOException</code>. Why is that awkward in a stream, but easy in a loop?</span></a></li><li><a href="#q15" data-q="15"><span class="n">Q15</span><span class="tx">A method returns <code>Optional&lt;User&gt;</code>, but sometimes returns <code>null</code>. What happens to the caller?</span></a></li><li><a href="#q16" data-q="16"><span class="n">Q16</span><span class="tx">Why can't you add <code>Duration.ofDays(1)</code> to a <code>LocalDate</code>?</span></a></li><li><a href="#q17" data-q="17"><span class="n">Q17</span><span class="tx">Inside a web request you call <code>thenApply(heavyWork)</code> on a future that has already finished. Which thread runs <code>heavyWork</code>?</span></a></li><li><a href="#q18" data-q="18"><span class="n">Q18</span><span class="tx">Why can one <code>ArrayList.class</code> serve both <code>List&lt;String&gt;</code> and <code>List&lt;Loan&gt;</code>, but not <code>List&lt;int&gt;</code>?</span></a></li><li><a href="#q19" data-q="19"><span class="n">Q19</span><span class="tx">Jackson can read JSON into a <code>List&lt;Loan&gt;</code> with <code>new TypeReference&lt;List&lt;Loan&gt;&gt;(){}</code>. If generics are erased, where does it find <code>Loan</code>?</span></a></li><li><a href="#q20" data-q="20"><span class="n">Q20</span><span class="tx">Why does <code>new T()</code> fail, but passing a <code>Supplier&lt;T&gt;</code> works?</span></a></li><li><a href="#q21" data-q="21"><span class="n">Q21</span><span class="tx">In <code>IntList.get</code>, why check against <code>size</code> instead of relying on the array's own bounds check?</span></a></li></ol></li><li><a class="toc-sec" href="#java-9-to-17">Java 9 to 17 <span>Q22–Q23</span></a><ol><li><a href="#q22" data-q="22"><span class="n">Q22</span><span class="tx">A record has a component <code>List&lt;String&gt; tags</code>. How do you make the record truly unchangeable?</span></a></li><li><a href="#q23" data-q="23"><span class="n">Q23</span><span class="tx">Why is a <code>default</code> branch in a switch over a sealed type usually a bad idea?</span></a></li></ol></li><li><a class="toc-sec" href="#java-21">Java 21 <span>Q24–Q26</span></a><ol><li><a href="#q24" data-q="24"><span class="n">Q24</span><span class="tx">Your service has 8 CPU cores and only resizes images. Will virtual threads make it faster?</span></a></li><li><a href="#q25" data-q="25"><span class="n">Q25</span><span class="tx">Why is <code>Executors.newFixedThreadPool(200, Thread.ofVirtual().factory())</code> a bad sign?</span></a></li><li><a href="#q26" data-q="26"><span class="n">Q26</span><span class="tx">A switch over a sealed interface was compiled when it covered every case. Later a new subtype is added, but only that subtype is recompiled. What happens when the switch receives the new type?</span></a></li></ol></li><li><a class="toc-sec" href="#threads-and-concurrency">Threads and concurrency <span>Q27–Q28</span></a><ol><li><a href="#q27" data-q="27"><span class="n">Q27</span><span class="tx">A loop <code>while (running) { ... }</code> never stops, even after another thread sets <code>running = false</code>. Why does adding <code>System.out.println</code> inside the loop often seem to fix it?</span></a></li><li><a href="#q28" data-q="28"><span class="n">Q28</span><span class="tx">Is a <code>synchronized</code> setter with a non-synchronized getter thread-safe?</span></a></li></ol></li><li><a class="toc-sec" href="#the-jvm">The JVM <span>Q29–Q30</span></a><ol><li><a href="#q29" data-q="29"><span class="n">Q29</span><span class="tx">Why does the first request to a freshly started Spring Boot app take much longer than the hundredth?</span></a></li><li><a href="#q30" data-q="30"><span class="n">Q30</span><span class="tx">Heap usage climbs steadily, then a full garbage collection brings it back down to the same level each time. Is that a memory leak?</span></a></li></ol></li><li><a class="toc-sec" href="#spring-boot">Spring Boot <span>Q31–Q31</span></a><ol><li><a href="#q31" data-q="31"><span class="n">Q31</span><span class="tx">Two <code>@Transactional</code> methods are in the same class. One calls the other, which is marked <code>REQUIRES_NEW</code>. Does the inner method get its own transaction?</span></a></li></ol></li></ol></nav>
+  <main id="main">
+    <section class="sec" id="java-8"><h2>Java 8</h2>
+      <article class="qa" id="q1" data-text="why must local variables used inside a lambda never change, while fields can be changed freely?   short answer:  a lambda gets a  copy  of a local variable&#x27;s value, but a  link  to the object that holds a field. a copy can go out of date; a link cannot. 
+  why it happens:  a local variable lives only while its method is running. it is stored in that method&#x27;s private memory (the stack), which is thrown away when the method finishes. but a lambda can live longer than that: it can be saved in a field, returned, or run later on another thread. so when the lambda is created, java copies the variable&#x27;s current value into it. 
+ if the variable could still change afterwards, the lambda would keep the old value while the method has a new one. one variable with two different values is a recipe for bugs, so the compiler simply forbids changing it. java calls such a variable &quot;effectively final&quot;. 
+ fields are different. they live inside an object in shared memory (the heap). the lambda keeps a link to that object ( this ) and reads the field through it every time. there is only one copy of the field, so nothing can go out of date. making that field safe for several threads is still your job. 
+  class counter {
+    private int total = 0;                 // a field: lives inside the object
+
+    void run(list&amp;lt;integer&amp;gt; xs) {
+        int local = 0;                     // a local variable: lives only during run()
+        xs.foreach(x -&amp;gt; total += x);       // ok: changes this.total through the link
+        xs.foreach(x -&amp;gt; local += x);       // compile error: the lambda only has a copy of local
+
+        // a workaround if you really need it: a one-item array (the array itself never changes)
+        int[] sum = {0};
+        xs.foreach(x -&amp;gt; sum[0] += x);
+        // better: let the stream add them up
+        int s = xs.stream().maptoint(integer::intvalue).sum();
+    }
+}
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q1</span>
+          <div class="qa-title">
+            <span class="topic">Lambdas</span>
+            <h3>Why must local variables used inside a lambda never change, while fields can be changed freely?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a1">Show answer</button>
+        <div class="answer" id="a1"><p class="short"><strong>Short answer:</strong> a lambda gets a <em>copy</em> of a local variable's value, but a <em>link</em> to the object that holds a field. A copy can go out of date; a link cannot.</p>
+<p class="why"><strong>Why it happens:</strong> a local variable lives only while its method is running. It is stored in that method's private memory (the stack), which is thrown away when the method finishes. But a lambda can live longer than that: it can be saved in a field, returned, or run later on another thread. So when the lambda is created, Java copies the variable's current value into it.</p>
+<p>If the variable could still change afterwards, the lambda would keep the old value while the method has a new one. One variable with two different values is a recipe for bugs, so the compiler simply forbids changing it. Java calls such a variable "effectively final".</p>
+<p>Fields are different. They live inside an object in shared memory (the heap). The lambda keeps a link to that object (<code>this</code>) and reads the field through it every time. There is only one copy of the field, so nothing can go out of date. Making that field safe for several threads is still your job.</p>
+<pre data-lang="java"><code class="language-java">class Counter {
+    private int total = 0;                 // a field: lives inside the object
+
+    void run(List&lt;Integer&gt; xs) {
+        int local = 0;                     // a local variable: lives only during run()
+        xs.forEach(x -&gt; total += x);       // OK: changes this.total through the link
+        xs.forEach(x -&gt; local += x);       // compile error: the lambda only has a copy of local
+
+        // A workaround if you really need it: a one-item array (the array itself never changes)
+        int[] sum = {0};
+        xs.forEach(x -&gt; sum[0] += x);
+        // Better: let the stream add them up
+        int s = xs.stream().mapToInt(Integer::intValue).sum();
+    }
+}
+</code></pre></div>
+      </article>
+      <article class="qa" id="q2" data-text="`comparator` declares two methods, `compare` and `equals`. is it still a functional interface?   short answer:  yes. methods that every object already has from  object  do not count. 
+  why it happens:  a functional interface is an interface with exactly one method that you still have to fill in, so that a lambda can be that method. every class automatically inherits  equals(object)  from  object , so a lambda never needs to provide it.  comparator  only lists  equals  again to attach documentation to it. methods that already have a body, default and static methods, do not count either. 
+  @functionalinterface
+interface rule {
+    boolean check(loan l);              // the one method a lambda fills in
+    boolean equals(object o);           // does not count: every object already has it
+    string tostring();                  // does not count
+    default rule and(rule o) { return l -&amp;gt; check(l) &amp;amp;&amp;amp; o.check(l); }   // has a body: does not count
+}
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q2</span>
+          <div class="qa-title">
+            <span class="topic">Lambdas</span>
+            <h3><code>Comparator</code> declares two methods, <code>compare</code> and <code>equals</code>. Is it still a functional interface?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a2">Show answer</button>
+        <div class="answer" id="a2"><p class="short"><strong>Short answer:</strong> yes. Methods that every object already has from <code>Object</code> do not count.</p>
+<p class="why"><strong>Why it happens:</strong> a functional interface is an interface with exactly one method that you still have to fill in, so that a lambda can be that method. Every class automatically inherits <code>equals(Object)</code> from <code>Object</code>, so a lambda never needs to provide it. <code>Comparator</code> only lists <code>equals</code> again to attach documentation to it. Methods that already have a body, default and static methods, do not count either.</p>
+<pre data-lang="java"><code class="language-java">@FunctionalInterface
+interface Rule {
+    boolean check(Loan l);              // the one method a lambda fills in
+    boolean equals(Object o);           // does not count: every object already has it
+    String toString();                  // does not count
+    default Rule and(Rule o) { return l -&gt; check(l) &amp;&amp; o.check(l); }   // has a body: does not count
+}
+</code></pre></div>
+      </article>
+      <article class="qa" id="q3" data-text="why does `predicate.not` exist when `negate()` already does the same thing?   short answer:  a method reference such as  string::isblank  has no type until java sees where it is used, so you cannot call  negate()  on it. passing it into a static method gives it a type. 
+  why it happens:   string::isblank  could become a  predicate&amp;lt;string&amp;gt; , a  function&amp;lt;string, boolean&amp;gt; , or any other interface with the same shape. java decides which one only by looking at where you put it. in  string::isblank.negate()  there is no such place, so it does not compile. in  not(string::isblank) , the method reference is a parameter of type  predicate , and that tells java everything it needs. 
+  lines.stream().filter(string::isblank.negate());          // compile error
+lines.stream().filter(s -&amp;gt; !s.isblank());                  // works, but longer
+lines.stream().filter(predicate.not(string::isblank));     // java 11+
+
+predicate&amp;lt;string&amp;gt; blank = string::isblank;                 // storing it in a variable also works
+lines.stream().filter(blank.negate());
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q3</span>
+          <div class="qa-title">
+            <span class="topic">Predicate</span>
+            <h3>Why does <code>Predicate.not</code> exist when <code>negate()</code> already does the same thing?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a3">Show answer</button>
+        <div class="answer" id="a3"><p class="short"><strong>Short answer:</strong> a method reference such as <code>String::isBlank</code> has no type until Java sees where it is used, so you cannot call <code>negate()</code> on it. Passing it into a static method gives it a type.</p>
+<p class="why"><strong>Why it happens:</strong> <code>String::isBlank</code> could become a <code>Predicate&lt;String&gt;</code>, a <code>Function&lt;String, Boolean&gt;</code>, or any other interface with the same shape. Java decides which one only by looking at where you put it. In <code>String::isBlank.negate()</code> there is no such place, so it does not compile. In <code>not(String::isBlank)</code>, the method reference is a parameter of type <code>Predicate</code>, and that tells Java everything it needs.</p>
+<pre data-lang="java"><code class="language-java">lines.stream().filter(String::isBlank.negate());          // compile error
+lines.stream().filter(s -&gt; !s.isBlank());                  // works, but longer
+lines.stream().filter(Predicate.not(String::isBlank));     // Java 11+
+
+Predicate&lt;String&gt; blank = String::isBlank;                 // storing it in a variable also works
+lines.stream().filter(blank.negate());
+</code></pre></div>
+      </article>
+      <article class="qa" id="q4" data-text="`p = a.and(b).or(c)`. for an item where a is true, b is false and c is true, which tests run, and what is the result?   short answer:  a, then b, then c. three tests run, and the result is true. 
+  why it happens:  chains are read from left to right, so  p  means  (a &amp;amp;&amp;amp; b) || c .  and  builds  t -&amp;gt; a.test(t) &amp;amp;&amp;amp; b.test(t) , and  or  wraps that. java&#x27;s own  &amp;amp;&amp;amp;  and  ||  decide what runs: 
+ 
+  a  is true, so  &amp;amp;&amp;amp;  must also check  b . 
+  b  is false, so the whole  and  part is false. 
+ the left side of  ||  is false, so  c  must be checked. it is true. 
+ 
+ if  a  had been false,  b  would never have run. if the  and  part had been true,  c  would never have run. 
+  predicate&amp;lt;string&amp;gt; a = s -&amp;gt; { system.out.println(&amp;quot;a&amp;quot;); return true;  };
+predicate&amp;lt;string&amp;gt; b = s -&amp;gt; { system.out.println(&amp;quot;b&amp;quot;); return false; };
+predicate&amp;lt;string&amp;gt; c = s -&amp;gt; { system.out.println(&amp;quot;c&amp;quot;); return true;  };
+
+system.out.println(a.and(b).or(c).test(&amp;quot;x&amp;quot;));   // prints a, b, c, true
+system.out.println(a.and(b.or(c)).test(&amp;quot;x&amp;quot;));   // prints a, b, c, true   -&amp;gt; this one means a &amp;amp;&amp;amp; (b || c)
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q4</span>
+          <div class="qa-title">
+            <span class="topic">Predicate</span>
+            <h3><code>p = a.and(b).or(c)</code>. For an item where a is true, b is false and c is true, which tests run, and what is the result?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a4">Show answer</button>
+        <div class="answer" id="a4"><p class="short"><strong>Short answer:</strong> a, then b, then c. Three tests run, and the result is true.</p>
+<p class="why"><strong>Why it happens:</strong> chains are read from left to right, so <code>p</code> means <code>(a &amp;&amp; b) || c</code>. <code>and</code> builds <code>t -&gt; a.test(t) &amp;&amp; b.test(t)</code>, and <code>or</code> wraps that. Java's own <code>&amp;&amp;</code> and <code>||</code> decide what runs:</p>
+<ol>
+<li><code>a</code> is true, so <code>&amp;&amp;</code> must also check <code>b</code>.</li>
+<li><code>b</code> is false, so the whole <code>and</code> part is false.</li>
+<li>The left side of <code>||</code> is false, so <code>c</code> must be checked. It is true.</li>
+</ol>
+<p>If <code>a</code> had been false, <code>b</code> would never have run. If the <code>and</code> part had been true, <code>c</code> would never have run.</p>
+<pre data-lang="java"><code class="language-java">Predicate&lt;String&gt; a = s -&gt; { System.out.println(&quot;a&quot;); return true;  };
+Predicate&lt;String&gt; b = s -&gt; { System.out.println(&quot;b&quot;); return false; };
+Predicate&lt;String&gt; c = s -&gt; { System.out.println(&quot;c&quot;); return true;  };
+
+System.out.println(a.and(b).or(c).test(&quot;x&quot;));   // prints a, b, c, true
+System.out.println(a.and(b.or(c)).test(&quot;x&quot;));   // prints a, b, c, true   -&gt; this one means a &amp;&amp; (b || c)
+</code></pre></div>
+      </article>
+      <article class="qa" id="q5" data-text="why does `and` call `objects.requirenonnull(other)` immediately, instead of letting `other.test` crash later?   short answer:  so the error appears on the line that made the mistake, not somewhere else much later. 
+  why it happens:  building a combined test and using it happen at different times, often in different places. without the check,  a.and(null)  would quietly return a normal-looking test. it would only crash when used: maybe inside a stream, in another class, or on another thread. worse, because  and  stops early, the  null  is only reached for items where  a  is true. if those are rare, the bug can stay hidden for weeks. 
+  predicate&amp;lt;loan&amp;gt; eligible = active.and(rules.get(&amp;quot;highrisk&amp;quot;));   // the map had no &amp;quot;highrisk&amp;quot; key: null
+// with requirenonnull: nullpointerexception here, on the line with the wrong rule name.
+// without it: a crash later, inside loans.stream().filter(eligible), and only for active loans.
+  
+  negate()  has no such check because it has no parameter to check. ">
+        <header class="qa-head">
+          <span class="qnum">Q5</span>
+          <div class="qa-title">
+            <span class="topic">Predicate</span>
+            <h3>Why does <code>and</code> call <code>Objects.requireNonNull(other)</code> immediately, instead of letting <code>other.test</code> crash later?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a5">Show answer</button>
+        <div class="answer" id="a5"><p class="short"><strong>Short answer:</strong> so the error appears on the line that made the mistake, not somewhere else much later.</p>
+<p class="why"><strong>Why it happens:</strong> building a combined test and using it happen at different times, often in different places. Without the check, <code>a.and(null)</code> would quietly return a normal-looking test. It would only crash when used: maybe inside a stream, in another class, or on another thread. Worse, because <code>and</code> stops early, the <code>null</code> is only reached for items where <code>a</code> is true. If those are rare, the bug can stay hidden for weeks.</p>
+<pre data-lang="java"><code class="language-java">Predicate&lt;Loan&gt; eligible = active.and(rules.get(&quot;highRisk&quot;));   // the map had no &quot;highRisk&quot; key: null
+// With requireNonNull: NullPointerException HERE, on the line with the wrong rule name.
+// Without it: a crash later, inside loans.stream().filter(eligible), and only for active loans.
+</code></pre>
+<p><code>negate()</code> has no such check because it has no parameter to check.</p></div>
+      </article>
+      <article class="qa" id="q6" data-text="what does `allmatch` return on an empty stream, and why is that the logical answer?   short answer:   true . &quot;every item passes&quot; can only be false if you can point at an item that fails, and an empty stream has none. 
+  why it happens:  think of  allmatch  as searching for a failing item. if the search finds nothing, the answer is &quot;no failures&quot;, which means true. the same reasoning gives  anymatch  = false (nothing matching was found) and  nonematch  = true (nothing matching was found). 
+ this also explains the starting value when you combine many tests with  and : you start from &quot;always true&quot;, just as adding numbers starts from 0 and multiplying starts from 1. 
+  list.&amp;lt;loan&amp;gt;of().stream().allmatch(loan::isactive);    // true
+list.&amp;lt;loan&amp;gt;of().stream().anymatch(loan::isactive);    // false
+list.&amp;lt;loan&amp;gt;of().stream().nonematch(loan::isactive);   // true
+
+predicate&amp;lt;loan&amp;gt; all = list.&amp;lt;predicate&amp;lt;loan&amp;gt;&amp;gt;of().stream()
+        .reduce(x -&amp;gt; true, predicate::and);           // no rules at all: everything passes
+  
+ a practical warning:  if (loans.stream().allmatch(loan::isapproved)) payout();  pays out when the list is empty. add  !loans.isempty()  when that matters. ">
+        <header class="qa-head">
+          <span class="qnum">Q6</span>
+          <div class="qa-title">
+            <span class="topic">Predicate</span>
+            <h3>What does <code>allMatch</code> return on an empty stream, and why is that the logical answer?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a6">Show answer</button>
+        <div class="answer" id="a6"><p class="short"><strong>Short answer:</strong> <code>true</code>. "Every item passes" can only be false if you can point at an item that fails, and an empty stream has none.</p>
+<p class="why"><strong>Why it happens:</strong> think of <code>allMatch</code> as searching for a failing item. If the search finds nothing, the answer is "no failures", which means true. The same reasoning gives <code>anyMatch</code> = false (nothing matching was found) and <code>noneMatch</code> = true (nothing matching was found).</p>
+<p>This also explains the starting value when you combine many tests with <code>and</code>: you start from "always true", just as adding numbers starts from 0 and multiplying starts from 1.</p>
+<pre data-lang="java"><code class="language-java">List.&lt;Loan&gt;of().stream().allMatch(Loan::isActive);    // true
+List.&lt;Loan&gt;of().stream().anyMatch(Loan::isActive);    // false
+List.&lt;Loan&gt;of().stream().noneMatch(Loan::isActive);   // true
+
+Predicate&lt;Loan&gt; all = List.&lt;Predicate&lt;Loan&gt;&gt;of().stream()
+        .reduce(x -&gt; true, Predicate::and);           // no rules at all: everything passes
+</code></pre>
+<p>A practical warning: <code>if (loans.stream().allMatch(Loan::isApproved)) payOut();</code> pays out when the list is empty. Add <code>!loans.isEmpty()</code> when that matters.</p></div>
+      </article>
+      <article class="qa" id="q7" data-text="why does `isequal` check for null once, when the test is built, instead of using `t -&gt; objects.equals(targetref, t)`?   short answer:  the value being compared against never changes, so checking it for null on every call would be wasted work. it also guarantees  equals  is never called on null. 
+  why it happens:  a predicate is built once and then used many times. anything that depends only on values known when it is built should be decided at that moment. it is the same idea as moving a calculation that never changes out of a loop. 
+  // jdk version: decides once which lambda to return
+return (null == targetref) ? objects::isnull : object -&amp;gt; targetref.equals(object);
+
+// simple version: checks targetref == null again on every call
+return t -&amp;gt; objects.equals(targetref, t);
+  
+ both give the same answers; the jdk version just does less work on each call. note that it uses the target&#x27;s own  equals , so  isequal(new bigdecimal(&quot;3.5&quot;))  does not match  3.50 , because  bigdecimal.equals  also compares the number of decimals. ">
+        <header class="qa-head">
+          <span class="qnum">Q7</span>
+          <div class="qa-title">
+            <span class="topic">Predicate</span>
+            <h3>Why does <code>isEqual</code> check for null once, when the test is built, instead of using <code>t -&gt; Objects.equals(targetRef, t)</code>?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a7">Show answer</button>
+        <div class="answer" id="a7"><p class="short"><strong>Short answer:</strong> the value being compared against never changes, so checking it for null on every call would be wasted work. It also guarantees <code>equals</code> is never called on null.</p>
+<p class="why"><strong>Why it happens:</strong> a predicate is built once and then used many times. Anything that depends only on values known when it is built should be decided at that moment. It is the same idea as moving a calculation that never changes out of a loop.</p>
+<pre data-lang="java"><code class="language-java">// JDK version: decides ONCE which lambda to return
+return (null == targetRef) ? Objects::isNull : object -&gt; targetRef.equals(object);
+
+// Simple version: checks targetRef == null again on every call
+return t -&gt; Objects.equals(targetRef, t);
+</code></pre>
+<p>Both give the same answers; the JDK version just does less work on each call. Note that it uses the target's own <code>equals</code>, so <code>isEqual(new BigDecimal("3.5"))</code> does not match <code>3.50</code>, because <code>BigDecimal.equals</code> also compares the number of decimals.</p></div>
+      </article>
+      <article class="qa" id="q8" data-text="why does `stream.iterate(1, x -&gt; x + 1).sorted().findfirst()` never finish?   short answer:   sorted  has to see every item before it can hand out the first one, and this source never ends. 
+  why it happens:  most stream steps pass each item straight on ( filter ,  map ). that is why  findfirst  can usually stop early.  sorted  cannot: the smallest item might be the very last one, so it must collect everything first. with a source that never ends, it keeps collecting until the program runs out of memory.  findfirst  never gets a chance to stop anything, because no item ever reaches it. 
+  stream.iterate(1, x -&amp;gt; x + 1).limit(10).sorted().findfirst();       // fine: limit comes first
+stream.iterate(1, x -&amp;gt; x + 1).filter(x -&amp;gt; x % 7 == 0).findfirst();  // fine: nothing has to wait
+stream.iterate(1, x -&amp;gt; x + 1).sorted().findfirst();                 // never returns
+  
+  distinct  has a similar effect, and in parallel streams  limit  and  skip  become expensive for the same reason. ">
+        <header class="qa-head">
+          <span class="qnum">Q8</span>
+          <div class="qa-title">
+            <span class="topic">Streams</span>
+            <h3>Why does <code>Stream.iterate(1, x -&gt; x + 1).sorted().findFirst()</code> never finish?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a8">Show answer</button>
+        <div class="answer" id="a8"><p class="short"><strong>Short answer:</strong> <code>sorted</code> has to see every item before it can hand out the first one, and this source never ends.</p>
+<p class="why"><strong>Why it happens:</strong> most stream steps pass each item straight on (<code>filter</code>, <code>map</code>). That is why <code>findFirst</code> can usually stop early. <code>sorted</code> cannot: the smallest item might be the very last one, so it must collect everything first. With a source that never ends, it keeps collecting until the program runs out of memory. <code>findFirst</code> never gets a chance to stop anything, because no item ever reaches it.</p>
+<pre data-lang="java"><code class="language-java">Stream.iterate(1, x -&gt; x + 1).limit(10).sorted().findFirst();       // fine: limit comes first
+Stream.iterate(1, x -&gt; x + 1).filter(x -&gt; x % 7 == 0).findFirst();  // fine: nothing has to wait
+Stream.iterate(1, x -&gt; x + 1).sorted().findFirst();                 // never returns
+</code></pre>
+<p><code>distinct</code> has a similar effect, and in parallel streams <code>limit</code> and <code>skip</code> become expensive for the same reason.</p></div>
+      </article>
+      <article class="qa" id="q9" data-text="why should you not use `reduce` to build a list?   short answer:   reduce  is meant for combining values that never change, like adding numbers. collecting items into a list is the job of  collect . 
+  why it happens:   reduce(start, combine)  assumes  combine  makes a  new  value from two old ones, and that the start value can be reused safely. in a parallel stream, every worker begins from that same start value. if the start value is one  arraylist , all workers add to the same list at the same time: items get lost or duplicated, or the program crashes. even on one thread, the &quot;make a new list each time&quot; version copies the list at every step, which is very slow. 
+  collect  was designed for this job: each worker gets its own fresh list, and the lists are joined at the end. 
+  // wrong: all parallel workers share one list
+list&amp;lt;string&amp;gt; bad = names.parallelstream().reduce(new arraylist&amp;lt;&amp;gt;(),
+        (acc, n) -&amp;gt; { acc.add(n); return acc; },
+        (l, r) -&amp;gt; { l.addall(r); return l; });
+
+// right
+list&amp;lt;string&amp;gt; good = names.parallelstream().collect(collectors.tolist());
+list&amp;lt;string&amp;gt; same = names.parallelstream().collect(arraylist::new, arraylist::add, arraylist::addall);
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q9</span>
+          <div class="qa-title">
+            <span class="topic">Streams</span>
+            <h3>Why should you not use <code>reduce</code> to build a list?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a9">Show answer</button>
+        <div class="answer" id="a9"><p class="short"><strong>Short answer:</strong> <code>reduce</code> is meant for combining values that never change, like adding numbers. Collecting items into a list is the job of <code>collect</code>.</p>
+<p class="why"><strong>Why it happens:</strong> <code>reduce(start, combine)</code> assumes <code>combine</code> makes a <em>new</em> value from two old ones, and that the start value can be reused safely. In a parallel stream, every worker begins from that same start value. If the start value is one <code>ArrayList</code>, all workers add to the same list at the same time: items get lost or duplicated, or the program crashes. Even on one thread, the "make a new list each time" version copies the list at every step, which is very slow.</p>
+<p><code>collect</code> was designed for this job: each worker gets its own fresh list, and the lists are joined at the end.</p>
+<pre data-lang="java"><code class="language-java">// Wrong: all parallel workers share one list
+List&lt;String&gt; bad = names.parallelStream().reduce(new ArrayList&lt;&gt;(),
+        (acc, n) -&gt; { acc.add(n); return acc; },
+        (l, r) -&gt; { l.addAll(r); return l; });
+
+// Right
+List&lt;String&gt; good = names.parallelStream().collect(Collectors.toList());
+List&lt;String&gt; same = names.parallelStream().collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+</code></pre></div>
+      </article>
+      <article class="qa" id="q10" data-text="with `filter(x -&gt; x &gt; 4).map(x -&gt; x * 10).limit(2).tolist()` on `[3, 8, 1, 12, 5, 9, 4, 15]`, how many numbers are read from the source, and how many times does the map lambda run?   short answer:  4 numbers are read (3, 8, 1, 12), and map runs only twice (for 8 and 12). 
+  why it happens:  a stream sends one item at a time through all the steps before it reads the next one. follow the items: 
+ 
+ 3 fails the filter. 8 passes, becomes 80, and is the 1st item through  limit . 
+ 1 fails the filter. 12 passes, becomes 120, and is the 2nd item through  limit . 
+  limit(2)  now has everything it needs, so it reports &quot;i need no more&quot;. before reading 5, the source asks whether anyone still wants items, hears no, and stops. 
+ 
+ so 5, 9, 4 and 15 are never read at all. the field guide&#x27;s &quot;streams vs iterators&quot; simulation lets you step through exactly this. 
+  list&amp;lt;integer&amp;gt; r = stream.of(3, 8, 1, 12, 5, 9, 4, 15)
+        .peek(x -&amp;gt; system.out.println(&amp;quot;read &amp;quot; + x))
+        .filter(x -&amp;gt; x &amp;gt; 4)
+        .map(x -&amp;gt; x * 10)
+        .limit(2)
+        .tolist();
+// read 3, read 8, read 1, read 12   -&amp;gt;  r = [80, 120]
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q10</span>
+          <div class="qa-title">
+            <span class="topic">Streams vs iterators</span>
+            <h3>With <code>filter(x -&gt; x &gt; 4).map(x -&gt; x * 10).limit(2).toList()</code> on <code>[3, 8, 1, 12, 5, 9, 4, 15]</code>, how many numbers are read from the source, and how many times does the map lambda run?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a10">Show answer</button>
+        <div class="answer" id="a10"><p class="short"><strong>Short answer:</strong> 4 numbers are read (3, 8, 1, 12), and map runs only twice (for 8 and 12).</p>
+<p class="why"><strong>Why it happens:</strong> a stream sends one item at a time through all the steps before it reads the next one. Follow the items:</p>
+<ol>
+<li>3 fails the filter. 8 passes, becomes 80, and is the 1st item through <code>limit</code>.</li>
+<li>1 fails the filter. 12 passes, becomes 120, and is the 2nd item through <code>limit</code>.</li>
+<li><code>limit(2)</code> now has everything it needs, so it reports "I need no more". Before reading 5, the source asks whether anyone still wants items, hears no, and stops.</li>
+</ol>
+<p>So 5, 9, 4 and 15 are never read at all. The Field Guide's "Streams vs iterators" simulation lets you step through exactly this.</p>
+<pre data-lang="java"><code class="language-java">List&lt;Integer&gt; r = Stream.of(3, 8, 1, 12, 5, 9, 4, 15)
+        .peek(x -&gt; System.out.println(&quot;read &quot; + x))
+        .filter(x -&gt; x &gt; 4)
+        .map(x -&gt; x * 10)
+        .limit(2)
+        .toList();
+// read 3, read 8, read 1, read 12   -&gt;  r = [80, 120]
+</code></pre></div>
+      </article>
+      <article class="qa" id="q11" data-text="add `sorted()` before `limit(2)`. how many numbers are read now, and why?   short answer:  all 8. the result is  [50, 80] . 
+  why it happens:   sorted  cannot send the smallest value on until it has seen every value, because the smallest might come last. so it collects all the items, and only when the source is empty does it sort them and send them on. while it is collecting, nothing reaches  limit , so  limit  never gets the chance to say &quot;stop&quot;. the early stop is blocked by the sort. 
+  stream.of(3, 8, 1, 12, 5, 9, 4, 15)
+        .peek(x -&amp;gt; system.out.println(&amp;quot;read &amp;quot; + x))
+        .filter(x -&amp;gt; x &amp;gt; 4)
+        .map(x -&amp;gt; x * 10)
+        .sorted()                 // collects 80, 120, 50, 90, 150, then sorts
+        .limit(2)
+        .tolist();
+// all 8 are read  -&amp;gt;  [50, 80]
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q11</span>
+          <div class="qa-title">
+            <span class="topic">Streams vs iterators</span>
+            <h3>Add <code>sorted()</code> before <code>limit(2)</code>. How many numbers are read now, and why?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a11">Show answer</button>
+        <div class="answer" id="a11"><p class="short"><strong>Short answer:</strong> all 8. The result is <code>[50, 80]</code>.</p>
+<p class="why"><strong>Why it happens:</strong> <code>sorted</code> cannot send the smallest value on until it has seen every value, because the smallest might come last. So it collects all the items, and only when the source is empty does it sort them and send them on. While it is collecting, nothing reaches <code>limit</code>, so <code>limit</code> never gets the chance to say "stop". The early stop is blocked by the sort.</p>
+<pre data-lang="java"><code class="language-java">Stream.of(3, 8, 1, 12, 5, 9, 4, 15)
+        .peek(x -&gt; System.out.println(&quot;read &quot; + x))
+        .filter(x -&gt; x &gt; 4)
+        .map(x -&gt; x * 10)
+        .sorted()                 // collects 80, 120, 50, 90, 150, then sorts
+        .limit(2)
+        .toList();
+// all 8 are read  -&gt;  [50, 80]
+</code></pre></div>
+      </article>
+      <article class="qa" id="q12" data-text="in a for-each loop over an `arraylist` you call `list.remove(x)`. why does that throw `concurrentmodificationexception`, while `it.remove()` does not?   short answer:  the iterator checks that nobody changed the list behind its back.  list.remove  changes it behind its back;  it.remove()  changes it through the iterator, which keeps track. 
+  why it happens:  an  arraylist  keeps a counter of how many times it has been changed ( modcount ). when the iterator is created, it remembers that number. every  next()  compares the two.  list.remove(x)  increases the list&#x27;s counter without telling the iterator, so the next check fails and throws.  it.remove()  removes the item  through  the iterator, which updates both its position and the number it expects. 
+  for (loan l : loans) if (l.isclosed()) loans.remove(l);     // concurrentmodificationexception
+
+for (iterator&amp;lt;loan&amp;gt; it = loans.iterator(); it.hasnext(); )  // ok
+    if (it.next().isclosed()) it.remove();
+
+loans.removeif(loan::isclosed);                             // java 8: the same in one line
+  
+ this check is best-effort: removing the second-to-last item often does not throw, because the loop ends before  next()  checks again. do not rely on that. ">
+        <header class="qa-head">
+          <span class="qnum">Q12</span>
+          <div class="qa-title">
+            <span class="topic">Streams vs iterators</span>
+            <h3>In a for-each loop over an <code>ArrayList</code> you call <code>list.remove(x)</code>. Why does that throw <code>ConcurrentModificationException</code>, while <code>it.remove()</code> does not?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a12">Show answer</button>
+        <div class="answer" id="a12"><p class="short"><strong>Short answer:</strong> the iterator checks that nobody changed the list behind its back. <code>list.remove</code> changes it behind its back; <code>it.remove()</code> changes it through the iterator, which keeps track.</p>
+<p class="why"><strong>Why it happens:</strong> an <code>ArrayList</code> keeps a counter of how many times it has been changed (<code>modCount</code>). When the iterator is created, it remembers that number. Every <code>next()</code> compares the two. <code>list.remove(x)</code> increases the list's counter without telling the iterator, so the next check fails and throws. <code>it.remove()</code> removes the item <em>through</em> the iterator, which updates both its position and the number it expects.</p>
+<pre data-lang="java"><code class="language-java">for (Loan l : loans) if (l.isClosed()) loans.remove(l);     // ConcurrentModificationException
+
+for (Iterator&lt;Loan&gt; it = loans.iterator(); it.hasNext(); )  // OK
+    if (it.next().isClosed()) it.remove();
+
+loans.removeIf(Loan::isClosed);                             // Java 8: the same in one line
+</code></pre>
+<p>This check is best-effort: removing the second-to-last item often does not throw, because the loop ends before <code>next()</code> checks again. Do not rely on that.</p></div>
+      </article>
+      <article class="qa" id="q13" data-text="why can a stream run in parallel, but an `iterator` cannot?   short answer:  an iterator is one bookmark that only knows the next item, so there is nothing to split. a stream&#x27;s source can split its remaining items in half and give one half to another worker. 
+  why it happens:  an  iterator  only offers  hasnext()  and  next() . two threads sharing one bookmark would just take turns, or step on each other. a stream&#x27;s source is a  spliterator , which adds  trysplit() : &quot;give half of what is left to a new spliterator&quot;. for an  arraylist  that is instant, since it just splits a range of positions. and because a stream controls its own loop, java can decide which thread handles which part, then combine the results. 
+  long sum = numbers.parallelstream()     // the list is split into chunks
+        .maptolong(long::longvalue)
+        .sum();                         // each thread adds up its chunk, then the totals are added
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q13</span>
+          <div class="qa-title">
+            <span class="topic">Streams vs iterators</span>
+            <h3>Why can a stream run in parallel, but an <code>Iterator</code> cannot?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a13">Show answer</button>
+        <div class="answer" id="a13"><p class="short"><strong>Short answer:</strong> an iterator is one bookmark that only knows the next item, so there is nothing to split. A stream's source can split its remaining items in half and give one half to another worker.</p>
+<p class="why"><strong>Why it happens:</strong> an <code>Iterator</code> only offers <code>hasNext()</code> and <code>next()</code>. Two threads sharing one bookmark would just take turns, or step on each other. A stream's source is a <code>Spliterator</code>, which adds <code>trySplit()</code>: "give half of what is left to a new spliterator". For an <code>ArrayList</code> that is instant, since it just splits a range of positions. And because a stream controls its own loop, Java can decide which thread handles which part, then combine the results.</p>
+<pre data-lang="java"><code class="language-java">long sum = numbers.parallelStream()     // the list is split into chunks
+        .mapToLong(Long::longValue)
+        .sum();                         // each thread adds up its chunk, then the totals are added
+</code></pre></div>
+      </article>
+      <article class="qa" id="q14" data-text="your `map` lambda needs to call a method that throws `ioexception`. why is that awkward in a stream, but easy in a loop?   short answer:  a lambda passed to  map  is a  function , and  function.apply  is not allowed to throw checked exceptions. in a loop, the code is your own method, which can simply declare  throws ioexception . 
+  why it happens:  java forces checked exceptions to be declared on every method they pass through. your lambda is called by java&#x27;s stream code, and those methods were not written to pass on your  ioexception . so you have to catch it inside the lambda and wrap it in an unchecked exception, then unwrap it outside if you care. 
+  // stream: wrap and unwrap
+try {
+    list&amp;lt;string&amp;gt; texts = paths.stream()
+        .map(p -&amp;gt; {
+            try { return files.readstring(p); }
+            catch (ioexception e) { throw new uncheckedioexception(e); }
+        })
+        .tolist();
+} catch (uncheckedioexception e) {
+    throw e.getcause();   // back to an ioexception
+}
+
+// loop: nothing special
+list&amp;lt;string&amp;gt; texts = new arraylist&amp;lt;&amp;gt;();
+for (path p : paths) texts.add(files.readstring(p));   // the method just says &amp;quot;throws ioexception&amp;quot;
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q14</span>
+          <div class="qa-title">
+            <span class="topic">Streams vs iterators</span>
+            <h3>Your <code>map</code> lambda needs to call a method that throws <code>IOException</code>. Why is that awkward in a stream, but easy in a loop?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a14">Show answer</button>
+        <div class="answer" id="a14"><p class="short"><strong>Short answer:</strong> a lambda passed to <code>map</code> is a <code>Function</code>, and <code>Function.apply</code> is not allowed to throw checked exceptions. In a loop, the code is your own method, which can simply declare <code>throws IOException</code>.</p>
+<p class="why"><strong>Why it happens:</strong> Java forces checked exceptions to be declared on every method they pass through. Your lambda is called by Java's stream code, and those methods were not written to pass on your <code>IOException</code>. So you have to catch it inside the lambda and wrap it in an unchecked exception, then unwrap it outside if you care.</p>
+<pre data-lang="java"><code class="language-java">// Stream: wrap and unwrap
+try {
+    List&lt;String&gt; texts = paths.stream()
+        .map(p -&gt; {
+            try { return Files.readString(p); }
+            catch (IOException e) { throw new UncheckedIOException(e); }
+        })
+        .toList();
+} catch (UncheckedIOException e) {
+    throw e.getCause();   // back to an IOException
+}
+
+// Loop: nothing special
+List&lt;String&gt; texts = new ArrayList&lt;&gt;();
+for (Path p : paths) texts.add(Files.readString(p));   // the method just says &quot;throws IOException&quot;
+</code></pre></div>
+      </article>
+      <article class="qa" id="q15" data-text="a method returns `optional&lt;user&gt;`, but sometimes returns `null`. what happens to the caller?   short answer:  the caller gets a  nullpointerexception  as soon as it calls anything on the result. that defeats the whole point of  optional . 
+  why it happens:   optional  moves &quot;there might be no value&quot; from a nasty surprise into the return type. the caller trusts that type and writes  finduser(id).map(...)  without checking for null. if the method returns  null  instead of  optional.empty() , that call is made on null and crashes. the rule is simple: a method that returns  optional  must never return  null . 
+  optional&amp;lt;user&amp;gt; finduser(long id) {
+    user u = repo.get(id);
+    return u == null ? null : optional.of(u);   // bug
+    // return optional.ofnullable(u);            // correct: empty optional when u is null
+}
+
+string name = finduser(42).map(user::name).orelse(&amp;quot;guest&amp;quot;);   // crashes with the buggy version
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q15</span>
+          <div class="qa-title">
+            <span class="topic">Optional</span>
+            <h3>A method returns <code>Optional&lt;User&gt;</code>, but sometimes returns <code>null</code>. What happens to the caller?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a15">Show answer</button>
+        <div class="answer" id="a15"><p class="short"><strong>Short answer:</strong> the caller gets a <code>NullPointerException</code> as soon as it calls anything on the result. That defeats the whole point of <code>Optional</code>.</p>
+<p class="why"><strong>Why it happens:</strong> <code>Optional</code> moves "there might be no value" from a nasty surprise into the return type. The caller trusts that type and writes <code>findUser(id).map(...)</code> without checking for null. If the method returns <code>null</code> instead of <code>Optional.empty()</code>, that call is made on null and crashes. The rule is simple: a method that returns <code>Optional</code> must never return <code>null</code>.</p>
+<pre data-lang="java"><code class="language-java">Optional&lt;User&gt; findUser(long id) {
+    User u = repo.get(id);
+    return u == null ? null : Optional.of(u);   // bug
+    // return Optional.ofNullable(u);            // correct: empty Optional when u is null
+}
+
+String name = findUser(42).map(User::name).orElse(&quot;guest&quot;);   // crashes with the buggy version
+</code></pre></div>
+      </article>
+      <article class="qa" id="q16" data-text="why can&#x27;t you add `duration.ofdays(1)` to a `localdate`?   short answer:  a  duration  is an exact number of seconds, and a  localdate  has no time of day to add seconds to. use  plusdays(1)  or a  period . 
+  why it happens:  java.time keeps two kinds of &quot;amount of time&quot; apart.  stopwatch time  ( duration ) counts exact seconds.  calendar time  ( period ) counts days, months and years the way people do. a calendar day is not always 24 hours: on the days the clocks change, it has 23 or 25. so mixing the two could give wrong answers. a  localdate  only understands calendar units, so it refuses seconds and throws  unsupportedtemporaltypeexception . 
+  localdate d = localdate.of(2026, 3, 28);
+d.plus(duration.ofdays(1));   // unsupportedtemporaltypeexception: unsupported unit: seconds
+d.plusdays(1);                // 2026-03-29
+d.plus(period.ofdays(1));     // 2026-03-29
+
+// where the difference shows: the night the clocks change in amsterdam
+zoneddatetime t = zoneddatetime.of(2026, 3, 28, 9, 0, 0, 0, zoneid.of(&amp;quot;europe/amsterdam&amp;quot;));
+t.plusdays(1);                // 2026-03-29t09:00+02:00  (calendar: still 9 o&#x27;clock)
+t.plus(duration.ofdays(1));   // 2026-03-29t10:00+02:00  (stopwatch: exactly 24 hours later)
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q16</span>
+          <div class="qa-title">
+            <span class="topic">java.time</span>
+            <h3>Why can't you add <code>Duration.ofDays(1)</code> to a <code>LocalDate</code>?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a16">Show answer</button>
+        <div class="answer" id="a16"><p class="short"><strong>Short answer:</strong> a <code>Duration</code> is an exact number of seconds, and a <code>LocalDate</code> has no time of day to add seconds to. Use <code>plusDays(1)</code> or a <code>Period</code>.</p>
+<p class="why"><strong>Why it happens:</strong> java.time keeps two kinds of "amount of time" apart. <em>Stopwatch time</em> (<code>Duration</code>) counts exact seconds. <em>Calendar time</em> (<code>Period</code>) counts days, months and years the way people do. A calendar day is not always 24 hours: on the days the clocks change, it has 23 or 25. So mixing the two could give wrong answers. A <code>LocalDate</code> only understands calendar units, so it refuses seconds and throws <code>UnsupportedTemporalTypeException</code>.</p>
+<pre data-lang="java"><code class="language-java">LocalDate d = LocalDate.of(2026, 3, 28);
+d.plus(Duration.ofDays(1));   // UnsupportedTemporalTypeException: Unsupported unit: Seconds
+d.plusDays(1);                // 2026-03-29
+d.plus(Period.ofDays(1));     // 2026-03-29
+
+// Where the difference shows: the night the clocks change in Amsterdam
+ZonedDateTime t = ZonedDateTime.of(2026, 3, 28, 9, 0, 0, 0, ZoneId.of(&quot;Europe/Amsterdam&quot;));
+t.plusDays(1);                // 2026-03-29T09:00+02:00  (calendar: still 9 o'clock)
+t.plus(Duration.ofDays(1));   // 2026-03-29T10:00+02:00  (stopwatch: exactly 24 hours later)
+</code></pre></div>
+      </article>
+      <article class="qa" id="q17" data-text="inside a web request you call `thenapply(heavywork)` on a future that has already finished. which thread runs `heavywork`?   short answer:  your own request thread, immediately, inside the  thenapply  call. 
+  why it happens:  a step without  async  in its name runs on whichever thread finishes the step before it. if that step is  already  finished when you attach the next one, no other thread is going to come along and run it. so the thread that called  thenapply , your request thread, runs it right away. only the methods ending in  async  hand the work to a thread pool. 
+  completablefuture&amp;lt;rate&amp;gt; f = completablefuture.completedfuture(rate);   // already finished
+
+f.thenapply(r -&amp;gt; {
+    system.out.println(thread.currentthread().getname());   // http-nio-8080-exec-3: the request thread
+    return heavywork(r);
+});
+
+f.thenapplyasync(r -&amp;gt; heavywork(r), cpupool);               // runs on cpupool instead
+  
+ this is why an endpoint can be slow even though it &quot;uses completablefuture&quot;: the work never actually moved to another thread. ">
+        <header class="qa-head">
+          <span class="qnum">Q17</span>
+          <div class="qa-title">
+            <span class="topic">CompletableFuture</span>
+            <h3>Inside a web request you call <code>thenApply(heavyWork)</code> on a future that has already finished. Which thread runs <code>heavyWork</code>?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a17">Show answer</button>
+        <div class="answer" id="a17"><p class="short"><strong>Short answer:</strong> your own request thread, immediately, inside the <code>thenApply</code> call.</p>
+<p class="why"><strong>Why it happens:</strong> a step without <code>Async</code> in its name runs on whichever thread finishes the step before it. If that step is <em>already</em> finished when you attach the next one, no other thread is going to come along and run it. So the thread that called <code>thenApply</code>, your request thread, runs it right away. Only the methods ending in <code>Async</code> hand the work to a thread pool.</p>
+<pre data-lang="java"><code class="language-java">CompletableFuture&lt;Rate&gt; f = CompletableFuture.completedFuture(rate);   // already finished
+
+f.thenApply(r -&gt; {
+    System.out.println(Thread.currentThread().getName());   // http-nio-8080-exec-3: the request thread
+    return heavyWork(r);
+});
+
+f.thenApplyAsync(r -&gt; heavyWork(r), cpuPool);               // runs on cpuPool instead
+</code></pre>
+<p>This is why an endpoint can be slow even though it "uses CompletableFuture": the work never actually moved to another thread.</p></div>
+      </article>
+      <article class="qa" id="q18" data-text="why can one `arraylist.class` serve both `list&lt;string&gt;` and `list&lt;loan&gt;`, but not `list&lt;int&gt;`?   short answer:  every object, whatever its class, is handled through a pointer, and all pointers use the same jvm instructions. an  int  is a raw number that needs different instructions. 
+  why it happens:  after the compiler has checked your code, it removes the  &amp;lt;string&amp;gt;  or  &amp;lt;loan&amp;gt;  part (type erasure). inside,  arraylist  keeps an  object[] , and its compiled code uses pointer instructions such as  aaload  (&quot;load a pointer from an array&quot;) and  areturn  (&quot;return a pointer&quot;). a pointer to a  string  and a pointer to a  loan  look the same to the jvm, so the same code works for both. 
+ an  int  is not a pointer. loading one needs  iaload , returning one needs  ireturn , and  long  and  double  are even twice as big. one compiled class cannot use both kinds of instructions, so  list&amp;lt;int&amp;gt;  would need separate compiled code. java&#x27;s answer today is boxing (wrapping each  int  in an  integer  object), or special classes like  intstream . 
+  // run javap -c on these two methods to see the different instructions
+object firstobj(object[] a) { return a[0]; }   // aload_1, iconst_0, aaload, areturn
+int    firstint(int[] a)    { return a[0]; }   // aload_1, iconst_0, iaload, ireturn
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q18</span>
+          <div class="qa-title">
+            <span class="topic">Generics and erasure</span>
+            <h3>Why can one <code>ArrayList.class</code> serve both <code>List&lt;String&gt;</code> and <code>List&lt;Loan&gt;</code>, but not <code>List&lt;int&gt;</code>?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a18">Show answer</button>
+        <div class="answer" id="a18"><p class="short"><strong>Short answer:</strong> every object, whatever its class, is handled through a pointer, and all pointers use the same JVM instructions. An <code>int</code> is a raw number that needs different instructions.</p>
+<p class="why"><strong>Why it happens:</strong> after the compiler has checked your code, it removes the <code>&lt;String&gt;</code> or <code>&lt;Loan&gt;</code> part (type erasure). Inside, <code>ArrayList</code> keeps an <code>Object[]</code>, and its compiled code uses pointer instructions such as <code>aaload</code> ("load a pointer from an array") and <code>areturn</code> ("return a pointer"). A pointer to a <code>String</code> and a pointer to a <code>Loan</code> look the same to the JVM, so the same code works for both.</p>
+<p>An <code>int</code> is not a pointer. Loading one needs <code>iaload</code>, returning one needs <code>ireturn</code>, and <code>long</code> and <code>double</code> are even twice as big. One compiled class cannot use both kinds of instructions, so <code>List&lt;int&gt;</code> would need separate compiled code. Java's answer today is boxing (wrapping each <code>int</code> in an <code>Integer</code> object), or special classes like <code>IntStream</code>.</p>
+<pre data-lang="java"><code class="language-java">// Run javap -c on these two methods to see the different instructions
+Object firstObj(Object[] a) { return a[0]; }   // aload_1, iconst_0, aaload, areturn
+int    firstInt(int[] a)    { return a[0]; }   // aload_1, iconst_0, iaload, ireturn
+</code></pre></div>
+      </article>
+      <article class="qa" id="q19" data-text="jackson can read json into a `list&lt;loan&gt;` with `new typereference&lt;list&lt;loan&gt;&gt;(){}`. if generics are erased, where does it find `loan`?   short answer:  the  {}  creates a small anonymous subclass. the  declaration  of a class, including the type it extends, is kept in the class file and is not erased. 
+  why it happens:  erasure removes type information from  objects  and  instructions : a  list&amp;lt;loan&amp;gt;  object at runtime is just an  arraylist . but declarations keep their full generic types in the class file, because other code needs them to compile against your class. a class declared as  extends typereference&amp;lt;list&amp;lt;loan&amp;gt;&amp;gt;  is a declaration, so reflection can read  list&amp;lt;loan&amp;gt;  back out of it. 
+  abstract class typetoken&amp;lt;t&amp;gt; {
+    final type type;
+    protected typetoken() {
+        parameterizedtype sup = (parameterizedtype) getclass().getgenericsuperclass();
+        this.type = sup.getactualtypearguments()[0];   // read t from the subclass declaration
+    }
+}
+
+type t = new typetoken&amp;lt;list&amp;lt;loan&amp;gt;&amp;gt;() {}.type;
+system.out.println(t);   // java.util.list&amp;lt;com.example.loan&amp;gt;
+
+new arraylist&amp;lt;loan&amp;gt;().getclass();   // class java.util.arraylist   (no loan: the object itself is erased)
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q19</span>
+          <div class="qa-title">
+            <span class="topic">Generics and erasure</span>
+            <h3>Jackson can read JSON into a <code>List&lt;Loan&gt;</code> with <code>new TypeReference&lt;List&lt;Loan&gt;&gt;(){}</code>. If generics are erased, where does it find <code>Loan</code>?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a19">Show answer</button>
+        <div class="answer" id="a19"><p class="short"><strong>Short answer:</strong> the <code>{}</code> creates a small anonymous subclass. The <em>declaration</em> of a class, including the type it extends, is kept in the class file and is not erased.</p>
+<p class="why"><strong>Why it happens:</strong> erasure removes type information from <em>objects</em> and <em>instructions</em>: a <code>List&lt;Loan&gt;</code> object at runtime is just an <code>ArrayList</code>. But declarations keep their full generic types in the class file, because other code needs them to compile against your class. A class declared as <code>extends TypeReference&lt;List&lt;Loan&gt;&gt;</code> is a declaration, so reflection can read <code>List&lt;Loan&gt;</code> back out of it.</p>
+<pre data-lang="java"><code class="language-java">abstract class TypeToken&lt;T&gt; {
+    final Type type;
+    protected TypeToken() {
+        ParameterizedType sup = (ParameterizedType) getClass().getGenericSuperclass();
+        this.type = sup.getActualTypeArguments()[0];   // read T from the subclass declaration
+    }
+}
+
+Type t = new TypeToken&lt;List&lt;Loan&gt;&gt;() {}.type;
+System.out.println(t);   // java.util.List&lt;com.example.Loan&gt;
+
+new ArrayList&lt;Loan&gt;().getClass();   // class java.util.ArrayList   (no Loan: the object itself is erased)
+</code></pre></div>
+      </article>
+      <article class="qa" id="q20" data-text="why does `new t()` fail, but passing a `supplier&lt;t&gt;` works?   short answer:  while the program runs,  t  is just  object , so the jvm does not know which class to create. a  supplier&amp;lt;t&amp;gt;  carries that knowledge as a value, from a caller who does know the real type. 
+  why it happens:   new  is compiled into an instruction that names one specific class. inside a generic class there is no specific class to name, because one compiled class serves every  t . the caller, however, writes  pool&amp;lt;stringbuilder&amp;gt;  and knows exactly what it wants. so the caller passes a factory (such as  stringbuilder::new ), and the knowledge travels into your class as an object instead of as a type. 
+  class pool&amp;lt;t&amp;gt; {
+    private final supplier&amp;lt;t&amp;gt; factory;
+    pool(supplier&amp;lt;t&amp;gt; factory) { this.factory = factory; }
+    t borrow() { return factory.get(); }      // instead of new t()
+}
+
+var pool = new pool&amp;lt;&amp;gt;(stringbuilder::new);   // the caller supplies the constructor
+
+// the same idea with a class object, for when you need reflection or arrays:
+&amp;lt;t&amp;gt; t[] newarray(class&amp;lt;t&amp;gt; type, int n) { return (t[]) array.newinstance(type, n); }
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q20</span>
+          <div class="qa-title">
+            <span class="topic">Generics and erasure</span>
+            <h3>Why does <code>new T()</code> fail, but passing a <code>Supplier&lt;T&gt;</code> works?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a20">Show answer</button>
+        <div class="answer" id="a20"><p class="short"><strong>Short answer:</strong> while the program runs, <code>T</code> is just <code>Object</code>, so the JVM does not know which class to create. A <code>Supplier&lt;T&gt;</code> carries that knowledge as a value, from a caller who does know the real type.</p>
+<p class="why"><strong>Why it happens:</strong> <code>new</code> is compiled into an instruction that names one specific class. Inside a generic class there is no specific class to name, because one compiled class serves every <code>T</code>. The caller, however, writes <code>Pool&lt;StringBuilder&gt;</code> and knows exactly what it wants. So the caller passes a factory (such as <code>StringBuilder::new</code>), and the knowledge travels into your class as an object instead of as a type.</p>
+<pre data-lang="java"><code class="language-java">class Pool&lt;T&gt; {
+    private final Supplier&lt;T&gt; factory;
+    Pool(Supplier&lt;T&gt; factory) { this.factory = factory; }
+    T borrow() { return factory.get(); }      // instead of new T()
+}
+
+var pool = new Pool&lt;&gt;(StringBuilder::new);   // the caller supplies the constructor
+
+// The same idea with a Class object, for when you need reflection or arrays:
+&lt;T&gt; T[] newArray(Class&lt;T&gt; type, int n) { return (T[]) Array.newInstance(type, n); }
+</code></pre></div>
+      </article>
+      <article class="qa" id="q21" data-text="in `intlist.get`, why check against `size` instead of relying on the array&#x27;s own bounds check?   short answer:  the array is usually bigger than the list. positions between  size  and the array&#x27;s length exist in the array, but they are not part of the list. 
+  why it happens:  a growable list keeps spare room so that  add  is usually fast: when the array is full, it creates one twice as big. so a list of 3 numbers may sit in an array of 10. the jvm&#x27;s own check only knows the array&#x27;s length (10), so reading position 5 would quietly return a leftover  0  instead of failing.  arraylist  checks against  size  for exactly the same reason. 
+  intlist list = new intlist(10);
+list.add(7); list.add(42); list.add(3);   // size = 3, but the array has room for 10
+
+// underneath: data = [7, 42, 3, 0, 0, 0, 0, 0, 0, 0]
+
+list.get(5);   // with objects.checkindex(index, size): indexoutofboundsexception (correct)
+               // without it: returns 0 (a silent bug)
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q21</span>
+          <div class="qa-title">
+            <span class="topic">Generics and erasure</span>
+            <h3>In <code>IntList.get</code>, why check against <code>size</code> instead of relying on the array's own bounds check?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a21">Show answer</button>
+        <div class="answer" id="a21"><p class="short"><strong>Short answer:</strong> the array is usually bigger than the list. Positions between <code>size</code> and the array's length exist in the array, but they are not part of the list.</p>
+<p class="why"><strong>Why it happens:</strong> a growable list keeps spare room so that <code>add</code> is usually fast: when the array is full, it creates one twice as big. So a list of 3 numbers may sit in an array of 10. The JVM's own check only knows the array's length (10), so reading position 5 would quietly return a leftover <code>0</code> instead of failing. <code>ArrayList</code> checks against <code>size</code> for exactly the same reason.</p>
+<pre data-lang="java"><code class="language-java">IntList list = new IntList(10);
+list.add(7); list.add(42); list.add(3);   // size = 3, but the array has room for 10
+
+// underneath: data = [7, 42, 3, 0, 0, 0, 0, 0, 0, 0]
+
+list.get(5);   // with Objects.checkIndex(index, size): IndexOutOfBoundsException (correct)
+               // without it: returns 0 (a silent bug)
+</code></pre></div>
+      </article></section><section class="sec" id="java-9-to-17"><h2>Java 9 to 17</h2>
+      <article class="qa" id="q22" data-text="a record has a component `list&lt;string&gt; tags`. how do you make the record truly unchangeable?   short answer:  copy the list in the compact constructor:  tags = list.copyof(tags); . 
+  why it happens:  a record&#x27;s fields are  final , but  final  only fixes  which  list the field points to, not what is inside that list. without a copy, two things could still change the record: 
+ 
+ the caller keeps its own reference to the list it passed in, and adds to it later. 
+ anyone who calls  tags()  gets the same list and can call  add  on it. 
+ 
+  list.copyof  fixes both. it copies the items into a new list that cannot be changed, so the caller&#x27;s list is no longer connected, and  tags()  returns a list that throws an error on  add . it also refuses  null  items. if the list you pass in is already unchangeable (for example from  list.of ), it is reused without copying. 
+  public record loantags(string loanid, list&amp;lt;string&amp;gt; tags) {
+    public loantags {
+        objects.requirenonnull(loanid);
+        tags = list.copyof(tags);          // a copy that cannot be changed
+    }
+}
+
+var source = new arraylist&amp;lt;&amp;gt;(list.of(&amp;quot;fixed&amp;quot;));
+var t = new loantags(&amp;quot;l1&amp;quot;, source);
+source.add(&amp;quot;oops&amp;quot;);                        // does not affect t
+t.tags().add(&amp;quot;oops&amp;quot;);                      // unsupportedoperationexception
+
+// without the copy, both lines above would quietly change t,
+// and its equals() and hashcode() would change too.
+  
+ that last point is why this matters: records are often used as keys in a  hashmap  or items in a  hashset . if a record&#x27;s contents change, its  hashcode  changes, and the map can no longer find the entry. ">
+        <header class="qa-head">
+          <span class="qnum">Q22</span>
+          <div class="qa-title">
+            <span class="topic">Records</span>
+            <h3>A record has a component <code>List&lt;String&gt; tags</code>. How do you make the record truly unchangeable?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a22">Show answer</button>
+        <div class="answer" id="a22"><p class="short"><strong>Short answer:</strong> copy the list in the compact constructor: <code>tags = List.copyOf(tags);</code>.</p>
+<p class="why"><strong>Why it happens:</strong> a record's fields are <code>final</code>, but <code>final</code> only fixes <em>which</em> list the field points to, not what is inside that list. Without a copy, two things could still change the record:</p>
+<ol>
+<li>The caller keeps its own reference to the list it passed in, and adds to it later.</li>
+<li>Anyone who calls <code>tags()</code> gets the same list and can call <code>add</code> on it.</li>
+</ol>
+<p><code>List.copyOf</code> fixes both. It copies the items into a new list that cannot be changed, so the caller's list is no longer connected, and <code>tags()</code> returns a list that throws an error on <code>add</code>. It also refuses <code>null</code> items. If the list you pass in is already unchangeable (for example from <code>List.of</code>), it is reused without copying.</p>
+<pre data-lang="java"><code class="language-java">public record LoanTags(String loanId, List&lt;String&gt; tags) {
+    public LoanTags {
+        Objects.requireNonNull(loanId);
+        tags = List.copyOf(tags);          // a copy that cannot be changed
+    }
+}
+
+var source = new ArrayList&lt;&gt;(List.of(&quot;fixed&quot;));
+var t = new LoanTags(&quot;L1&quot;, source);
+source.add(&quot;oops&quot;);                        // does not affect t
+t.tags().add(&quot;oops&quot;);                      // UnsupportedOperationException
+
+// Without the copy, both lines above would quietly change t,
+// and its equals() and hashCode() would change too.
+</code></pre>
+<p>That last point is why this matters: records are often used as keys in a <code>HashMap</code> or items in a <code>HashSet</code>. If a record's contents change, its <code>hashCode</code> changes, and the map can no longer find the entry.</p></div>
+      </article>
+      <article class="qa" id="q23" data-text="why is a `default` branch in a switch over a sealed type usually a bad idea?   short answer:  it switches off the compiler&#x27;s &quot;did you handle every case?&quot; check. when someone adds a new subtype later, the  default  silently handles it, instead of giving a compile error at every switch that needs a decision. 
+  why it happens:  the main benefit of a sealed type is that the compiler knows the complete list of subtypes. because of that, it can confirm that a switch covers all of them, and warn you as soon as one is missing. a  default  branch means &quot;anything else goes here&quot;, so the switch always counts as complete, whatever is added later. you have swapped a helpful compile error for behaviour you probably did not intend. 
+  sealed interface payment permits card, ideal, banktransfer { }
+
+bigdecimal fee(payment p) {
+    return switch (p) {
+        case card c         -&amp;gt; new bigdecimal(&amp;quot;0.30&amp;quot;);
+        case ideal i        -&amp;gt; new bigdecimal(&amp;quot;0.29&amp;quot;);
+        case banktransfer b -&amp;gt; bigdecimal.zero;
+        // no default: adding &amp;quot;record klarna(...) implements payment&amp;quot; breaks
+        // the build here, so nobody forgets to decide klarna&#x27;s fee
+    };
+}
+
+bigdecimal feewithdefault(payment p) {
+    return switch (p) {
+        case card c -&amp;gt; new bigdecimal(&amp;quot;0.30&amp;quot;);
+        default     -&amp;gt; bigdecimal.zero;    // klarna would now quietly be charged 0
+    };
+}
+  
+ a  default  is still fine when you really mean &quot;treat every other kind, including future ones, the same way&quot;. make it a conscious choice, not a habit. ">
+        <header class="qa-head">
+          <span class="qnum">Q23</span>
+          <div class="qa-title">
+            <span class="topic">Sealed classes</span>
+            <h3>Why is a <code>default</code> branch in a switch over a sealed type usually a bad idea?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a23">Show answer</button>
+        <div class="answer" id="a23"><p class="short"><strong>Short answer:</strong> it switches off the compiler's "did you handle every case?" check. When someone adds a new subtype later, the <code>default</code> silently handles it, instead of giving a compile error at every switch that needs a decision.</p>
+<p class="why"><strong>Why it happens:</strong> the main benefit of a sealed type is that the compiler knows the complete list of subtypes. Because of that, it can confirm that a switch covers all of them, and warn you as soon as one is missing. A <code>default</code> branch means "anything else goes here", so the switch always counts as complete, whatever is added later. You have swapped a helpful compile error for behaviour you probably did not intend.</p>
+<pre data-lang="java"><code class="language-java">sealed interface Payment permits Card, Ideal, BankTransfer { }
+
+BigDecimal fee(Payment p) {
+    return switch (p) {
+        case Card c         -&gt; new BigDecimal(&quot;0.30&quot;);
+        case Ideal i        -&gt; new BigDecimal(&quot;0.29&quot;);
+        case BankTransfer b -&gt; BigDecimal.ZERO;
+        // no default: adding &quot;record Klarna(...) implements Payment&quot; breaks
+        // the build HERE, so nobody forgets to decide Klarna's fee
+    };
+}
+
+BigDecimal feeWithDefault(Payment p) {
+    return switch (p) {
+        case Card c -&gt; new BigDecimal(&quot;0.30&quot;);
+        default     -&gt; BigDecimal.ZERO;    // Klarna would now quietly be charged 0
+    };
+}
+</code></pre>
+<p>A <code>default</code> is still fine when you really mean "treat every other kind, including future ones, the same way". Make it a conscious choice, not a habit.</p></div>
+      </article></section><section class="sec" id="java-21"><h2>Java 21</h2>
+      <article class="qa" id="q24" data-text="your service has 8 cpu cores and only resizes images. will virtual threads make it faster?   short answer:  no. resizing is pure calculation, so 8 cores can resize 8 images at a time, however many threads exist. 
+  why it happens:  virtual threads make  waiting  cheap. when a virtual thread waits for a database or another service, it steps off its carrier thread, and the carrier runs someone else in the meantime. idle waiting time turns into useful work. image resizing never waits: it keeps a cpu core busy from start to finish. there is no idle time to win back, so extra threads only add overhead. 
+ a useful test: look at cpu usage under load. at 100%, you are limited by calculation and need more cores or faster code. at 20% while requests pile up, threads are waiting, and virtual threads (or a bigger pool) will help. 
+  // calculation-heavy: one thread per core is enough
+executorservice cpu = executors.newfixedthreadpool(runtime.getruntime().availableprocessors());
+images.foreach(img -&amp;gt; cpu.submit(() -&amp;gt; resize(img)));
+
+// waiting-heavy: one virtual thread per task is the right tool
+try (var io = executors.newvirtualthreadpertaskexecutor()) {
+    urls.foreach(u -&amp;gt; io.submit(() -&amp;gt; httpclient.send(get(u), ofstring())));
+}
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q24</span>
+          <div class="qa-title">
+            <span class="topic">Virtual threads</span>
+            <h3>Your service has 8 CPU cores and only resizes images. Will virtual threads make it faster?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a24">Show answer</button>
+        <div class="answer" id="a24"><p class="short"><strong>Short answer:</strong> no. Resizing is pure calculation, so 8 cores can resize 8 images at a time, however many threads exist.</p>
+<p class="why"><strong>Why it happens:</strong> virtual threads make <em>waiting</em> cheap. When a virtual thread waits for a database or another service, it steps off its carrier thread, and the carrier runs someone else in the meantime. Idle waiting time turns into useful work. Image resizing never waits: it keeps a CPU core busy from start to finish. There is no idle time to win back, so extra threads only add overhead.</p>
+<p>A useful test: look at CPU usage under load. At 100%, you are limited by calculation and need more cores or faster code. At 20% while requests pile up, threads are waiting, and virtual threads (or a bigger pool) will help.</p>
+<pre data-lang="java"><code class="language-java">// Calculation-heavy: one thread per core is enough
+ExecutorService cpu = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+images.forEach(img -&gt; cpu.submit(() -&gt; resize(img)));
+
+// Waiting-heavy: one virtual thread per task is the right tool
+try (var io = Executors.newVirtualThreadPerTaskExecutor()) {
+    urls.forEach(u -&gt; io.submit(() -&gt; httpClient.send(get(u), ofString())));
+}
+</code></pre></div>
+      </article>
+      <article class="qa" id="q25" data-text="why is `executors.newfixedthreadpool(200, thread.ofvirtual().factory())` a bad sign?   short answer:  it puts virtual threads in a pool, which brings no benefit, and it quietly limits the work to 200 tasks at a time in a way that looks like a performance setting. 
+  why it happens:  thread pools exist because classic threads are expensive to create (an operating-system thread and about 1 mb of memory each), so reusing them saves money. a virtual thread is a small java object, cheaper to create than the pool&#x27;s own bookkeeping. so the reason for having a pool disappears. 
+ what is left is a side effect: at most 200 tasks run at once. if a limit is what you actually want, for example because a partner api allows only 10 calls at a time, say so directly with a  semaphore . that documents the reason, and limits only the scarce resource instead of all work. 
+  // unclear: is 200 a performance guess or a real limit?
+var pool = executors.newfixedthreadpool(200, thread.ofvirtual().factory());
+
+// clear: cheap threads for everything, a hard limit only on the partner api
+private final semaphore partnerlimit = new semaphore(10);
+
+try (var exec = executors.newvirtualthreadpertaskexecutor()) {
+    for (string id : ids) {
+        exec.submit(() -&amp;gt; {
+            partnerlimit.acquire();
+            try { return partnerapi.fetch(id); }
+            finally { partnerlimit.release(); }
+        });
+    }
+}
+  ">
+        <header class="qa-head">
+          <span class="qnum">Q25</span>
+          <div class="qa-title">
+            <span class="topic">Virtual threads</span>
+            <h3>Why is <code>Executors.newFixedThreadPool(200, Thread.ofVirtual().factory())</code> a bad sign?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a25">Show answer</button>
+        <div class="answer" id="a25"><p class="short"><strong>Short answer:</strong> it puts virtual threads in a pool, which brings no benefit, and it quietly limits the work to 200 tasks at a time in a way that looks like a performance setting.</p>
+<p class="why"><strong>Why it happens:</strong> thread pools exist because classic threads are expensive to create (an operating-system thread and about 1 MB of memory each), so reusing them saves money. A virtual thread is a small Java object, cheaper to create than the pool's own bookkeeping. So the reason for having a pool disappears.</p>
+<p>What is left is a side effect: at most 200 tasks run at once. If a limit is what you actually want, for example because a partner API allows only 10 calls at a time, say so directly with a <code>Semaphore</code>. That documents the reason, and limits only the scarce resource instead of all work.</p>
+<pre data-lang="java"><code class="language-java">// Unclear: is 200 a performance guess or a real limit?
+var pool = Executors.newFixedThreadPool(200, Thread.ofVirtual().factory());
+
+// Clear: cheap threads for everything, a hard limit only on the partner API
+private final Semaphore partnerLimit = new Semaphore(10);
+
+try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
+    for (String id : ids) {
+        exec.submit(() -&gt; {
+            partnerLimit.acquire();
+            try { return partnerApi.fetch(id); }
+            finally { partnerLimit.release(); }
+        });
+    }
+}
+</code></pre></div>
+      </article>
+      <article class="qa" id="q26" data-text="a switch over a sealed interface was compiled when it covered every case. later a new subtype is added, but only that subtype is recompiled. what happens when the switch receives the new type?   short answer:  the switch throws a  matchexception . 
+  why it happens:  the &quot;every case is covered&quot; check happens when compiling. but java lets you recompile classes separately: a jar built last month can run next to a class built today. so the compiler cannot be sure the list of subtypes is still the same when the program runs. to stay safe, it adds a hidden branch that throws if an unknown type ever arrives. (before java 21, a switch over an enum did something similar with  incompatibleclasschangeerror .) 
+  // compiled when payment only permitted card and ideal
+string label(payment p) {
+    return switch (p) {
+        case card c  -&amp;gt; &amp;quot;card&amp;quot;;
+        case ideal i -&amp;gt; &amp;quot;ideal&amp;quot;;
+        // the compiler secretly adds: default -&amp;gt; throw new matchexception(...)
+    };
+}
+// later payment also permits klarna and is recompiled, but this class is not.
+label(new klarna());   // java.lang.matchexception while the program runs
+  
+ the fix is to rebuild everything. in practice this happens when a shared model jar is upgraded, but a service that switches over its types is not rebuilt against the new version. ">
+        <header class="qa-head">
+          <span class="qnum">Q26</span>
+          <div class="qa-title">
+            <span class="topic">Pattern matching</span>
+            <h3>A switch over a sealed interface was compiled when it covered every case. Later a new subtype is added, but only that subtype is recompiled. What happens when the switch receives the new type?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a26">Show answer</button>
+        <div class="answer" id="a26"><p class="short"><strong>Short answer:</strong> the switch throws a <code>MatchException</code>.</p>
+<p class="why"><strong>Why it happens:</strong> the "every case is covered" check happens when compiling. But Java lets you recompile classes separately: a JAR built last month can run next to a class built today. So the compiler cannot be sure the list of subtypes is still the same when the program runs. To stay safe, it adds a hidden branch that throws if an unknown type ever arrives. (Before Java 21, a switch over an enum did something similar with <code>IncompatibleClassChangeError</code>.)</p>
+<pre data-lang="java"><code class="language-java">// Compiled when Payment only permitted Card and Ideal
+String label(Payment p) {
+    return switch (p) {
+        case Card c  -&gt; &quot;card&quot;;
+        case Ideal i -&gt; &quot;ideal&quot;;
+        // the compiler secretly adds: default -&gt; throw new MatchException(...)
+    };
+}
+// Later Payment also permits Klarna and is recompiled, but this class is not.
+label(new Klarna());   // java.lang.MatchException while the program runs
+</code></pre>
+<p>The fix is to rebuild everything. In practice this happens when a shared model JAR is upgraded, but a service that switches over its types is not rebuilt against the new version.</p></div>
+      </article></section><section class="sec" id="threads-and-concurrency"><h2>Threads and concurrency</h2>
+      <article class="qa" id="q27" data-text="a loop `while (running) { ... }` never stops, even after another thread sets `running = false`. why does adding `system.out.println` inside the loop often seem to fix it?   short answer:   println  uses a lock internally, which makes the thread re-read memory and stops the jit compiler from reading  running  only once. it works by accident. the real fix is to make the field  volatile . 
+  why it happens:  unless something links the two threads (java calls this a  happens-before  relationship), the jvm may assume no other thread changes  running . the jit compiler, java&#x27;s optimiser that runs while your program runs, sees that the loop never changes  running . so it reads the field once and turns the loop into  if (running) while (true) {...} . even without that, a cpu core may keep using its own cached copy of the value. 
+  system.out.println  takes a lock inside  printstream . taking a lock forces fresh reads from memory, and the jit cannot see through that call, so it stops making the &quot;read once&quot; shortcut. the loop happens to see the new value. but nothing in the java rules promises this. a newer jvm, a different logger, or removing the debug line brings the bug straight back. 
+  class worker {
+    private boolean running = true;              // bug: no visibility guarantee
+    // private volatile boolean running = true;  // fix: every write is seen by later reads
+
+    void stop() { running = false; }              // thread b
+    void loop() {                                 // thread a
+        long n = 0;
+        while (running) { n++; }                  // may run forever without volatile
+        system.out.println(&amp;quot;stopped after &amp;quot; + n);
+    }
+}
+
+// also correct: an atomicboolean, or reading and writing it under the same lock.
+private final atomicboolean running = new atomicboolean(true);
+  
+ rule of thumb: if a bug disappears when you add logging, you probably have a visibility bug. ">
+        <header class="qa-head">
+          <span class="qnum">Q27</span>
+          <div class="qa-title">
+            <span class="topic">Java Memory Model</span>
+            <h3>A loop <code>while (running) { ... }</code> never stops, even after another thread sets <code>running = false</code>. Why does adding <code>System.out.println</code> inside the loop often seem to fix it?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a27">Show answer</button>
+        <div class="answer" id="a27"><p class="short"><strong>Short answer:</strong> <code>println</code> uses a lock internally, which makes the thread re-read memory and stops the JIT compiler from reading <code>running</code> only once. It works by accident. The real fix is to make the field <code>volatile</code>.</p>
+<p class="why"><strong>Why it happens:</strong> unless something links the two threads (Java calls this a <em>happens-before</em> relationship), the JVM may assume no other thread changes <code>running</code>. The JIT compiler, Java's optimiser that runs while your program runs, sees that the loop never changes <code>running</code>. So it reads the field once and turns the loop into <code>if (running) while (true) {...}</code>. Even without that, a CPU core may keep using its own cached copy of the value.</p>
+<p><code>System.out.println</code> takes a lock inside <code>PrintStream</code>. Taking a lock forces fresh reads from memory, and the JIT cannot see through that call, so it stops making the "read once" shortcut. The loop happens to see the new value. But nothing in the Java rules promises this. A newer JVM, a different logger, or removing the debug line brings the bug straight back.</p>
+<pre data-lang="java"><code class="language-java">class Worker {
+    private boolean running = true;              // bug: no visibility guarantee
+    // private volatile boolean running = true;  // fix: every write is seen by later reads
+
+    void stop() { running = false; }              // thread B
+    void loop() {                                 // thread A
+        long n = 0;
+        while (running) { n++; }                  // may run forever without volatile
+        System.out.println(&quot;stopped after &quot; + n);
+    }
+}
+
+// Also correct: an AtomicBoolean, or reading and writing it under the same lock.
+private final AtomicBoolean running = new AtomicBoolean(true);
+</code></pre>
+<p>Rule of thumb: if a bug disappears when you add logging, you probably have a visibility bug.</p></div>
+      </article>
+      <article class="qa" id="q28" data-text="is a `synchronized` setter with a non-synchronized getter thread-safe?   short answer:  no. the getter never takes the lock, so nothing guarantees it sees the setter&#x27;s change. it may return an old value. both must use the same lock, or the field must be  volatile . 
+  why it happens:  a lock does two jobs. first,  only one at a time : one thread runs the protected code while others wait. second,  visibility : when a thread releases a lock, the next thread that takes the same lock is guaranteed to see everything written before the release. that second promise only applies to threads that actually  take  the lock. a getter without  synchronized  never takes it, so it gets no promise. 
+ for  long  and  double  it is even worse: without  volatile , the jvm may write the 64 bits in two 32-bit halves, so a reader could see half of the old value and half of the new one. 
+  class rate {
+    private bigdecimal value;
+
+    public synchronized void set(bigdecimal v) { value = v; }
+    public bigdecimal get() { return value; }                  // bug: may return an old value
+
+    // fix 1: the same lock on both sides
+    public synchronized bigdecimal getsafe() { return value; }
+}
+
+// fix 2, for one field that is simply replaced: volatile
+class rate2 {
+    private volatile bigdecimal value;                   // safe, because bigdecimal never changes itself
+    public void set(bigdecimal v) { value = v; }
+    public bigdecimal get() { return value; }
+}
+  
+  volatile  is enough here because each update is one single step: replacing the reference with a new object. as soon as an update reads and then writes ( count++ , or &quot;check, then set&quot;), you need a lock or an atomic class. ">
+        <header class="qa-head">
+          <span class="qnum">Q28</span>
+          <div class="qa-title">
+            <span class="topic">Locks</span>
+            <h3>Is a <code>synchronized</code> setter with a non-synchronized getter thread-safe?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a28">Show answer</button>
+        <div class="answer" id="a28"><p class="short"><strong>Short answer:</strong> no. The getter never takes the lock, so nothing guarantees it sees the setter's change. It may return an old value. Both must use the same lock, or the field must be <code>volatile</code>.</p>
+<p class="why"><strong>Why it happens:</strong> a lock does two jobs. First, <em>only one at a time</em>: one thread runs the protected code while others wait. Second, <em>visibility</em>: when a thread releases a lock, the next thread that takes the same lock is guaranteed to see everything written before the release. That second promise only applies to threads that actually <em>take</em> the lock. A getter without <code>synchronized</code> never takes it, so it gets no promise.</p>
+<p>For <code>long</code> and <code>double</code> it is even worse: without <code>volatile</code>, the JVM may write the 64 bits in two 32-bit halves, so a reader could see half of the old value and half of the new one.</p>
+<pre data-lang="java"><code class="language-java">class Rate {
+    private BigDecimal value;
+
+    public synchronized void set(BigDecimal v) { value = v; }
+    public BigDecimal get() { return value; }                  // bug: may return an old value
+
+    // Fix 1: the same lock on both sides
+    public synchronized BigDecimal getSafe() { return value; }
+}
+
+// Fix 2, for one field that is simply replaced: volatile
+class Rate2 {
+    private volatile BigDecimal value;                   // safe, because BigDecimal never changes itself
+    public void set(BigDecimal v) { value = v; }
+    public BigDecimal get() { return value; }
+}
+</code></pre>
+<p><code>volatile</code> is enough here because each update is one single step: replacing the reference with a new object. As soon as an update reads and then writes (<code>count++</code>, or "check, then set"), you need a lock or an atomic class.</p></div>
+      </article></section><section class="sec" id="the-jvm"><h2>The JVM</h2>
+      <article class="qa" id="q29" data-text="why does the first request to a freshly started spring boot app take much longer than the hundredth?   short answer:  warm-up. classes are loaded the first time they are used, all code starts out slow (interpreted), and libraries set things up on first use. later requests run fast compiled code with everything already in place. 
+  why it happens:  the jvm does as little work as possible up front, and only optimises what turns out to be used a lot. the first request pays several one-time costs: 
+ 
+  loading classes.  every class the request touches (jackson serializers, hibernate helpers, your dtos) is found, read, checked and initialised the first time it is used. 
+  interpreting.  code first runs in the interpreter, one instruction at a time, which is much slower than compiled code. only methods that run often are compiled, first quickly by c1 and later thoroughly by c2. 
+  lazy set-up in libraries.  the first database call may open connections, hibernate prepares its queries, jackson builds a serializer per type, and spring mvc works out which controller handles which url. 
+  empty caches.  cpu caches, the jit&#x27;s usage statistics and your own application caches all start empty. 
+ 
+  # see which classes load during the first request
+java -xlog:class+load:file=classes.log -jar app.jar
+# watch methods being compiled as traffic comes in
+java -xx:+printcompilation -jar app.jar
+  
+ ways to reduce it: 
+ 
+ send some warm-up traffic before the pod is marked ready. 
+ use class data sharing (cds), which loads pre-processed classes from an archive. spring boot 3.3+ can create one for you. 
+ open database connections at start-up (hikari&#x27;s  minimum-idle  setting). 
+ for instant start-up, graalvm native image or crac, at the cost of a more complex build or less runtime optimisation. 
+ ">
+        <header class="qa-head">
+          <span class="qnum">Q29</span>
+          <div class="qa-title">
+            <span class="topic">From source to running code</span>
+            <h3>Why does the first request to a freshly started Spring Boot app take much longer than the hundredth?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a29">Show answer</button>
+        <div class="answer" id="a29"><p class="short"><strong>Short answer:</strong> warm-up. Classes are loaded the first time they are used, all code starts out slow (interpreted), and libraries set things up on first use. Later requests run fast compiled code with everything already in place.</p>
+<p class="why"><strong>Why it happens:</strong> the JVM does as little work as possible up front, and only optimises what turns out to be used a lot. The first request pays several one-time costs:</p>
+<ol>
+<li><strong>Loading classes.</strong> Every class the request touches (Jackson serializers, Hibernate helpers, your DTOs) is found, read, checked and initialised the first time it is used.</li>
+<li><strong>Interpreting.</strong> Code first runs in the interpreter, one instruction at a time, which is much slower than compiled code. Only methods that run often are compiled, first quickly by C1 and later thoroughly by C2.</li>
+<li><strong>Lazy set-up in libraries.</strong> The first database call may open connections, Hibernate prepares its queries, Jackson builds a serializer per type, and Spring MVC works out which controller handles which URL.</li>
+<li><strong>Empty caches.</strong> CPU caches, the JIT's usage statistics and your own application caches all start empty.</li>
+</ol>
+<pre data-lang="bash"><code class="language-bash"># See which classes load during the first request
+java -Xlog:class+load:file=classes.log -jar app.jar
+# Watch methods being compiled as traffic comes in
+java -XX:+PrintCompilation -jar app.jar
+</code></pre>
+<p>Ways to reduce it:</p>
+<ul>
+<li>Send some warm-up traffic before the pod is marked ready.</li>
+<li>Use Class Data Sharing (CDS), which loads pre-processed classes from an archive. Spring Boot 3.3+ can create one for you.</li>
+<li>Open database connections at start-up (Hikari's <code>minimum-idle</code> setting).</li>
+<li>For instant start-up, GraalVM native image or CRaC, at the cost of a more complex build or less runtime optimisation.</li>
+</ul></div>
+      </article>
+      <article class="qa" id="q30" data-text="heap usage climbs steadily, then a full garbage collection brings it back down to the same level each time. is that a memory leak?   short answer:  no. that saw-tooth shape is normal: garbage builds up until the collector runs. a leak looks different: the level the heap drops back to  after  each full collection keeps rising over time. 
+  why it happens:  the garbage collector does not free an object the moment it stops being used. it lets garbage pile up and cleans it in batches, because that is much cheaper per object. so the heap always grows between collections. the number that matters is what is left  after  a full collection: everything that is still reachable. if that stays flat, nothing is piling up. if it grows with every cycle, something is holding on to objects it should have let go, which is exactly what a memory leak in java is. 
+
+ 
+   
+     
+        
+       
+       
+       time 
+     
+      normal.  the floor after each gc stays flat. 
+   
+   
+     
+        
+       
+       
+       time 
+     
+      leak.  the floor rises after every gc. 
+   
+ 
+ how to check: 
+  # a gc log: compare the heap size after each collection over a few hours
+java -xlog:gc*:file=gc.log:time,uptime -jar app.jar
+
+# quick object counts per class, without a full dump. take two a few minutes apart and compare.
+jcmd &amp;lt;pid&amp;gt; gc.class_histogram | head -20
+
+# a full heap dump; open it in eclipse mat and look at the &amp;quot;dominator tree&amp;quot;
+jcmd &amp;lt;pid&amp;gt; gc.heap_dump /tmp/heap.hprof
+  
+ common causes when the level does rise: a static map that things are added to but never removed from,  threadlocal  values that are never removed on pooled threads, listeners that are registered but never unregistered, and caches without a size limit. ">
+        <header class="qa-head">
+          <span class="qnum">Q30</span>
+          <div class="qa-title">
+            <span class="topic">Garbage collection</span>
+            <h3>Heap usage climbs steadily, then a full garbage collection brings it back down to the same level each time. Is that a memory leak?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a30">Show answer</button>
+        <div class="answer" id="a30"><p class="short"><strong>Short answer:</strong> no. That saw-tooth shape is normal: garbage builds up until the collector runs. A leak looks different: the level the heap drops back to <em>after</em> each full collection keeps rising over time.</p>
+<p class="why"><strong>Why it happens:</strong> the garbage collector does not free an object the moment it stops being used. It lets garbage pile up and cleans it in batches, because that is much cheaper per object. So the heap always grows between collections. The number that matters is what is left <em>after</em> a full collection: everything that is still reachable. If that stays flat, nothing is piling up. If it grows with every cycle, something is holding on to objects it should have let go, which is exactly what a memory leak in Java is.</p>
+
+<figure class="saw" aria-label="Two heap charts: normal sawtooth with a flat floor, and a leak where the floor rises after every GC">
+  <div class="saw-panel">
+    <svg viewBox="0 0 240 120" role="img" aria-label="Normal: heap rises and drops back to the same floor">
+      <line x1="20" y1="100" x2="230" y2="100" class="ax"/><line x1="20" y1="10" x2="20" y2="100" class="ax"/>
+      <polyline class="heap" points="20,80 60,30 60,80 100,30 100,80 140,30 140,80 180,30 180,80 220,30 220,80"/>
+      <line x1="20" y1="80" x2="225" y2="80" class="floor"/>
+      <text x="125" y="115" class="lbl">time</text>
+    </svg>
+    <figcaption><b>Normal.</b> The floor after each GC stays flat.</figcaption>
+  </div>
+  <div class="saw-panel">
+    <svg viewBox="0 0 240 120" role="img" aria-label="Leak: the floor after each GC rises over time">
+      <line x1="20" y1="100" x2="230" y2="100" class="ax"/><line x1="20" y1="10" x2="20" y2="100" class="ax"/>
+      <polyline class="heap leak" points="20,88 60,52 60,82 100,44 100,72 140,36 140,62 180,26 180,52 220,16 220,42"/>
+      <polyline class="floor leak" points="20,88 60,82 100,72 140,62 180,52 220,42"/>
+      <text x="125" y="115" class="lbl">time</text>
+    </svg>
+    <figcaption><b>Leak.</b> The floor rises after every GC.</figcaption>
+  </div>
+</figure>
+<p>How to check:</p>
+<pre data-lang="bash"><code class="language-bash"># A GC log: compare the heap size after each collection over a few hours
+java -Xlog:gc*:file=gc.log:time,uptime -jar app.jar
+
+# Quick object counts per class, without a full dump. Take two a few minutes apart and compare.
+jcmd &lt;pid&gt; GC.class_histogram | head -20
+
+# A full heap dump; open it in Eclipse MAT and look at the &quot;dominator tree&quot;
+jcmd &lt;pid&gt; GC.heap_dump /tmp/heap.hprof
+</code></pre>
+<p>Common causes when the level does rise: a static map that things are added to but never removed from, <code>ThreadLocal</code> values that are never removed on pooled threads, listeners that are registered but never unregistered, and caches without a size limit.</p></div>
+      </article></section><section class="sec" id="spring-boot"><h2>Spring Boot</h2>
+      <article class="qa" id="q31" data-text="two `@transactional` methods are in the same class. one calls the other, which is marked `requires_new`. does the inner method get its own transaction?   short answer:  no. a call inside the same class goes through  this , not through spring&#x27;s proxy, so the inner annotation is never seen. the inner method simply runs inside the outer transaction. 
+  why it happens:   @transactional  is not handled by the java compiler or the jvm. spring makes it work by wrapping your bean in a  proxy : a generated stand-in object. when another bean calls an annotated method, the call reaches the proxy first. the proxy starts the transaction, calls your real method, then saves (commits) or undoes (rolls back). other beans always receive the proxy when they inject your class, so their calls go through it. 
+ inside your own class, though,  this  is your real object, not the proxy.  this.audit()  is a plain java method call straight to your code. the proxy, the only thing that knows what  requires_new  means, is never involved. 
+  @service
+public class loanservice {
+
+    @transactional
+    public void approve(long id) {
+        loanrepo.markapproved(id);
+        audit(id, &amp;quot;approved&amp;quot;);               // really this.audit(): skips the proxy
+        throw new illegalstateexception();   // undoes the approval and the audit row
+    }
+
+    @transactional(propagation = propagation.requires_new)   // ignored for the call above
+    public void audit(long id, string event) {
+        auditrepo.save(new auditentry(id, event));
+    }
+}
+  
+ you can confirm it while debugging:  transactionsynchronizationmanager.getcurrenttransactionname()  prints the same name in both methods. 
+ the fix is to make the call go through a proxy, which means the method has to live in another bean: 
+  @service
+class auditservice {
+    @transactional(propagation = propagation.requires_new)
+    public void record(long id, string event) {
+        auditrepo.save(new auditentry(id, event));
+    }
+}
+
+@service
+class loanservice {
+    private final auditservice audit;                 // spring injects the proxy
+    loanservice(auditservice audit) { this.audit = audit; }
+
+    @transactional
+    public void approve(long id) {
+        loanrepo.markapproved(id);
+        audit.record(id, &amp;quot;approved&amp;quot;);        // goes through the proxy: its own transaction, saved at once
+        throw new illegalstateexception();   // the approval is undone; the audit row stays
+    }
+}
+  
+ the same one mechanism explains a whole family of surprises: 
+ 
+  @async ,  @cacheable ,  @retryable  and  @preauthorize  also do nothing when a method calls another method of the same class. 
+ these annotations are ignored on  private  and  final  methods, because a generated subclass cannot override them. 
+ code in  @postconstruct  runs before the proxy exists, so  @transactional  has no effect there. 
+ 
+ one more detail:  requires_new  pauses the outer transaction and takes a  second  database connection from the pool. if many requests do this at once with a small pool (hikari&#x27;s default is 10), they can each hold one connection while waiting for a second, and the pool runs dry. ">
+        <header class="qa-head">
+          <span class="qnum">Q31</span>
+          <div class="qa-title">
+            <span class="topic">Transactions and proxies</span>
+            <h3>Two <code>@Transactional</code> methods are in the same class. One calls the other, which is marked <code>REQUIRES_NEW</code>. Does the inner method get its own transaction?</h3>
+          </div>
+        </header>
+        <button class="reveal" type="button" aria-expanded="false" aria-controls="a31">Show answer</button>
+        <div class="answer" id="a31"><p class="short"><strong>Short answer:</strong> no. A call inside the same class goes through <code>this</code>, not through Spring's proxy, so the inner annotation is never seen. The inner method simply runs inside the outer transaction.</p>
+<p class="why"><strong>Why it happens:</strong> <code>@Transactional</code> is not handled by the Java compiler or the JVM. Spring makes it work by wrapping your bean in a <em>proxy</em>: a generated stand-in object. When another bean calls an annotated method, the call reaches the proxy first. The proxy starts the transaction, calls your real method, then saves (commits) or undoes (rolls back). Other beans always receive the proxy when they inject your class, so their calls go through it.</p>
+<p>Inside your own class, though, <code>this</code> is your real object, not the proxy. <code>this.audit()</code> is a plain Java method call straight to your code. The proxy, the only thing that knows what <code>REQUIRES_NEW</code> means, is never involved.</p>
+<pre data-lang="java"><code class="language-java">@Service
+public class LoanService {
+
+    @Transactional
+    public void approve(long id) {
+        loanRepo.markApproved(id);
+        audit(id, &quot;APPROVED&quot;);               // really this.audit(): skips the proxy
+        throw new IllegalStateException();   // undoes the approval AND the audit row
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)   // ignored for the call above
+    public void audit(long id, String event) {
+        auditRepo.save(new AuditEntry(id, event));
+    }
+}
+</code></pre>
+<p>You can confirm it while debugging: <code>TransactionSynchronizationManager.getCurrentTransactionName()</code> prints the same name in both methods.</p>
+<p>The fix is to make the call go through a proxy, which means the method has to live in another bean:</p>
+<pre data-lang="java"><code class="language-java">@Service
+class AuditService {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void record(long id, String event) {
+        auditRepo.save(new AuditEntry(id, event));
+    }
+}
+
+@Service
+class LoanService {
+    private final AuditService audit;                 // Spring injects the PROXY
+    LoanService(AuditService audit) { this.audit = audit; }
+
+    @Transactional
+    public void approve(long id) {
+        loanRepo.markApproved(id);
+        audit.record(id, &quot;APPROVED&quot;);        // goes through the proxy: its own transaction, saved at once
+        throw new IllegalStateException();   // the approval is undone; the audit row stays
+    }
+}
+</code></pre>
+<p>The same one mechanism explains a whole family of surprises:</p>
+<ul>
+<li><code>@Async</code>, <code>@Cacheable</code>, <code>@Retryable</code> and <code>@PreAuthorize</code> also do nothing when a method calls another method of the same class.</li>
+<li>These annotations are ignored on <code>private</code> and <code>final</code> methods, because a generated subclass cannot override them.</li>
+<li>Code in <code>@PostConstruct</code> runs before the proxy exists, so <code>@Transactional</code> has no effect there.</li>
+</ul>
+<p>One more detail: <code>REQUIRES_NEW</code> pauses the outer transaction and takes a <em>second</em> database connection from the pool. If many requests do this at once with a small pool (Hikari's default is 10), they can each hold one connection while waiting for a second, and the pool runs dry.</p></div>
+      </article></section>
+    <p class="empty" id="empty" hidden>No question matches that search. Try a word such as volatile, proxy or stream.</p>
+  </main>
+</div>
+<footer>From the Java Backend Field Guide. Code examples use JDK 21 unless a line says otherwise.</footer>
+<a class="top" href="#" aria-label="Back to top">↑ Top</a>
+
+<script>
+(function(){
+  /* ---- syntax highlighting (Java, plus # comments for shell) ---- */
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const KW = "abstract assert boolean break byte case catch char class continue default do double else enum extends final finally float for if implements import instanceof int interface long native new package private protected public return short static super switch synchronized this throw throws transient try void volatile while var record sealed permits yield when true false null";
+  const HL = new RegExp(String.raw`(\/\*[\s\S]*?\*\/|\/\/[^\n]*|^[ \t]*#[^\n]*)|("(?:\\.|[^"\\\n])*")|(@[A-Za-z_]\w*)|\b(` + KW.split(" ").join("|") + String.raw`)\b|\b(\d[\d_]*(?:\.\d+)?[LlFfDd]?)\b|\b([A-Z][A-Za-z0-9_]*)\b`, "gm");
+  function hl(src){
+    let out = "", last = 0, m; HL.lastIndex = 0;
+    while ((m = HL.exec(src))){
+      out += esc(src.slice(last, m.index));
+      const cls = m[1]?"c":m[2]?"s":m[3]?"a":m[4]?"k":m[5]?"nm":"t";
+      out += '<span class="'+cls+'">'+esc(m[0])+'</span>';
+      last = HL.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  const LABEL = {java:"Java", bash:"Shell", text:"Diagram"};
+  document.querySelectorAll(".answer pre").forEach((pre, i) => {
+    const lang = pre.dataset.lang || "text", code = pre.querySelector("code");
+    if (lang === "java" || lang === "bash") code.innerHTML = hl(code.textContent);
+    const wrap = document.createElement("div"); wrap.className = "code";
+    wrap.innerHTML = '<div class="code-head"><span>'+(LABEL[lang]||lang)+'</span><button class="copy" type="button">Copy</button></div>';
+    pre.replaceWith(wrap); wrap.appendChild(pre);
+  });
+  document.addEventListener("click", e => {
+    const b = e.target.closest(".copy"); if (!b) return;
+    const code = b.closest(".code").querySelector("code");
+    const done = () => { b.textContent = "Copied"; setTimeout(() => b.textContent = "Copy", 1400); };
+    const select = () => { const r = document.createRange(); r.selectNodeContents(code); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Selected"; setTimeout(() => b.textContent = "Copy", 1400); };
+    try { navigator.clipboard.writeText(code.textContent).then(done, select); } catch (err) { select(); }
+  });
+
+  /* ---- quiz mode ---- */
+  const quiz = document.getElementById("quiz");
+  let saved = null; try { saved = localStorage.getItem("jqa-quiz"); } catch (e) {}
+  quiz.checked = saved === "1";
+  const applyQuiz = () => {
+    document.body.classList.toggle("quiz", quiz.checked);
+    document.querySelectorAll(".qa").forEach(a => { a.classList.remove("open"); const r = a.querySelector(".reveal"); r.textContent = "Show answer"; r.setAttribute("aria-expanded","false"); });
+    try { localStorage.setItem("jqa-quiz", quiz.checked ? "1" : "0"); } catch (e) {}
+  };
+  quiz.addEventListener("change", applyQuiz); applyQuiz();
+  document.addEventListener("click", e => {
+    const r = e.target.closest(".reveal"); if (!r) return;
+    const card = r.closest(".qa"), open = card.classList.toggle("open");
+    r.textContent = open ? "Hide answer" : "Show answer";
+    r.setAttribute("aria-expanded", String(open));
+  });
+
+  /* ---- search ---- */
+  const q = document.getElementById("q"), count = document.getElementById("count"), empty = document.getElementById("empty");
+  const cards = [...document.querySelectorAll(".qa")], secs = [...document.querySelectorAll(".sec")];
+  const tocLinks = new Map([...document.querySelectorAll(".toc a[data-q]")].map(a => [a.dataset.q, a]));
+  q.addEventListener("input", () => {
+    const term = q.value.trim().toLowerCase(); let shown = 0;
+    cards.forEach(c => {
+      const hit = !term || c.dataset.text.includes(term);
+      c.hidden = !hit; if (hit) shown++;
+      const link = tocLinks.get(c.id.slice(1)); if (link) link.parentElement.classList.toggle("dim", !hit);
+    });
+    secs.forEach(s => s.hidden = !s.querySelector(".qa:not([hidden])"));
+    count.textContent = term ? shown + " of " + cards.length + " match" : cards.length + " questions";
+    empty.hidden = shown > 0;
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "/" && document.activeElement !== q && !e.target.closest("input,textarea")){ e.preventDefault(); q.focus(); }
+  });
+
+  /* ---- highlight where you are ---- */
+  const chips = new Map([...document.querySelectorAll(".chip")].map(c => [c.getAttribute("href").slice(1), c]));
+  if ("IntersectionObserver" in window){
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        if (!en.isIntersecting) return;
+        const card = en.target, sec = card.closest(".sec");
+        tocLinks.forEach(a => a.classList.remove("on"));
+        const link = tocLinks.get(card.id.slice(1)); if (link) link.classList.add("on");
+        chips.forEach(c => c.classList.remove("on"));
+        const chip = chips.get(sec.id);
+        if (chip){ chip.classList.add("on"); const bar = chip.parentElement; bar.scrollLeft = chip.offsetLeft - (bar.clientWidth - chip.offsetWidth) / 2; }
+      });
+    }, {rootMargin:"-30% 0px -60% 0px"});
+    cards.forEach(c => io.observe(c));
+  }
+})();
+</script>
+</body>
+</html>
