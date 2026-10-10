@@ -98,6 +98,13 @@ const TOPICS = [
     summary: "A first-principles manual for Spring Boot developers, Container Field Manual",
     tags: ["kubernates", "containerization"],
     file: "topics/kubernates_guide.html"
+  },
+  {
+    id: "security-review",
+    title: "Security Review Guide",
+    summary: "Security review and web penetration testing, from first principles, with Java examples.",
+    tags: ["security-review", "sast", "dast", "sca", "vulnerability"],
+    file: "topics/Security_review_guide.html"
   }
 ];
 
