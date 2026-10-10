@@ -1,0 +1,1528 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Container Field Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a port-yard field manual. Fixed chapter rail on wide screens, one reading column (~68ch),
+   interactive "yard instruments" break out to a wider measure. Container-door stencil type for headings. */
+:root{
+  --bg:#ECEFF2; --surface:#FFFFFF; --sunk:#E2E7EC; --ink:#15212C; --muted:#56646F; --line:#C9D1D8;
+  --accent:#A86200; --accent-soft:#F6E3C6; --net:#0B7680; --net-soft:#D2ECEE;
+  --ok:#2B7A4B; --ok-soft:#D7EFE0; --bad:#B42A20; --bad-soft:#F7DAD6; --warn:#946200;
+  --code-bg:#1B2631; --code-ink:#DCE6EE; --code-dim:#8FA3B3;
+  --display:"Big Shoulders Display","Arial Narrow","Roboto Condensed",Impact,sans-serif;
+  --body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+  --rail:248px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E151C; --surface:#16212B; --sunk:#111A22; --ink:#E2E9EF; --muted:#94A3B0; --line:#2A3946;
+  --accent:#F0A43C; --accent-soft:#3A2A12; --net:#4CC4CC; --net-soft:#12343A;
+  --ok:#62C98E; --ok-soft:#163626; --bad:#F27A70; --bad-soft:#3C1A17; --warn:#E9B949;
+  --code-bg:#0A1016; --code-ink:#DCE6EE; --code-dim:#7F93A3; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E151C; --surface:#16212B; --sunk:#111A22; --ink:#E2E9EF; --muted:#94A3B0; --line:#2A3946;
+  --accent:#F0A43C; --accent-soft:#3A2A12; --net:#4CC4CC; --net-soft:#12343A;
+  --ok:#62C98E; --ok-soft:#163626; --bad:#F27A70; --bad-soft:#3C1A17; --warn:#E9B949;
+  --code-bg:#0A1016; --code-ink:#DCE6EE; --code-dim:#7F93A3; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{background:var(--bg);color:var(--ink);font:17px/1.62 var(--body);margin:0}
+a{color:var(--net)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+
+/* rail */
+.rail{display:none}
+@media (min-width:1100px){
+  .rail{display:block;position:fixed;top:env(safe-area-inset-top,0px);left:0;bottom:0;width:var(--rail);
+    overflow-y:auto;padding:28px 18px 40px 22px;border-right:1px solid var(--line);background:var(--surface)}
+  .wrap{margin-left:var(--rail)}
+}
+.rail .brand{font:800 26px/1 var(--display);letter-spacing:.02em;text-transform:uppercase;margin:0 0 4px}
+.rail .brand small{display:block;font:600 11px/1.4 var(--mono);letter-spacing:.12em;color:var(--muted);margin-top:6px}
+.rail h4{font:600 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:22px 0 8px}
+.rail ol{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+.rail a{display:flex;gap:8px;text-decoration:none;color:var(--muted);font-size:14px;line-height:1.3;padding:5px 8px;border-radius:4px}
+.rail a span{font:600 11px/1.6 var(--mono);color:var(--line);min-width:20px}
+.rail a:hover{color:var(--ink);background:var(--sunk)}
+.rail a.on{color:var(--ink);background:var(--accent-soft)}
+.rail a.on span{color:var(--accent)}
+.progress{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;height:3px;z-index:30;pointer-events:none}
+.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s linear}
+
+.wrap{padding-inline:20px}
+main{max-width:1060px;margin:0 auto;padding-block:0 80px}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:40px;align-items:center;padding-block:56px 36px;border-bottom:1px solid var(--line)}
+@media (max-width:820px){.hero{grid-template-columns:1fr;gap:28px;padding-top:36px}}
+.eyebrow{font:600 12px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+.hero h1{font:800 clamp(52px,9vw,104px)/.88 var(--display);text-transform:uppercase;letter-spacing:.005em;margin:0 0 22px;text-wrap:balance}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.thesis{font-size:21px;line-height:1.5;max-width:34ch;margin:0 0 18px}
+.hero p.sub{color:var(--muted);max-width:52ch;margin:0}
+.legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:22px;font-size:14px;color:var(--muted)}
+.legend .t{cursor:help}
+
+/* hero container stack */
+.stack{position:relative;display:grid;gap:10px;justify-items:center;padding:8px 0 0}
+.box{position:relative;width:min(100%,400px);height:76px;border-radius:3px;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 18px;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.10) 0 3px,rgba(0,0,0,.10) 3px 14px),var(--c);box-shadow:0 2px 0 rgba(0,0,0,.25) inset, 0 -2px 0 rgba(255,255,255,.12) inset;
+  animation:drop .9s cubic-bezier(.2,.8,.2,1) both}
+.box b{font:800 24px/1 var(--display);letter-spacing:.06em;text-transform:uppercase}
+.box code{font:600 11px/1.3 var(--mono);opacity:.9;text-align:right;color:#fff;background:none;padding:0}
+.box.b1{--c:#2F5D7A;animation-delay:.05s}.box.b2{--c:#8A4B12;animation-delay:.22s}.box.b3{--c:#0B6670;animation-delay:.4s}
+.box.b0{--c:#4C5A66;height:58px;animation-delay:.58s}
+@keyframes drop{from{transform:translateY(-36px)}to{transform:none}}
+.plate{width:min(100%,400px);border:1.5px solid var(--ink);border-radius:2px;padding:10px 14px;font:600 12px/1.55 var(--mono);display:grid;grid-template-columns:auto 1fr;gap:2px 14px;background:var(--surface)}
+.plate .k{color:var(--muted)}
+.plate .cid{grid-column:1/-1;font:800 26px/1.1 var(--display);letter-spacing:.12em;margin-bottom:4px}
+.plate .cid i{font-style:normal;border:1.5px solid var(--ink);padding:0 5px;margin-left:4px}
+
+/* TOC block (for all widths) */
+.toc{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px;padding-block:30px;border-bottom:1px solid var(--line)}
+.toc h3{font:800 20px/1 var(--display);text-transform:uppercase;letter-spacing:.04em;margin:0 0 10px}
+.toc h3 small{display:block;font:600 11px/1.3 var(--mono);letter-spacing:.12em;color:var(--accent);margin-bottom:6px}
+.toc ol{margin:0;padding-left:0;list-style:none;display:grid;gap:3px;font-size:15px}
+.toc li span{font:600 12px var(--mono);color:var(--muted);display:inline-block;width:26px}
+.toc a{color:var(--ink);text-decoration:none;border-bottom:1px solid transparent}
+.toc a:hover{border-color:var(--accent)}
+
+/* parts and chapters */
+.part{padding-block:56px 6px}
+.part .eyebrow{margin-bottom:6px}
+.part h2.partname{font:800 clamp(40px,6vw,68px)/.95 var(--display);text-transform:uppercase;margin:0;text-wrap:balance}
+.part p.lede{color:var(--muted);max-width:62ch;margin:12px 0 0}
+section.ch{padding-block:44px 8px;border-top:1px solid var(--line);margin-top:40px}
+.ch header{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 18px;align-items:end;margin-bottom:18px}
+.ch .num{font:800 64px/.8 var(--display);color:var(--accent);grid-row:span 2}
+.ch .kicker{font:600 12px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ch h2{font:800 clamp(30px,4.4vw,44px)/1 var(--display);text-transform:uppercase;letter-spacing:.01em;margin:0;text-wrap:balance}
+.prose{max-width:68ch}
+.prose p,.prose li{margin:0 0 14px}
+.prose ul,.prose ol{padding-left:22px;margin:0 0 14px}
+.prose h3{font:800 23px/1.15 var(--display);text-transform:uppercase;letter-spacing:.03em;margin:30px 0 10px;text-wrap:balance}
+.prose strong{font-weight:700}
+.first{border-left:3px solid var(--accent);padding:6px 0 6px 16px;margin:6px 0 20px;max-width:64ch}
+.first .lbl{display:block;font:600 11px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.first p{margin:0;font-size:18px}
+code{font:500 .86em/1 var(--mono);background:var(--sunk);padding:2px 5px;border-radius:3px}
+
+/* glossary term */
+.t{text-decoration:underline dotted;text-decoration-color:var(--accent);text-decoration-thickness:2px;text-underline-offset:4px;cursor:help;border-radius:2px}
+.t:hover,.t.on{background:var(--accent-soft)}
+#pop{position:absolute;z-index:50;max-width:min(340px,calc(100vw - 32px));background:var(--surface);color:var(--ink);border:1px solid var(--line);border-top:3px solid var(--accent);
+  border-radius:4px;padding:12px 14px 12px;box-shadow:0 12px 32px rgba(0,0,0,.22);font-size:15px;line-height:1.5}
+#pop b{display:block;font:800 19px/1.1 var(--display);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
+#pop .why{display:block;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);color:var(--muted);font-size:14px}
+#pop .why::before{content:"Why it exists · ";font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+
+/* code */
+.code{position:relative;margin:16px 0 22px;max-width:100%}
+.code .cap{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--code-bg);color:var(--code-dim);font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:10px 14px 0;border-radius:6px 6px 0 0}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-ink);font:13px/1.6 var(--mono);padding:10px 14px 14px;border-radius:0 0 6px 6px;overflow-x:auto;tab-size:2}
+.code pre .c{color:var(--code-dim)}
+.code pre .h{color:#F4B860}
+.copy{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--code-dim);background:transparent;border:1px solid #33414e;border-radius:4px;padding:4px 8px;cursor:pointer}
+.copy:hover{color:#fff;border-color:#5b6b78}
+
+/* tables */
+.tbl{overflow-x:auto;margin:14px 0 22px;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:560px}
+th{font:600 11px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:2px solid var(--ink)}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td code{white-space:nowrap}
+
+/* instruments (interactive widgets) */
+.inst{background:var(--surface);border:1px solid var(--line);border-radius:6px;margin:22px 0 26px;overflow:hidden}
+.inst .bar{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;align-items:baseline;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--sunk)}
+.inst .bar b{font:800 18px/1.1 var(--display);text-transform:uppercase;letter-spacing:.05em}
+.inst .bar span{font:600 11px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.inst .body{padding:16px}
+.ctrls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+button.btn{font:600 13px/1 var(--body);background:var(--surface);color:var(--ink);border:1.5px solid var(--line);border-radius:5px;padding:9px 12px;cursor:pointer}
+button.btn:hover{border-color:var(--ink)}
+button.btn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] button.btn.primary{color:#1a1206}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) button.btn.primary{color:#1a1206}}
+.note{font-size:14px;color:var(--muted);margin:10px 0 0}
+.pill{display:inline-block;font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:5px 7px;border-radius:999px;border:1px solid currentColor}
+.pill.ok{color:var(--ok);background:var(--ok-soft)}.pill.bad{color:var(--bad);background:var(--bad-soft)}.pill.warn{color:var(--warn);background:var(--accent-soft)}.pill.net{color:var(--net);background:var(--net-soft)}
+
+/* ns widget */
+.ns-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.ns-cell{border:1px solid var(--line);border-radius:5px;padding:10px 12px;min-width:0;transition:background .3s,border-color .3s}
+.ns-cell h5{margin:0 0 4px;font:600 11px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.ns-cell p{margin:0;font:13px/1.5 var(--mono)}
+.ns-cell.iso{border-color:var(--net);background:var(--net-soft)}
+
+/* layers */
+.layers{display:grid;gap:6px}
+.layer{display:grid;grid-template-columns:minmax(0,1fr) 84px 92px;gap:10px;align-items:center;font-size:14px}
+.layer .lb{position:relative;border-radius:3px;padding:8px 10px;background:var(--sunk);border:1px solid var(--line);overflow:hidden;min-width:0}
+.layer .lb i{position:absolute;left:0;top:0;bottom:0;background:var(--net-soft);transition:width .5s}
+.layer .lb span{position:relative}
+.layer .sz{font:600 12px var(--mono);text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.layer.re .lb{border-color:var(--accent);animation:flash .7s}
+.layer.re .lb i{background:var(--accent-soft)}
+@keyframes flash{0%{background:var(--accent)}100%{background:var(--sunk)}}
+.readout{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);font-size:14px}
+.readout b{font:800 26px/1 var(--display);display:block;font-variant-numeric:tabular-nums}
+
+/* jvm */
+.sliders{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px 22px;margin-bottom:18px}
+.sliders label{display:grid;gap:6px;font-size:14px}
+.sliders label span{display:flex;justify-content:space-between;color:var(--muted)}
+.sliders label output{font:600 13px var(--mono);color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.mem{position:relative;height:46px;border-radius:4px;background:var(--sunk);border:1px solid var(--line);display:flex;overflow:visible}
+.mem div{height:100%;transition:width .35s;display:flex;align-items:center;justify-content:center;font:600 11px var(--mono);color:#fff;overflow:hidden;white-space:nowrap}
+.mem .hp{background:#2F5D7A}.mem .ms{background:#8A4B12}.mem .th{background:#0B6670}.mem .ot{background:#59636c}
+.mem .lim{position:absolute;top:-8px;bottom:-8px;width:0;border-left:2.5px dashed var(--bad);transition:left .35s}
+.mem .lim::after{content:"cgroup limit";position:absolute;top:-16px;left:4px;font:600 10px var(--mono);color:var(--bad);white-space:nowrap}
+.memkey{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:20px;font-size:13px;color:var(--muted)}
+.memkey i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+
+/* reconcile */
+.loop{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.loop span{font:600 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:6px 10px;border-radius:4px;border:1px solid var(--line);color:var(--muted);transition:all .2s}
+.loop span.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.pods{display:flex;flex-wrap:wrap;gap:8px;min-height:62px;margin-bottom:12px}
+.pod{width:78px;height:56px;border-radius:5px;display:grid;place-items:center;text-align:center;font:600 11px/1.25 var(--mono);border:1.5px solid var(--net);background:var(--net-soft);color:var(--ink);transition:transform .3s,opacity .3s}
+.pod.creating{border-style:dashed;opacity:.65}
+.pod.terminating{border-color:var(--bad);background:var(--bad-soft);opacity:.6}
+.pod.v2{border-color:var(--accent);background:var(--accent-soft)}
+.pod.v2.creating{border-style:dashed}
+.log{font:12.5px/1.6 var(--mono);background:var(--code-bg);color:var(--code-ink);border-radius:5px;padding:10px 12px;min-height:96px;overflow-x:auto}
+.log div{white-space:pre}
+.log .k{color:#F4B860}
+.stepper{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:5px;overflow:hidden}
+.stepper button{border:0;background:var(--surface);color:var(--ink);font:700 16px var(--mono);width:36px;height:34px;cursor:pointer}
+.stepper output{font:600 14px var(--mono);padding:0 12px}
+
+/* svg diagrams */
+.fig{margin:20px 0 24px;overflow-x:auto;max-width:100%}
+.fig svg{display:block;width:100%;height:auto;min-width:560px}
+.fig figcaption{font-size:14px;color:var(--muted);margin-top:8px;max-width:68ch}
+svg text{font-family:var(--mono)}
+.s-box{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+.s-sunk{fill:var(--sunk);stroke:var(--line);stroke-width:1.5}
+.s-acc{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
+.s-net{fill:var(--net-soft);stroke:var(--net);stroke-width:1.5}
+.s-t{fill:var(--ink);font-size:12px}
+.s-m{fill:var(--muted);font-size:11px}
+.s-h{fill:var(--ink);font-size:13px;font-weight:600}
+.s-line{stroke:var(--muted);stroke-width:1.5;fill:none}
+.s-flow{stroke:var(--net);stroke-width:2;fill:none;stroke-dasharray:6 6;animation:dash 1.2s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-24}}
+.s-dot{fill:var(--accent)}
+.s-pod-ready{fill:var(--net-soft);stroke:var(--net);stroke-width:1.5}
+.s-pod-unready{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.5;stroke-dasharray:4 3}
+
+/* check yourself */
+details.check{border:1px solid var(--line);border-left:3px solid var(--net);border-radius:4px;padding:10px 14px;margin:18px 0;background:var(--surface);max-width:68ch}
+details.check summary{cursor:pointer;font-weight:700}
+details.check summary::before{content:"Check yourself · ";font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--net)}
+details.check p{margin:10px 0 0}
+
+/* two column compare */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:16px 0 22px}
+.col{border:1px solid var(--line);border-radius:5px;padding:12px 14px;background:var(--surface);min-width:0}
+.col h5{margin:0 0 6px;font:800 18px/1.1 var(--display);text-transform:uppercase;letter-spacing:.04em}
+.col p,.col li{font-size:15px;margin:0 0 6px}
+.col ul{padding-left:18px;margin:0}
+
+/* glossary */
+.gl-search{width:100%;max-width:420px;font:16px var(--body);padding:10px 12px;border:1.5px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink);margin:6px 0 18px}
+.gl{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.gl div{border:1px solid var(--line);border-radius:4px;padding:10px 12px;background:var(--surface);font-size:14.5px;min-width:0}
+.gl div b{display:block;font:800 17px/1.15 var(--display);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}
+.gl div em{font-style:normal;color:var(--muted);display:block;margin-top:5px;font-size:13.5px}
+footer{color:var(--muted);font-size:14px;border-top:1px solid var(--line);margin-top:60px;padding-top:18px}
+
+/* mesh */
+.mesh-nodes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;position:relative}
+@media (max-width:620px){.mesh-nodes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.mn{border:1.5px solid var(--line);border-radius:5px;padding:10px;text-align:center;font:600 12px/1.35 var(--mono);transition:all .25s;min-width:0}
+.mn small{display:block;font-weight:400;color:var(--muted)}
+.mn.app{background:var(--sunk)}
+.mn.px{background:var(--net-soft);border-color:var(--net)}
+.mn.hot{border-color:var(--accent);background:var(--accent-soft);transform:translateY(-3px)}
+.mn.fail{border-color:var(--bad);background:var(--bad-soft)}
+.pod-frame{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:10px}
+.pod-frame div{font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-top:2px solid var(--line);padding-top:4px;text-align:center}
+.wire{height:8px;margin:8px 0 12px;border-radius:4px;background:var(--sunk);position:relative;overflow:hidden}
+.wire i{position:absolute;top:0;bottom:0;width:22%;left:-22%;background:var(--accent);border-radius:4px}
+.wire.tls{background:repeating-linear-gradient(90deg,var(--ok-soft) 0 10px,var(--sunk) 10px 20px)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}
+@media (max-width:520px){
+  body{font-size:16px}
+  .ch .num{font-size:46px}
+  .layer{grid-template-columns:minmax(0,1fr) 64px;}
+  .layer .st{grid-column:1/-1}
+}
+</style>
+
+<div class="progress" aria-hidden="true"><i id="prog"></i></div>
+
+<nav class="rail" aria-label="Chapters">
+  <p class="brand">Container<br>Field Manual<small>Spring Boot · Docker · K8s · Mesh · OpenShift</small></p>
+  <div id="railList"></div>
+</nav>
+
+<div class="wrap">
+<main>
+
+<header class="hero">
+  <div>
+    <p class="eyebrow">A first-principles manual for Spring Boot developers</p>
+    <h1>Container <em>Field</em> Manual</h1>
+    <p class="thesis">A container is a normal Linux <span class="t" data-t="process">process</span> with a fence around what it can see, a budget for what it can use, and a private filesystem.</p>
+    <p class="sub">Everything else in this manual (Docker, Kubernetes, Kong Mesh, OpenShift) is machinery for building that process, placing it on machines, keeping it alive, and letting copies of it talk safely. Each chapter starts from the problem, then derives the mechanism.</p>
+    <div class="legend"><span>Dotted words have definitions: <span class="t" data-t="cgroup">hover or tap me</span>.</span><span>Grey panels are live instruments. Press their buttons.</span></div>
+  </div>
+  <div class="stack" aria-label="An image drawn as stacked shipping containers: base OS, JRE, dependencies, application">
+    <div class="plate">
+      <span class="cid">SBTU 210521 <i>3</i></span>
+      <span class="k">MAX GROSS</span><span>512 MiB (memory limit)</span>
+      <span class="k">TARE</span><span>JRE 21 + base OS · 218 MB</span>
+      <span class="k">CARGO</span><span>order-api.jar · Spring Boot</span>
+    </div>
+    <div class="box b3"><b>application</b><code>your classes<br>0.3 MB</code></div>
+    <div class="box b2"><b>dependencies</b><code>spring, jackson…<br>62 MB</code></div>
+    <div class="box b1"><b>JRE 21</b><code>eclipse-temurin<br>140 MB</code></div>
+    <div class="box b0"><b>base OS</b><code>ubuntu noble · 78 MB</code></div>
+  </div>
+</header>
+
+<div class="toc" id="toc"></div>
+
+<!-- ============================ PART I ============================ -->
+<div class="part" id="part-1">
+  <p class="eyebrow">Part I</p>
+  <h2 class="partname">The container itself</h2>
+  <p class="lede">What Docker actually does to your Spring Boot jar, from the Linux kernel up.</p>
+</div>
+
+<section class="ch" id="c1" data-title="What a program needs">
+  <header><span class="num">01</span><span class="kicker">The problem</span><h2>What a running program needs</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>A program only runs correctly when its whole environment matches what it was tested against. Ship the environment with the program and the mismatch disappears.</p></div>
+  <div class="prose">
+    <p>Picture what <code>java -jar order-api.jar</code> silently depends on. It needs a <span class="t" data-t="kernel">kernel</span> to give it CPU time and memory. It needs the exact JVM version you compiled for. It needs every jar on the classpath, the operating system's C library, the CA certificates that let it make HTTPS calls, timezone data, a free port 8080, and the right values for <code>SPRING_DATASOURCE_URL</code>. "It works on my machine" means at least one of those differs between your laptop and the server.</p>
+    <p>There are two ways to ship the whole environment along with the program:</p>
+  </div>
+  <div class="cols">
+    <div class="col"><h5>Ship a whole computer</h5><p>A <span class="t" data-t="vm">virtual machine</span> packs its own kernel and boots like a real computer. Strong isolation, but each copy carries gigabytes and takes tens of seconds to boot.</p></div>
+    <div class="col"><h5>Share the kernel, fence the process</h5><p>A container reuses the host's kernel. It packs only the files above the kernel and asks the kernel to isolate the process. Start time is your JVM start time, nothing more.</p></div>
+  </div>
+  <figure class="fig">
+    <svg viewBox="0 0 760 250" role="img" aria-label="Virtual machines each carry a guest kernel; containers share one host kernel">
+      <text x="20" y="22" class="s-h">Virtual machines</text>
+      <text x="410" y="22" class="s-h">Containers</text>
+      <rect x="20" y="200" width="350" height="34" class="s-sunk"/><text x="195" y="222" text-anchor="middle" class="s-t">hardware + hypervisor</text>
+      <g>
+        <rect x="20" y="36" width="168" height="158" class="s-box"/>
+        <rect x="30" y="46" width="148" height="34" class="s-acc"/><text x="104" y="68" text-anchor="middle" class="s-t">order-api.jar</text>
+        <rect x="30" y="84" width="148" height="30" class="s-sunk"/><text x="104" y="104" text-anchor="middle" class="s-t">JRE + libs</text>
+        <rect x="30" y="118" width="148" height="30" class="s-sunk"/><text x="104" y="138" text-anchor="middle" class="s-t">guest OS userland</text>
+        <rect x="30" y="152" width="148" height="32" class="s-net"/><text x="104" y="173" text-anchor="middle" class="s-t">guest KERNEL</text>
+        <rect x="202" y="36" width="168" height="158" class="s-box"/>
+        <rect x="212" y="46" width="148" height="34" class="s-acc"/><text x="286" y="68" text-anchor="middle" class="s-t">payment-api.jar</text>
+        <rect x="212" y="84" width="148" height="30" class="s-sunk"/><text x="286" y="104" text-anchor="middle" class="s-t">JRE + libs</text>
+        <rect x="212" y="118" width="148" height="30" class="s-sunk"/><text x="286" y="138" text-anchor="middle" class="s-t">guest OS userland</text>
+        <rect x="212" y="152" width="148" height="32" class="s-net"/><text x="286" y="173" text-anchor="middle" class="s-t">guest KERNEL</text>
+      </g>
+      <rect x="410" y="200" width="330" height="34" class="s-sunk"/><text x="575" y="222" text-anchor="middle" class="s-t">hardware</text>
+      <rect x="410" y="160" width="330" height="34" class="s-net"/><text x="575" y="182" text-anchor="middle" class="s-t">ONE host kernel (namespaces + cgroups)</text>
+      <rect x="410" y="74" width="160" height="80" class="s-box"/>
+      <rect x="420" y="84" width="140" height="30" class="s-acc"/><text x="490" y="104" text-anchor="middle" class="s-t">order-api.jar</text>
+      <rect x="420" y="118" width="140" height="28" class="s-sunk"/><text x="490" y="137" text-anchor="middle" class="s-t">JRE + libs</text>
+      <rect x="580" y="74" width="160" height="80" class="s-box"/>
+      <rect x="590" y="84" width="140" height="30" class="s-acc"/><text x="660" y="104" text-anchor="middle" class="s-t">payment-api.jar</text>
+      <rect x="590" y="118" width="140" height="28" class="s-sunk"/><text x="660" y="137" text-anchor="middle" class="s-t">JRE + libs</text>
+      <text x="575" y="58" text-anchor="middle" class="s-m">no guest kernel: nothing to boot</text>
+    </svg>
+    <figcaption>The VM ships the kernel; the container borrows it. That one difference explains why containers start in a second and why a Linux container cannot run on a Windows kernel without a Linux VM underneath (which is exactly what WSL2 and Docker Desktop provide).</figcaption>
+  </figure>
+  <div class="prose">
+    <p>Proof that a container is just a process: start one, then run <code>ps aux | grep java</code> on the host. Your JVM is right there in the host's process list, with a host PID. The kernel is not running a "container"; it is running a process that it has been asked to fence.</p>
+  </div>
+  <details class="check"><summary>Why does a container start faster than a VM, but not faster than the app inside it?</summary><p>There is no operating system to boot, because the kernel is already running. What remains is starting your process, which for Spring Boot means JVM startup plus context initialization. A container makes the environment portable; it does not make the JVM faster.</p></details>
+</section>
+
+<section class="ch" id="c2" data-title="Namespaces, cgroups, filesystems">
+  <header><span class="num">02</span><span class="kicker">The mechanism</span><h2>The fence: namespaces, cgroups, filesystems</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>Isolation needs three answers: what may the process <em>see</em>, how much may it <em>use</em>, and which <em>files</em> make up its world. Linux has one feature for each.</p></div>
+  <div class="prose">
+    <h3>See: namespaces</h3>
+    <p>A <span class="t" data-t="namespace">namespace</span> gives a process its own private copy of one global kernel resource. In a <span class="t" data-t="pidns">PID namespace</span> your JVM believes it is process number 1. In a network namespace it gets its own interfaces, IP address and port table, so ten containers can all listen on 8080. A mount namespace gives it its own filesystem tree, and a UTS namespace its own hostname. Nothing is copied or virtualized; the kernel simply filters what the process is allowed to look up.</p>
+    <h3>Use: cgroups</h3>
+    <p>Seeing less is not the same as using less. A <span class="t" data-t="cgroup">cgroup</span> (control group) puts a budget on a group of processes: so many CPU shares per period, so many bytes of memory, so many process IDs. When memory use crosses the limit, the kernel's <span class="t" data-t="oomkiller">OOM killer</span> ends the process. That is the origin of the famous <span class="t" data-t="exit137">exit code 137</span>.</p>
+    <h3>Files: a layered root filesystem</h3>
+    <p>The process's <code>/</code> is assembled by <span class="t" data-t="overlayfs">OverlayFS</span>: read-only image layers stacked underneath, plus one thin writable layer on top. Writing to a file from a lower layer first copies it up (<span class="t" data-t="cow">copy-on-write</span>). Delete the container and that writable layer goes with it. Anything that must survive goes in a <span class="t" data-t="volume">volume</span>.</p>
+  </div>
+
+  <div class="inst" id="ns">
+    <div class="bar"><b>Fence builder</b><span>Toggle each isolation and watch what the JVM can see</span></div>
+    <div class="body">
+      <div class="ctrls" role="group" aria-label="Isolation toggles">
+        <button class="btn" data-ns="pid" aria-pressed="false">PID namespace</button>
+        <button class="btn" data-ns="net" aria-pressed="false">Network namespace</button>
+        <button class="btn" data-ns="mnt" aria-pressed="false">Mount namespace</button>
+        <button class="btn" data-ns="uts" aria-pressed="false">UTS namespace</button>
+        <button class="btn" data-ns="cg" aria-pressed="false">cgroup limits</button>
+        <button class="btn primary" id="nsAll">Make it a container</button>
+      </div>
+      <div class="ns-grid" id="nsGrid"></div>
+      <p class="note" id="nsNote">Nothing isolated yet: this is a plain <code>java -jar</code> on your laptop.</p>
+    </div>
+  </div>
+
+  <div class="prose">
+    <p>Two more guards complete the fence. Linux <span class="t" data-t="capabilities">capabilities</span> split root's powers into small pieces, and container runtimes drop most of them. <span class="t" data-t="seccomp">seccomp</span> filters which system calls the process may make at all. This is why "root inside a container" is weaker than root on the host, and also why it is still worth avoiding.</p>
+  </div>
+  <details class="check"><summary>Your Spring Boot container writes uploaded PDFs to /tmp/uploads. After a redeploy they are gone. Why?</summary><p>They lived in the container's writable OverlayFS layer, which belongs to that one container instance. A redeploy creates a new container from the image, with a fresh empty writable layer. Persist files in a volume or, better for multiple replicas, in object storage such as S3.</p></details>
+</section>
+
+<section class="ch" id="c3" data-title="Images and layers">
+  <header><span class="num">03</span><span class="kicker">Packaging</span><h2>Images: a stack of filesystem diffs</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>If the filesystem is built from stacked diffs, then a diff that hasn't changed never needs to be rebuilt, re-uploaded or re-downloaded. Order your diffs from least to most frequently changed.</p></div>
+  <div class="prose">
+    <p>An <span class="t" data-t="image">image</span> is two things: an ordered list of <span class="t" data-t="layer">layers</span> (each a tar archive of file changes) and a small JSON config saying which user to run as, which environment variables to set and which command to start. The whole thing is identified by a <span class="t" data-t="digest">digest</span>, a SHA-256 hash of its content. A <span class="t" data-t="tag">tag</span> like <code>order-api:1.4.2</code> is just a human-friendly label that points to a digest, and it can be moved. Images live in a <span class="t" data-t="registry">registry</span> and follow the <span class="t" data-t="oci">OCI</span> format, which is why Docker, Podman, containerd and OpenShift can all share them.</p>
+    <p>A <span class="t" data-t="dockerfile">Dockerfile</span> is a recipe where every filesystem-changing instruction produces one layer. The build cache keys each layer on its instruction plus its inputs. The moment one layer misses the cache, every layer above it is rebuilt too, because each diff is defined relative to the one below.</p>
+    <h3>Why the fat jar fights the cache</h3>
+    <p>A Spring Boot <span class="t" data-t="fatjar">fat jar</span> bundles 60 MB of dependencies with 300 KB of your code in one file. Copy it into the image and it becomes one layer, so changing one line in a controller re-ships all 60 MB. Spring Boot's <span class="t" data-t="layeredjar">layered jar</span> fixes this by splitting the jar into four directories ordered by how often they change. Try both below.</p>
+  </div>
+
+  <div class="inst" id="lay">
+    <div class="bar"><b>Layer cache simulator</b><span>Change something, then see what has to be pushed</span></div>
+    <div class="body">
+      <div class="ctrls" role="group" aria-label="Packaging mode">
+        <button class="btn" data-mode="fat" aria-pressed="false">Fat jar (one COPY)</button>
+        <button class="btn" data-mode="layered" aria-pressed="true">Layered jar</button>
+      </div>
+      <div class="ctrls" role="group" aria-label="Changes">
+        <button class="btn primary" data-chg="src">Edit a @RestController</button>
+        <button class="btn primary" data-chg="pom">Add a dependency to pom.xml</button>
+        <button class="btn primary" data-chg="base">Patch the base image (CVE)</button>
+      </div>
+      <div class="layers" id="layers" aria-live="polite"></div>
+      <div class="readout"><div><b id="layPush">0.3 MB</b>pushed to the registry</div><div><b id="layPull">0.3 MB</b>pulled by each node</div><div style="max-width:42ch;font-size:14px;color:var(--muted)" id="layMsg">Layered: a code change only rebuilds the top layer.</div></div>
+    </div>
+  </div>
+
+  <div class="prose"><p>A production Dockerfile uses a <span class="t" data-t="multistage">multi-stage build</span>: a heavy JDK + Maven stage compiles, and only the extracted layers are copied into a slim JRE stage. The build tools never reach production.</p></div>
+  <div class="code"><div class="cap"><span>Dockerfile · multi-stage, layered, OpenShift-friendly</span><button class="copy">Copy</button></div><pre><span class="c"># ---- stage 1: build (JDK + Maven, thrown away afterwards) ----</span>
+FROM eclipse-temurin:21-jdk AS build
+WORKDIR /src
+COPY mvnw pom.xml ./
+COPY .mvn .mvn
+RUN ./mvnw -q dependency:go-offline          <span class="c"># cached until pom.xml changes</span>
+COPY src src
+RUN ./mvnw -q package -DskipTests
+<span class="c"># split the fat jar into its layers (Boot 3.3+ "tools" jarmode)</span>
+RUN java -Djarmode=tools -jar target/order-api.jar extract --layers --launcher --destination /x
+
+<span class="c"># ---- stage 2: runtime (JRE only) ----</span>
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+<span class="c"># least to most frequently changed = best cache reuse</span>
+COPY --from=build /x/dependencies/ ./
+COPY --from=build /x/spring-boot-loader/ ./
+COPY --from=build /x/snapshot-dependencies/ ./
+COPY --from=build /x/application/ ./
+<span class="c"># group 0 + group-writable: survives OpenShift's random UID (chapter 18)</span>
+RUN chgrp -R 0 /app &amp;&amp; chmod -R g=u /app
+USER 1001
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75"
+EXPOSE 8080
+<span class="h">ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]</span></pre></div>
+
+  <div class="prose">
+    <h3>Two ways to skip the Dockerfile</h3>
+    <ul>
+      <li><strong><span class="t" data-t="buildpack">Buildpacks</span></strong>: <code>mvn spring-boot:build-image</code>. Detects a Java app, picks a JRE, applies the layering, sets memory flags from the container limit, and runs as a non-root user. Needs a Docker daemon.</li>
+      <li><strong><span class="t" data-t="jib">Jib</span></strong>: a Maven/Gradle plugin that builds layered images straight from your class files and pushes to a registry without any Docker daemon. Ideal in CI.</li>
+    </ul>
+    <p>Housekeeping that pays off: a <code>.dockerignore</code> (keep <code>target/</code> and <code>.git</code> out of the build context), pinning base images by digest for reproducible builds, and preferring JRE-only or <span class="t" data-t="distroless">distroless</span> bases, since every package you leave out is one less thing to patch.</p>
+  </div>
+  <details class="check"><summary>Why put <code>COPY pom.xml</code> and <code>dependency:go-offline</code> before <code>COPY src</code>?</summary><p>Layers are cached by their inputs. pom.xml changes rarely, so the slow dependency download layer stays cached across almost every build. If src were copied first, every code edit would invalidate the dependency layer and Maven would download the internet again.</p></details>
+</section>
+
+<section class="ch" id="c4" data-title="PID 1, signals, shutdown">
+  <header><span class="num">04</span><span class="kicker">Runtime behaviour</span><h2>PID 1, signals and graceful shutdown</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>A platform stops your container by sending a polite signal, waiting, then forcing it. Your app only gets the polite signal if it is the process receiving it.</p></div>
+  <div class="prose">
+    <p>Inside its PID namespace, the first process is <span class="t" data-t="pid1">PID 1</span>. When Docker or Kubernetes wants it gone, it sends <span class="t" data-t="sigterm">SIGTERM</span> to PID 1, waits a grace period (10 s in Docker, 30 s by default in Kubernetes), then sends <span class="t" data-t="sigkill">SIGKILL</span>, which cannot be caught.</p>
+    <p>The trap is the <span class="t" data-t="entrypoint">ENTRYPOINT</span> form. Write <code>ENTRYPOINT java -jar app.jar</code> (shell form) and PID 1 becomes <code>/bin/sh</code>, which does not forward SIGTERM to Java. Your app never hears the request to stop, gets killed mid-request, and the client sees a dropped connection. Write the JSON exec form, <code>["java","-jar","app.jar"]</code>, and Java is PID 1.</p>
+    <p>Once Java receives SIGTERM, Spring Boot can drain cleanly:</p>
+  </div>
+  <div class="code"><div class="cap"><span>application.yml</span><button class="copy">Copy</button></div><pre>server:
+  shutdown: graceful                 <span class="c"># stop accepting, finish in-flight requests</span>
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 20s  <span class="c"># must be shorter than the platform's grace period</span></pre></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Exit code</th><th>What happened</th><th>Usually means</th></tr></thead>
+    <tbody>
+      <tr><td><code>0</code></td><td>Process ended normally</td><td>A Job finished, or the app shut down cleanly</td></tr>
+      <tr><td><code>1</code></td><td>Uncaught exception at startup</td><td>Bad config, missing bean, DB unreachable. Read the logs.</td></tr>
+      <tr><td><code>137</code></td><td>128 + 9: killed by SIGKILL</td><td>OOM-killed by the cgroup, or ignored SIGTERM past the grace period</td></tr>
+      <tr><td><code>143</code></td><td>128 + 15: ended by SIGTERM</td><td>Normal stop when the app doesn't exit with its own code</td></tr>
+    </tbody></table></div>
+  <div class="prose">
+    <h3>Logs and config: let the platform own them</h3>
+    <p>Write logs to <span class="t" data-t="stdout">stdout</span>, not to files. The runtime already captures stdout, and a log file inside the container dies with its writable layer. Read configuration from environment variables: Spring's relaxed binding turns <code>SPRING_DATASOURCE_URL</code> into <code>spring.datasource.url</code>, so the same image runs in every environment. This is the <span class="t" data-t="twelvefactor">twelve-factor</span> idea: build once, configure at deploy time.</p>
+  </div>
+  <details class="check"><summary>Pods return 502s for a few seconds during every deploy. What two things do you check first?</summary><p>First, that the ENTRYPOINT uses exec form so Java actually receives SIGTERM. Second, that <code>server.shutdown=graceful</code> is set and finishes inside the grace period. Chapter 12 adds the third piece: a short preStop delay so the load balancer stops sending traffic before the app stops accepting it.</p></details>
+</section>
+
+<section class="ch" id="c5" data-title="The JVM inside a fence">
+  <header><span class="num">05</span><span class="kicker">Java specifics</span><h2>The JVM inside a fence</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>The JVM sizes itself from the resources it believes it has. Inside a cgroup, the only honest number is the cgroup's limit, and the heap is only one part of what the JVM spends.</p></div>
+  <div class="prose">
+    <p>Old JVMs read <code>/proc/meminfo</code> and saw the whole host. A JVM in a 512 MiB container on a 16 GiB node would plan a 4 GiB heap and get killed by the kernel. Since JDK 10 (and 8u191), the JVM is container-aware and reads the cgroup limit instead. But its default maximum <span class="t" data-t="heap">heap</span> is only 25% of that limit, which wastes most of the container. That is why <span class="t" data-t="maxram">-XX:MaxRAMPercentage</span> exists.</p>
+    <p>Do not set it to 100%. The process also spends memory on <span class="t" data-t="metaspace">metaspace</span> (class metadata), one stack per thread (about 1 MiB each, and Tomcat defaults to 200 worker threads), the JIT code cache, direct byte buffers used by Netty and NIO, and the garbage collector's own bookkeeping. The kernel counts all of it.</p>
+  </div>
+
+  <div class="inst" id="jvm">
+    <div class="bar"><b>JVM memory budget</b><span>Worst case: heap fully grown under load</span></div>
+    <div class="body">
+      <div class="sliders">
+        <label><span>Container memory limit <output id="oLim">512 MiB</output></span><input id="sLim" type="range" min="256" max="2048" step="64" value="512"></label>
+        <label><span>-XX:MaxRAMPercentage <output id="oPct">75 %</output></span><input id="sPct" type="range" min="25" max="95" step="5" value="75"></label>
+        <label><span>Live threads (Tomcat + pools) <output id="oThr">200</output></span><input id="sThr" type="range" min="20" max="400" step="10" value="200"></label>
+      </div>
+      <div class="ctrls"><button class="btn" id="jvmOld" aria-pressed="false">Simulate a JVM that ignores cgroups (pre-JDK 10)</button></div>
+      <div class="mem" id="memBar" aria-hidden="true"><div class="hp"></div><div class="ms"></div><div class="th"></div><div class="ot"></div><span class="lim"></span></div>
+      <div class="memkey"><span><i style="background:#2F5D7A"></i>heap</span><span><i style="background:#8A4B12"></i>metaspace + code cache</span><span><i style="background:#0B6670"></i>thread stacks</span><span><i style="background:#59636c"></i>direct buffers + GC + native</span></div>
+      <div class="readout" aria-live="polite"><div><b id="jHeap">384 MiB</b>max heap</div><div><b id="jTot">642 MiB</b>total process</div><div><span id="jState" class="pill bad">OOMKilled</span><p class="note" id="jMsg" style="max-width:44ch"></p></div></div>
+    </div>
+  </div>
+
+  <div class="prose">
+    <p>Notice the two different failures. <span class="t" data-t="javaoom">java.lang.OutOfMemoryError</span> means the heap is full, so the JVM complains and you get a stack trace. <span class="t" data-t="oomkilled">OOMKilled</span> means the whole process exceeded the cgroup and the kernel ended it without a word: no stack trace, exit code 137. The first is a code or heap-size problem; the second is usually a budget problem outside the heap.</p>
+    <h3>CPU is a budget too</h3>
+    <p>A CPU limit of <code>1</code> means 100 ms of CPU time per 100 ms window. Spend it early in a garbage collection and the kernel pauses your process for the rest of the window: <span class="t" data-t="throttling">CPU throttling</span>. You see it as random latency spikes, not as high CPU. The JVM also derives its GC thread count and the <code>ForkJoinPool</code> size from the CPU limit, so a tiny limit makes a slow JVM. Many teams set CPU requests but no CPU limit for Java services for this reason.</p>
+    <p>Startup time matters when the platform scales and restarts you. <span class="t" data-t="cds">Class Data Sharing</span>, Spring AOT processing and lazy initialization each shave seconds; virtual threads reduce how many platform-thread stacks you pay for.</p>
+  </div>
+  <details class="check"><summary>A pod is OOMKilled but heap dumps show the heap only 60% full. Where is the memory?</summary><p>Outside the heap: thread stacks (count your threads with <code>jcmd &lt;pid&gt; Thread.print</code>), metaspace from many classes, direct buffers from Netty/Kafka clients, or native allocations. Enable <code>-XX:NativeMemoryTracking=summary</code> and run <code>jcmd &lt;pid&gt; VM.native_memory summary</code> to get the breakdown, then lower MaxRAMPercentage or raise the limit.</p></details>
+</section>
+
+<section class="ch" id="c6" data-title="Networking, volumes, Compose">
+  <header><span class="num">06</span><span class="kicker">One host, many containers</span><h2>Networking, volumes and Compose</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>Every container has its own network namespace, so <code>localhost</code> means "this container", never "the machine". Containers find each other by name through a shared network, not by address.</p></div>
+  <div class="prose">
+    <p>Docker connects containers through a virtual <span class="t" data-t="bridge">bridge network</span>. On a user-defined network Docker also runs a small DNS server, so the container named <code>postgres</code> is reachable at the hostname <code>postgres</code>. The classic beginner bug is an app container configured with <code>jdbc:postgresql://localhost:5432</code>: inside the app container, nothing is listening on 5432.</p>
+    <p>To reach a container from your laptop you <span class="t" data-t="portpublish">publish a port</span>: <code>-p 8080:8080</code> maps host port to container port. For data, choose between a named <span class="t" data-t="volume">volume</span> (Docker manages the storage; good for databases), a <span class="t" data-t="bindmount">bind mount</span> (a host folder, good for local config) and tmpfs (memory only).</p>
+  </div>
+  <div class="code"><div class="cap"><span>compose.yaml · app + database, started in order</span><button class="copy">Copy</button></div><pre>services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: orders
+      POSTGRES_USER: orders
+      POSTGRES_PASSWORD: changeme
+    volumes: [pgdata:/var/lib/postgresql/data]   <span class="c"># survives container removal</span>
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orders"]
+      interval: 5s
+      retries: 10
+
+  order-api:
+    image: order-api:0.0.1
+    ports: ["8080:8080"]                         <span class="c"># host:container</span>
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/orders   <span class="c"># service name, not localhost</span>
+      SPRING_DATASOURCE_PASSWORD: changeme
+    depends_on:
+      postgres: { condition: service_healthy }    <span class="c"># wait for a real health check</span>
+    mem_limit: 512m
+
+volumes:
+  pgdata: {}</pre></div>
+  <div class="prose"><p><span class="t" data-t="compose">Compose</span> is the right tool for one machine: your laptop or a CI job. For integration tests, <span class="t" data-t="testcontainers">Testcontainers</span> starts the same Postgres or Kafka images from inside JUnit. Once you need many machines, automatic restarts and rolling deploys, you need the next part.</p></div>
+  <details class="check"><summary>Compose starts order-api after postgres, yet the app still fails with "connection refused" without the healthcheck. Why?</summary><p>Plain <code>depends_on</code> waits only until the postgres container has <em>started</em>, not until Postgres is accepting connections, which takes a few seconds longer. The healthcheck plus <code>condition: service_healthy</code> waits for real readiness. Kubernetes solves the same problem differently, with readiness probes and retries.</p></details>
+</section>
+
+<!-- ============================ PART II ============================ -->
+<div class="part" id="part-2">
+  <p class="eyebrow">Part II</p>
+  <h2 class="partname">Kubernetes</h2>
+  <p class="lede">From one machine to a fleet: the same container, now placed, healed, discovered and scaled for you.</p>
+</div>
+
+<section class="ch" id="c7" data-title="Desired state">
+  <header><span class="num">07</span><span class="kicker">The core idea</span><h2>Desired state and the reconcile loop</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>Instead of giving the system instructions ("start 3 containers"), you write down the outcome ("3 should exist") and let small programs keep reality equal to it forever.</p></div>
+  <div class="prose">
+    <p>With many machines, new questions appear. Which machine has room for this container? Who restarts it when the machine dies? How do other services find it once its IP changes? How do I roll out version 2 without downtime? A script that runs commands once answers none of these, because the world keeps changing after the script ends.</p>
+    <p>Kubernetes is <span class="t" data-t="declarative">declarative</span>. You store <span class="t" data-t="desiredstate">desired state</span> as an object in the API. A <span class="t" data-t="controller">controller</span> runs a <span class="t" data-t="reconcile">reconcile loop</span>: observe the actual state, diff it against the desired state, act to close the gap, repeat. Because it keeps comparing levels instead of reacting to individual events, a missed event does no lasting harm; the next loop catches the difference.</p>
+  </div>
+
+  <div class="inst" id="rec">
+    <div class="bar"><b>Reconcile loop</b><span>Change the desired count or kill a pod, then watch the controller react</span></div>
+    <div class="body">
+      <div class="ctrls" style="align-items:center">
+        <span style="font-size:14px;color:var(--muted)">spec.replicas</span>
+        <span class="stepper"><button id="recMinus" aria-label="Fewer replicas">−</button><output id="recDes">3</output><button id="recPlus" aria-label="More replicas">+</button></span>
+        <button class="btn primary" id="recKill">Kill a random pod</button>
+        <button class="btn" id="recPause" aria-pressed="false">Pause controller</button>
+      </div>
+      <div class="loop" aria-hidden="true"><span data-p="obs">observe</span><span data-p="diff">diff</span><span data-p="act">act</span></div>
+      <div class="pods" id="recPods" aria-live="polite"></div>
+      <div class="log" id="recLog"></div>
+      <p class="note">Pause the controller and kill pods: nothing heals. That is the whole point. Kubernetes is not magic; it is dozens of these loops running all the time.</p>
+    </div>
+  </div>
+  <details class="check"><summary>You run <code>kubectl delete pod order-api-7d9f…</code> and a new pod appears seconds later. You wanted it gone. What do you change instead?</summary><p>The pod is owned by a ReplicaSet whose desired count didn't change, so the controller replaced it. Change the desired state instead: <code>kubectl scale deployment order-api --replicas=2</code>, or edit the replicas in your manifest or Helm values.</p></details>
+</section>
+
+<section class="ch" id="c8" data-title="Architecture">
+  <header><span class="num">08</span><span class="kicker">Who does what</span><h2>Cluster architecture</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>One component stores the truth, everything else watches it. Every part of Kubernetes talks only to the API server; no component calls another directly.</p></div>
+  <figure class="fig">
+    <svg viewBox="0 0 760 330" role="img" aria-label="Control plane with API server, etcd, scheduler and controller manager; worker nodes with kubelet, kube-proxy, container runtime and pods">
+      <rect x="10" y="10" width="740" height="128" rx="6" class="s-acc" style="fill-opacity:.35"/>
+      <text x="24" y="32" class="s-h">CONTROL PLANE</text>
+      <rect x="270" y="46" width="200" height="54" rx="4" class="s-box"/><text x="370" y="70" text-anchor="middle" class="s-h">kube-apiserver</text><text x="370" y="88" text-anchor="middle" class="s-m">the only door; validates, stores</text>
+      <rect x="24" y="46" width="170" height="54" rx="4" class="s-box"/><text x="109" y="70" text-anchor="middle" class="s-h">etcd</text><text x="109" y="88" text-anchor="middle" class="s-m">key-value store of truth</text>
+      <rect x="546" y="40" width="190" height="40" rx="4" class="s-box"/><text x="641" y="64" text-anchor="middle" class="s-h">scheduler</text>
+      <rect x="546" y="88" width="190" height="40" rx="4" class="s-box"/><text x="641" y="112" text-anchor="middle" class="s-h">controller-manager</text>
+      <path d="M194 73 H270" class="s-line"/><path d="M470 60 H546" class="s-line"/><path d="M470 90 H546 V108" class="s-line"/>
+      <text x="20" y="128" class="s-m">kubectl apply → apiserver → etcd</text>
+      <g>
+        <rect x="10" y="170" width="360" height="150" rx="6" class="s-net" style="fill-opacity:.35"/>
+        <text x="24" y="192" class="s-h">WORKER NODE 1</text>
+        <rect x="24" y="202" width="104" height="36" rx="4" class="s-box"/><text x="76" y="225" text-anchor="middle" class="s-t">kubelet</text>
+        <rect x="136" y="202" width="104" height="36" rx="4" class="s-box"/><text x="188" y="225" text-anchor="middle" class="s-t">kube-proxy</text>
+        <rect x="248" y="202" width="108" height="36" rx="4" class="s-box"/><text x="302" y="225" text-anchor="middle" class="s-t">containerd</text>
+        <rect x="24" y="250" width="100" height="54" rx="4" class="s-box"/><text x="74" y="273" text-anchor="middle" class="s-t">pod</text><text x="74" y="290" text-anchor="middle" class="s-m">order-api</text>
+        <rect x="132" y="250" width="100" height="54" rx="4" class="s-box"/><text x="182" y="273" text-anchor="middle" class="s-t">pod</text><text x="182" y="290" text-anchor="middle" class="s-m">payment-api</text>
+        <text x="300" y="282" text-anchor="middle" class="s-m">CNI: pod IPs</text>
+      </g>
+      <g>
+        <rect x="390" y="170" width="360" height="150" rx="6" class="s-net" style="fill-opacity:.35"/>
+        <text x="404" y="192" class="s-h">WORKER NODE 2</text>
+        <rect x="404" y="202" width="104" height="36" rx="4" class="s-box"/><text x="456" y="225" text-anchor="middle" class="s-t">kubelet</text>
+        <rect x="516" y="202" width="104" height="36" rx="4" class="s-box"/><text x="568" y="225" text-anchor="middle" class="s-t">kube-proxy</text>
+        <rect x="628" y="202" width="108" height="36" rx="4" class="s-box"/><text x="682" y="225" text-anchor="middle" class="s-t">containerd</text>
+        <rect x="404" y="250" width="100" height="54" rx="4" class="s-box"/><text x="454" y="273" text-anchor="middle" class="s-t">pod</text><text x="454" y="290" text-anchor="middle" class="s-m">order-api</text>
+        <rect x="512" y="250" width="100" height="54" rx="4" class="s-box"/><text x="562" y="273" text-anchor="middle" class="s-t">pod</text><text x="562" y="290" text-anchor="middle" class="s-m">postgres-0</text>
+      </g>
+      <path d="M370 100 V140 H76 V202" class="s-flow"/><path d="M370 100 V140 H456 V202" class="s-flow"/>
+      <text x="380" y="156" class="s-m">kubelets watch the API</text>
+    </svg>
+  </figure>
+  <div class="prose">
+    <p>Follow one <code>kubectl apply -f deployment.yaml</code> through the machine. These steps really are a sequence:</p>
+    <ol>
+      <li><span class="t" data-t="kubectl">kubectl</span> sends the YAML to the <span class="t" data-t="apiserver">API server</span>, which authenticates you, checks <span class="t" data-t="rbac">RBAC</span>, runs admission checks and stores the Deployment in <span class="t" data-t="etcd">etcd</span>.</li>
+      <li>The Deployment controller (inside the controller-manager) sees a Deployment with no ReplicaSet and creates one. The ReplicaSet controller sees zero pods out of three and creates three Pod objects. Nothing runs yet; these are just records.</li>
+      <li>The <span class="t" data-t="scheduler">scheduler</span> sees pods with no node, scores the nodes by free requests, affinity and spread, and writes a node name into each pod.</li>
+      <li>The <span class="t" data-t="kubelet">kubelet</span> on that node sees a pod assigned to it and asks the container runtime (<span class="t" data-t="containerd">containerd</span> or CRI-O, through the <span class="t" data-t="cri">CRI</span>) to pull the image and start the containers. The <span class="t" data-t="cni">CNI</span> plugin gives the pod an IP.</li>
+      <li>The kubelet runs probes and reports status back to the API. When the pod is ready, endpoint controllers add its IP to matching Services and <span class="t" data-t="kubeproxy">kube-proxy</span> updates routing rules on every node.</li>
+    </ol>
+    <p>Every arrow points at the API server. That design is why a cluster can survive any one component restarting: each one simply re-reads the state and continues its loop.</p>
+  </div>
+</section>
+
+<section class="ch" id="c9" data-title="Workloads">
+  <header><span class="num">09</span><span class="kicker">Deriving the objects</span><h2>Workloads: Pod to Deployment and beyond</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>Every workload object exists because the one below it lacks exactly one guarantee. Learn the missing guarantee and you know the object.</p></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Object</th><th>Problem it solves</th><th>What it still lacks</th></tr></thead>
+    <tbody>
+      <tr><td><span class="t" data-t="pod">Pod</span></td><td>Groups containers that must share a network namespace and volumes (app + <span class="t" data-t="sidecar">sidecar</span>, plus <span class="t" data-t="initcontainer">init containers</span> that run first)</td><td>Mortal. If its node dies, nothing recreates it. Its IP changes every time.</td></tr>
+      <tr><td><span class="t" data-t="replicaset">ReplicaSet</span></td><td>Keeps N identical pods alive</td><td>No idea of versions. Changing the image does not replace running pods.</td></tr>
+      <tr><td><span class="t" data-t="deployment">Deployment</span></td><td>Owns ReplicaSets per version and moves pods from old to new in a controlled rolling update, with rollback</td><td>Pods are interchangeable: random names, shared or no storage</td></tr>
+      <tr><td><span class="t" data-t="statefulset">StatefulSet</span></td><td>Stable names (<code>postgres-0</code>), ordered start, one persistent volume per pod</td><td>More operational care; most Spring services do not need it</td></tr>
+      <tr><td><span class="t" data-t="daemonset">DaemonSet</span></td><td>Exactly one pod per node (log shippers, node agents)</td><td>Not for apps</td></tr>
+      <tr><td><span class="t" data-t="job">Job</span> / <span class="t" data-t="cronjob">CronJob</span></td><td>Run to completion, retry on failure, optionally on a schedule (batch imports, nightly reconciliation)</td><td>Not for long-running servers</td></tr>
+    </tbody></table></div>
+  <div class="prose">
+    <p>The glue between all of them is the <span class="t" data-t="label">label</span>. A ReplicaSet does not keep a list of its pods; it runs a <span class="t" data-t="selector">selector</span> query (<code>app=order-api</code>) on every loop. A Service finds its pods the same way. Get a label wrong and objects silently stop finding each other.</p>
+  </div>
+  <div class="code"><div class="cap"><span>deployment.yaml · a production-shaped Spring Boot Deployment</span><button class="copy">Copy</button></div><pre>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-api
+  namespace: orders
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: order-api }           <span class="c"># must match the template labels</span>
+  strategy:
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  template:
+    metadata:
+      labels: { app: order-api, version: "1.4.2" }
+    spec:
+      terminationGracePeriodSeconds: 40
+      containers:
+        - name: app
+          image: registry.example.com/order-api@sha256:4f1c…   <span class="c"># pin by digest</span>
+          ports: [{ containerPort: 8080, name: http }]
+          envFrom:
+            - configMapRef: { name: order-api-config }
+            - secretRef:    { name: order-api-db }
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits:   { memory: 512Mi }            <span class="c"># memory limit, no CPU limit</span>
+          startupProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            failureThreshold: 30
+            periodSeconds: 2                          <span class="c"># up to 60 s to boot</span>
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: http }
+            periodSeconds: 5
+          lifecycle:
+            preStop: { sleep: { seconds: 5 } }        <span class="c"># let endpoints update first (K8s 1.30+)</span>
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }</pre></div>
+
+  <div class="inst" id="roll">
+    <div class="bar"><b>Rolling update</b><span>Step through v1 → v2 with 4 replicas</span></div>
+    <div class="body">
+      <div class="ctrls">
+        <button class="btn" data-preset="a" aria-pressed="true">maxSurge 1 · maxUnavailable 0</button>
+        <button class="btn" data-preset="b" aria-pressed="false">maxSurge 0 · maxUnavailable 1</button>
+      </div>
+      <div class="ctrls">
+        <button class="btn primary" id="rollNext">Next step</button>
+        <button class="btn" id="rollPlay">Play all</button>
+        <button class="btn" id="rollReset">Reset</button>
+      </div>
+      <div class="pods" id="rollPods" aria-live="polite"></div>
+      <div class="readout"><div><b id="rollReady">4</b>ready to serve</div><div><b id="rollTotal">4</b>pods running</div><div style="max-width:46ch;font-size:14px;color:var(--muted)" id="rollMsg">Press Next step.</div></div>
+    </div>
+  </div>
+  <div class="prose"><p>Surge spends extra capacity to keep full availability; unavailable spends availability to avoid extra capacity. A rollout that stalls (bad image, failing readiness) never removes the old pods, which is why readiness probes are the safety net of every deploy. <code>kubectl rollout undo deployment/order-api</code> flips back to the previous ReplicaSet.</p></div>
+</section>
+
+<section class="ch" id="c10" data-title="Config and secrets">
+  <header><span class="num">10</span><span class="kicker">Same image, every environment</span><h2>ConfigMaps, Secrets and Spring</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>An image that contains environment-specific settings has to be rebuilt per environment, so what you tested is not what you ship. Keep configuration outside the image and inject it at start.</p></div>
+  <div class="prose">
+    <p>A <span class="t" data-t="configmap">ConfigMap</span> holds plain settings; a <span class="t" data-t="secret">Secret</span> holds sensitive ones. Both reach the pod as environment variables or as files in a mounted volume. One distinction matters: environment variables are fixed when the container starts, while mounted files are updated in place (after a short delay) when the object changes.</p>
+    <p>Know what a Secret is not. Its values are <strong>base64-encoded, not encrypted</strong>. Anyone allowed to read Secrets in the namespace can decode them. Real protection comes from RBAC, encryption at rest in etcd, and often an external store such as Vault or a cloud secrets manager synced in by an operator.</p>
+  </div>
+  <div class="code"><div class="cap"><span>Spring reads mounted Secrets as properties with configtree</span><button class="copy">Copy</button></div><pre><span class="c"># pod spec: mount each Secret key as a file</span>
+volumes:
+  - name: db
+    secret: { secretName: order-api-db }        <span class="c"># keys: spring.datasource.username, spring.datasource.password</span>
+containers:
+  - name: app
+    volumeMounts: [{ name: db, mountPath: /etc/secrets/db, readOnly: true }]
+
+<span class="c"># application.yml: each file name becomes a property name, content its value</span>
+spring:
+  config:
+    import: "optional:configtree:/etc/secrets/*/"</pre></div>
+  <div class="prose"><p>The <span class="t" data-t="configtree">configtree</span> import keeps secrets out of environment variables, where they can leak through <code>/actuator/env</code>, crash dumps or child processes. Profiles still work: set <code>SPRING_PROFILES_ACTIVE=prod</code> from a ConfigMap.</p></div>
+  <details class="check"><summary>You updated a ConfigMap, but the running app still uses the old value. Why, and what are the two fixes?</summary><p>If the value arrives as an environment variable, it was copied into the process at start and never changes. Either restart the pods (<code>kubectl rollout restart deployment/order-api</code>, or have Helm add a checksum annotation so config changes trigger a rollout), or mount it as files and have the app re-read them.</p></details>
+</section>
+
+<section class="ch" id="c11" data-title="Services and traffic">
+  <header><span class="num">11</span><span class="kicker">Finding each other</span><h2>Services, DNS, Ingress</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>Pods are cattle: they come and go with new IPs. Clients need one name that never changes and always points at whichever pods are currently healthy.</p></div>
+  <div class="prose">
+    <p>Every pod gets its own IP from the <span class="t" data-t="cni">CNI</span> plugin, and every pod can reach every other pod directly. But those IPs change with each restart. A <span class="t" data-t="service">Service</span> provides a stable virtual IP and DNS name. Behind it, an <span class="t" data-t="endpointslice">EndpointSlice</span> lists the IPs of pods that match the Service's selector <em>and are ready</em>. kube-proxy turns that list into iptables, IPVS or eBPF rules on every node, so a connection to the virtual IP lands on one real pod.</p>
+    <p>From any pod, <span class="t" data-t="coredns">CoreDNS</span> resolves <code>payment-api</code> (same namespace) or <code>payment-api.payments.svc.cluster.local</code> (anywhere). Your Spring <code>RestClient</code> just calls <code>http://payment-api:8080</code>.</p>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Service type</th><th>Reachable from</th><th>Use it for</th></tr></thead>
+    <tbody>
+      <tr><td><span class="t" data-t="clusterip">ClusterIP</span></td><td>Inside the cluster</td><td>Default; service-to-service calls</td></tr>
+      <tr><td><span class="t" data-t="nodeport">NodePort</span></td><td>Every node's IP on a high port</td><td>Labs, or behind your own load balancer</td></tr>
+      <tr><td><span class="t" data-t="loadbalancer">LoadBalancer</span></td><td>A cloud load balancer's public IP</td><td>Exposing one service directly</td></tr>
+      <tr><td><span class="t" data-t="headless">Headless</span> (<code>clusterIP: None</code>)</td><td>DNS returns pod IPs</td><td>StatefulSets, client-side discovery (Kafka, DB clusters)</td></tr>
+    </tbody></table></div>
+
+  <div class="inst" id="svc">
+    <div class="bar"><b>Service routing and probes</b><span>Requests flow only to pods in the endpoint list</span></div>
+    <div class="body">
+      <div class="fig" style="margin:0 0 10px">
+        <svg id="svcSvg" viewBox="0 0 620 230" role="img" aria-label="Client sending requests through a Service to three pods">
+          <rect x="14" y="92" width="96" height="46" rx="5" class="s-box"/><text x="62" y="112" text-anchor="middle" class="s-h">client</text><text x="62" y="128" text-anchor="middle" class="s-m">order-api</text>
+          <rect x="220" y="80" width="130" height="70" rx="5" class="s-acc"/><text x="285" y="106" text-anchor="middle" class="s-h">Service</text><text x="285" y="122" text-anchor="middle" class="s-m">payment-api</text><text x="285" y="138" text-anchor="middle" class="s-m">10.96.14.7</text>
+          <path d="M110 115 H220" class="s-line"/>
+          <g id="svcPods"></g>
+          <g id="svcDots"></g>
+        </svg>
+      </div>
+      <div class="ctrls" id="svcCtrls"></div>
+      <div class="readout" aria-live="polite"><div><b id="svcEp">3</b>endpoints</div><div style="flex:1;min-width:220px"><div class="log" id="svcLog" style="min-height:76px"></div></div></div>
+      <p class="note">"DB down" fails only readiness: the pod stays alive but leaves the endpoint list. "Hang JVM" fails liveness too: after 3 failures the kubelet restarts the container.</p>
+    </div>
+  </div>
+
+  <div class="prose">
+    <h3>North-south traffic: Ingress and Gateway API</h3>
+    <p>Services are layer 4: IPs and ports. Traffic from outside the cluster (<span class="t" data-t="northsouth">north-south</span>) usually needs layer 7: hostnames, paths, TLS certificates. An <span class="t" data-t="ingress">Ingress</span> object describes those rules, and an ingress controller (NGINX, Traefik, Kong Gateway, HAProxy) implements them. The newer <span class="t" data-t="gatewayapi">Gateway API</span> splits the same job into roles: platform teams own the Gateway, app teams attach HTTPRoutes.</p>
+    <p>By default every pod can call every other pod. A <span class="t" data-t="networkpolicy">NetworkPolicy</span> turns that into an allowlist, and in regulated environments the norm is deny-all plus explicit allows.</p>
+  </div>
+  <details class="check"><summary>A Service exists, the pods are Running, but calls time out. <code>kubectl get endpointslices</code> shows no addresses. Name two causes.</summary><p>Either the Service selector does not match the pod labels (compare <code>kubectl get pods --show-labels</code> with the Service spec), or the pods are not ready because their readiness probe fails. Both leave the endpoint list empty, so there is nowhere to route.</p></details>
+</section>
+
+<section class="ch" id="c12" data-title="Health probes">
+  <header><span class="num">12</span><span class="kicker">Alive is not ready</span><h2>Probes with Spring Boot Actuator</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>The platform needs two different answers: "should I kill and restart you?" and "should I send you traffic right now?" Mixing them up turns a small outage into a big one.</p></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Probe</th><th>Question</th><th>On failure</th><th>Spring Boot endpoint</th></tr></thead>
+    <tbody>
+      <tr><td><span class="t" data-t="startupprobe">Startup</span></td><td>Have you finished booting?</td><td>Keeps the other probes paused; restarts after the threshold</td><td><code>/actuator/health/liveness</code></td></tr>
+      <tr><td><span class="t" data-t="liveness">Liveness</span></td><td>Are you stuck beyond self-repair?</td><td>Container restart</td><td><code>/actuator/health/liveness</code></td></tr>
+      <tr><td><span class="t" data-t="readiness">Readiness</span></td><td>Can you serve a request right now?</td><td>Removed from Service endpoints; not restarted</td><td><code>/actuator/health/readiness</code></td></tr>
+    </tbody></table></div>
+  <div class="prose">
+    <p><span class="t" data-t="actuator">Spring Boot Actuator</span> exposes both groups automatically when it detects Kubernetes, backed by <code>LivenessState</code> and <code>ReadinessState</code> in the application context. During startup, readiness stays <code>REFUSING_TRAFFIC</code> until all <code>ApplicationRunner</code>s finish; during shutdown it flips back, so traffic drains before the app stops.</p>
+    <p>The most expensive mistake: <strong>never put external dependencies in liveness</strong>. If the database goes down and liveness checks the database, every pod fails liveness at once and the kubelet restarts the whole fleet in a loop, which does nothing for the database and adds cold-start load when it returns. Dependencies belong in readiness, if anywhere.</p>
+  </div>
+  <div class="code"><div class="cap"><span>application.yml · probe groups</span><button class="copy">Copy</button></div><pre>management:
+  endpoint:
+    health:
+      probes:
+        enabled: true                  <span class="c"># on automatically in K8s; explicit for local tests</span>
+      group:
+        liveness:
+          include: livenessState       <span class="c"># only "is the JVM healthy", never the DB</span>
+        readiness:
+          include: readinessState, db  <span class="c"># optional: stop traffic while DB is unreachable</span>
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus</pre></div>
+  <div class="prose"><p>The shutdown sequence ties chapters 4, 11 and 12 together. On delete, Kubernetes removes the pod from endpoints <em>and</em> sends SIGTERM at roughly the same moment, but the endpoint removal takes a second or two to reach every node. A short <code>preStop</code> sleep keeps the app accepting requests until no one routes to it any more; then graceful shutdown finishes what is in flight.</p></div>
+</section>
+
+<section class="ch" id="c13" data-title="Resources and scaling">
+  <header><span class="num">13</span><span class="kicker">Placement and size</span><h2>Requests, limits, QoS and autoscaling</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>A scheduler can only pack machines safely if every pod states what it needs. A node can only stay healthy if every pod has a ceiling.</p></div>
+  <div class="prose">
+    <p>A <span class="t" data-t="request">request</span> is a reservation: the scheduler places the pod only on a node with that much unreserved capacity, and the pod is guaranteed it. A <span class="t" data-t="limit">limit</span> is a ceiling enforced by the cgroup: memory over the limit means OOMKilled, CPU over the limit means throttling. CPU is measured in millicores (<code>250m</code> is a quarter of a core), memory in bytes (<code>512Mi</code>).</p>
+    <p>The combination sets the pod's <span class="t" data-t="qos">QoS class</span>, which decides who gets evicted first when a node runs out of memory:</p>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>QoS class</th><th>Rule</th><th>Eviction order</th></tr></thead>
+    <tbody>
+      <tr><td>Guaranteed</td><td>requests = limits for CPU and memory in every container</td><td>Last</td></tr>
+      <tr><td>Burstable</td><td>Some request set, not equal to limits</td><td>Middle</td></tr>
+      <tr><td>BestEffort</td><td>No requests or limits at all</td><td>First</td></tr>
+    </tbody></table></div>
+  <div class="prose">
+    <p>For a Spring Boot service a sound default is: memory request equal to memory limit (the JVM heap does not shrink back, so bursting memory only invites OOM kills), and a CPU request with no CPU limit (so startup and GC can burst instead of being throttled).</p>
+    <h3>Horizontal Pod Autoscaler</h3>
+    <p>The <span class="t" data-t="hpa">HPA</span> is another reconcile loop. Every 15 seconds it computes <code>desired = ceil(current × currentMetric ÷ target)</code>. Three pods at 90% CPU against a 60% target gives <code>ceil(3 × 90 ÷ 60) = 5</code>. CPU percent is measured against the request, so a missing request makes the HPA blind. For queue consumers, scale on lag instead (KEDA does this for Kafka and SQS).</p>
+    <p>A <span class="t" data-t="pdb">PodDisruptionBudget</span> protects you from voluntary disruptions such as node drains during cluster upgrades: <code>minAvailable: 2</code> stops a drain from evicting below two ready pods. To spread replicas across nodes and zones, use topology spread constraints or pod anti-affinity; taints and tolerations keep pods off nodes reserved for something else.</p>
+  </div>
+  <details class="check"><summary>A pod sits in <code>Pending</code> forever while the cluster's dashboard shows nodes at 30% CPU usage. How can that be?</summary><p>The scheduler counts <em>requests</em>, not live usage. If existing pods have requested most of each node's CPU, there is no unreserved room left even though actual usage is low. <code>kubectl describe pod</code> shows a FailedScheduling event with "Insufficient cpu". Right-size the requests or add nodes.</p></details>
+</section>
+
+<section class="ch" id="c14" data-title="Storage">
+  <header><span class="num">14</span><span class="kicker">Data that outlives pods</span><h2>Persistent volumes</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>Separate "I need 10 GiB of disk" (what the app asks for) from "here is an EBS volume in zone b" (what the infrastructure provides), so app manifests stay portable across clusters.</p></div>
+  <div class="prose">
+    <p>A <span class="t" data-t="pvc">PersistentVolumeClaim</span> is the app's request: size and access mode. A <span class="t" data-t="pv">PersistentVolume</span> is a real piece of storage. A <span class="t" data-t="storageclass">StorageClass</span> lets the cluster create a PV on demand when a claim appears (dynamic provisioning). Access modes matter: <code>ReadWriteOnce</code> attaches to one node at a time (block disks), <code>ReadWriteMany</code> lets many pods on many nodes share it (network filesystems).</p>
+    <p>A StatefulSet's <code>volumeClaimTemplates</code> gives each replica its own claim (<code>data-postgres-0</code>, <code>data-postgres-1</code>), reattached to the same identity after rescheduling. In practice, most teams run production databases as managed services and keep Kubernetes storage for brokers, caches and labs. Stateless Spring services should not need a volume at all; use object storage for files.</p>
+  </div>
+</section>
+
+<section class="ch" id="c15" data-title="Delivery">
+  <header><span class="num">15</span><span class="kicker">Getting manifests to clusters</span><h2>Helm, Kustomize and GitOps</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>Dev, test and prod manifests are 95% identical. Write the shared part once and express only the differences, then let a reconcile loop apply them from Git.</p></div>
+  <div class="cols">
+    <div class="col"><h5><span class="t" data-t="helm">Helm</span></h5><p>Templates plus a <code>values.yaml</code> per environment. Installs are tracked as numbered releases, so <code>helm rollback order-api 3</code> restores an earlier set of manifests. Good for packaging and sharing apps.</p></div>
+    <div class="col"><h5><span class="t" data-t="kustomize">Kustomize</span></h5><p>No templating: a plain YAML base plus overlays that patch it per environment. Built into <code>kubectl apply -k</code>. Good when you want the YAML to stay plain YAML.</p></div>
+    <div class="col"><h5><span class="t" data-t="gitops">GitOps</span></h5><p><span class="t" data-t="argocd">Argo CD</span> or Flux watches a Git repo and keeps the cluster equal to it. It is the reconcile loop from chapter 7, one level up: Git holds desired state; manual <code>kubectl edit</code> drift gets reverted.</p></div>
+  </div>
+  <div class="code"><div class="cap"><span>values-prod.yaml · only the differences</span><button class="copy">Copy</button></div><pre>replicaCount: 4
+image:
+  tag: "1.4.2"
+resources:
+  requests: { cpu: 500m, memory: 768Mi }
+  limits:   { memory: 768Mi }
+config:
+  SPRING_PROFILES_ACTIVE: prod
+ingress:
+  host: orders.example.com</pre></div>
+</section>
+
+<!-- ============================ PART III ============================ -->
+<div class="part" id="part-3">
+  <p class="eyebrow">Part III</p>
+  <h2 class="partname">Service mesh and Kong Mesh</h2>
+  <p class="lede">Moving retries, timeouts, encryption and identity out of every service and into the platform.</p>
+</div>
+
+<section class="ch" id="c16" data-title="Why a mesh">
+  <header><span class="num">16</span><span class="kicker">The problem</span><h2>Why a service mesh exists</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>When fifty services each reimplement mTLS, retries, timeouts and metrics in their own library and language, they do it fifty slightly different ways. Put one proxy next to every service and configure all of them from one place.</p></div>
+  <div class="prose">
+    <p>Every network call between services (<span class="t" data-t="eastwest">east-west</span> traffic) needs the same things: encryption and proof of identity (<span class="t" data-t="mtls">mTLS</span>), timeouts, retries with backoff, <span class="t" data-t="circuitbreaker">circuit breaking</span>, load balancing, metrics and trace propagation. In Spring you can do much of this with Resilience4j and Micrometer, but only in Java, only if every team configures it the same way, and only by redeploying apps to change a timeout.</p>
+    <p>A <span class="t" data-t="servicemesh">service mesh</span> splits the job in two. The <span class="t" data-t="dataplane">data plane</span> is a proxy, almost always <span class="t" data-t="envoy">Envoy</span>, injected as a sidecar into every pod. A <span class="t" data-t="transparentproxy">transparent proxy</span> setup rewrites the pod's iptables rules so all traffic in and out goes through it, without the app changing a line. The <span class="t" data-t="controlplane">control plane</span> turns your policies into Envoy configuration, issues each proxy a certificate that encodes its identity, and pushes both to every proxy.</p>
+  </div>
+  <figure class="fig">
+    <svg viewBox="0 0 760 200" role="img" aria-label="Two pods, each with app and Envoy sidecar, connected by mTLS; control plane configures both proxies">
+      <rect x="250" y="12" width="260" height="46" rx="5" class="s-acc"/><text x="380" y="32" text-anchor="middle" class="s-h">control plane (kuma-cp)</text><text x="380" y="48" text-anchor="middle" class="s-m">policies → Envoy config + certs</text>
+      <rect x="20" y="88" width="300" height="96" rx="6" class="s-sunk"/><text x="34" y="106" class="s-m">pod: order-api</text>
+      <rect x="34" y="116" width="120" height="54" rx="4" class="s-box"/><text x="94" y="140" text-anchor="middle" class="s-h">Spring app</text><text x="94" y="157" text-anchor="middle" class="s-m">http://payment-api</text>
+      <rect x="186" y="116" width="120" height="54" rx="4" class="s-net"/><text x="246" y="140" text-anchor="middle" class="s-h">Envoy</text><text x="246" y="157" text-anchor="middle" class="s-m">kuma-dp</text>
+      <rect x="440" y="88" width="300" height="96" rx="6" class="s-sunk"/><text x="454" y="106" class="s-m">pod: payment-api</text>
+      <rect x="454" y="116" width="120" height="54" rx="4" class="s-net"/><text x="514" y="140" text-anchor="middle" class="s-h">Envoy</text><text x="514" y="157" text-anchor="middle" class="s-m">kuma-dp</text>
+      <rect x="606" y="116" width="120" height="54" rx="4" class="s-box"/><text x="666" y="140" text-anchor="middle" class="s-h">Spring app</text><text x="666" y="157" text-anchor="middle" class="s-m">:8080</text>
+      <path d="M154 143 H186" class="s-line"/><path d="M574 143 H606" class="s-line"/>
+      <path d="M306 143 H454" class="s-flow"/><text x="380" y="135" text-anchor="middle" class="s-m">mTLS</text>
+      <path d="M330 58 L262 116" class="s-line" stroke-dasharray="3 4"/><path d="M430 58 L498 116" class="s-line" stroke-dasharray="3 4"/>
+    </svg>
+    <figcaption>The app speaks plain HTTP to localhost; its sidecar upgrades the call to mTLS, applies retries and timeouts, and the receiving sidecar checks the caller's identity before the request reaches the other app.</figcaption>
+  </figure>
+  <div class="prose"><p>The cost is real: an extra hop (typically well under a millisecond each way), memory per sidecar, and one more system to debug. Newer "sidecarless" designs (Istio ambient, Cilium) move the proxy to the node to reduce that cost; the concepts stay the same.</p></div>
+</section>
+
+<section class="ch" id="c17" data-title="Kong Mesh">
+  <header><span class="num">17</span><span class="kicker">The product</span><h2>Kong Mesh in practice</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>A mesh is only as good as its policy model. In Kong Mesh every policy answers two questions: which proxies does it configure, and for traffic to or from whom.</p></div>
+  <div class="prose">
+    <p><span class="t" data-t="kongmesh">Kong Mesh</span> is Kong's enterprise distribution of <span class="t" data-t="kuma">Kuma</span>, an open-source CNCF mesh built on Envoy. The control plane is <span class="t" data-t="kumacp">kuma-cp</span>; the sidecar is <span class="t" data-t="kumadp">kuma-dp</span>, a small agent that runs and configures Envoy. Each proxy is registered as a <span class="t" data-t="dataplaneobj">Dataplane</span> object. Kong Mesh adds enterprise features on top of Kuma: certificate authorities backed by HashiCorp Vault or cloud PCA, OPA policy, FIPS-compliant builds, role-based access to mesh resources and support.</p>
+    <p>Two properties make it attractive for banks and large enterprises. It runs on Kubernetes <em>and</em> on plain VMs ("Universal mode"), so legacy services can join the same mesh. And it supports <span class="t" data-t="multizone">multi-zone</span> deployments: a global control plane holds policies, zone control planes in each cluster or data centre apply them, and zone ingress and egress proxies carry cross-zone traffic.</p>
+    <p>Do not confuse it with <span class="t" data-t="konggateway">Kong Gateway</span>. The gateway is the API front door for north-south traffic: authentication plugins, rate limits for partners, developer portal. The mesh handles east-west traffic between your own services. They work together; a gateway can run inside the mesh so it too speaks mTLS to backends.</p>
+    <h3>The policy model</h3>
+    <p>Modern Kuma/Kong Mesh policies share one shape. A <span class="t" data-t="targetref">targetRef</span> at the top selects which proxies receive the configuration (the whole Mesh, a set of Dataplanes by label, or one MeshService). A <code>to</code> section configures outbound traffic toward destinations; a <code>from</code> section configures inbound traffic from sources.</p>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Policy</th><th>Replaces in your Spring code</th></tr></thead>
+    <tbody>
+      <tr><td><code>Mesh</code> with an <code>mtls</code> backend</td><td>Keystores, truststores, manual certificate rotation</td></tr>
+      <tr><td><code>MeshTrafficPermission</code></td><td>Service-to-service authorization ("only order-api may call payment-api")</td></tr>
+      <tr><td><code>MeshTimeout</code></td><td>Client connect and read timeouts</td></tr>
+      <tr><td><code>MeshRetry</code></td><td>Resilience4j retry and backoff</td></tr>
+      <tr><td><code>MeshCircuitBreaker</code> / <code>MeshHealthCheck</code></td><td>Resilience4j circuit breaker, outlier ejection</td></tr>
+      <tr><td><code>MeshRateLimit</code></td><td>Bucket4j-style inbound rate limiting</td></tr>
+      <tr><td><code>MeshHTTPRoute</code> / <code>MeshLoadBalancingStrategy</code></td><td>Header-based routing, canary weights, locality-aware load balancing</td></tr>
+      <tr><td><code>MeshMetrics</code> / <code>MeshTrace</code> / <code>MeshAccessLog</code></td><td>Uniform golden-signal metrics, trace spans and access logs for every hop</td></tr>
+      <tr><td><code>MeshFaultInjection</code></td><td>Chaos testing: inject delays or 503s on purpose</td></tr>
+    </tbody></table></div>
+
+  <div class="inst" id="mesh">
+    <div class="bar"><b>Request through the mesh</b><span>order-api calls payment-api</span></div>
+    <div class="body">
+      <div class="ctrls" role="group" aria-label="Mesh settings">
+        <button class="btn" data-m="mtls" aria-pressed="true">mTLS on</button>
+        <button class="btn" data-m="perm" aria-pressed="true">Permission: allow order-api</button>
+        <button class="btn" data-m="retry" aria-pressed="true">MeshRetry: 3 attempts</button>
+        <button class="btn" data-m="fault" aria-pressed="false">payment-api returns 503 once</button>
+      </div>
+      <div class="pod-frame"><div>pod: order-api</div><div>pod: payment-api</div></div>
+      <div class="mesh-nodes">
+        <div class="mn app" id="mn0">Spring app<small>RestClient</small></div>
+        <div class="mn px" id="mn1">Envoy (outbound)<small>retry · timeout</small></div>
+        <div class="mn px" id="mn2">Envoy (inbound)<small>mTLS · permission</small></div>
+        <div class="mn app" id="mn3">Spring app<small>/payments</small></div>
+      </div>
+      <div class="wire" id="meshWire"><i id="meshDot"></i></div>
+      <div class="ctrls"><button class="btn primary" id="meshGo">Send request</button></div>
+      <div class="log" id="meshLog"></div>
+    </div>
+  </div>
+
+  <div class="code"><div class="cap"><span>Kong Mesh on Kubernetes · enable mTLS, allow one caller, add retries</span><button class="copy">Copy</button></div><pre><span class="c"># 1. Opt a namespace into the mesh: new pods get a kuma-dp sidecar</span>
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: payments
+  labels:
+    kuma.io/sidecar-injection: enabled
+---
+<span class="c"># 2. Turn on mTLS with the built-in CA (Kong Mesh can also use Vault / ACM PCA)</span>
+apiVersion: kuma.io/v1alpha1
+kind: Mesh
+metadata:
+  name: default
+spec:
+  mtls:
+    enabledBackend: ca-1
+    backends:
+      - name: ca-1
+        type: builtin
+---
+<span class="c"># 3. Only order-api may call payment-api.</span>
+<span class="c">#    Field names shift between Kong Mesh versions: check the docs for yours.</span>
+apiVersion: kuma.io/v1alpha1
+kind: MeshTrafficPermission
+metadata:
+  name: payment-api-callers
+  namespace: payments
+  labels: { kuma.io/mesh: default }
+spec:
+  targetRef:
+    kind: Dataplane
+    labels: { app: payment-api }
+  from:
+    - targetRef:
+        kind: MeshSubset
+        tags: { app: order-api }
+      default:
+        action: Allow
+---
+<span class="c"># 4. Retries for calls from order-api to payment-api</span>
+apiVersion: kuma.io/v1alpha1
+kind: MeshRetry
+metadata:
+  name: order-to-payment-retry
+  namespace: orders
+  labels: { kuma.io/mesh: default }
+spec:
+  targetRef:
+    kind: Dataplane
+    labels: { app: order-api }
+  to:
+    - targetRef:
+        kind: MeshService
+        name: payment-api
+        namespace: payments
+      default:
+        http:
+          numRetries: 2
+          backOff: { baseInterval: 100ms, maxInterval: 1s }
+          retryOn: ["5XX", "ConnectFailure"]</pre></div>
+
+  <div class="prose">
+    <h3>What changes in your Spring Boot app</h3>
+    <ul>
+      <li><strong>Call by Service name over plain HTTP.</strong> <code>http://payment-api.payments:8080</code>. The sidecar handles TLS; adding your own TLS on top is double work.</li>
+      <li><strong>Remove duplicate retries.</strong> If the app retries 3 times, the mesh retries 3 times, and the next hop does the same, one user click becomes 3 × 3 × 3 = 27 calls against a struggling service: a <span class="t" data-t="retrystorm">retry storm</span>. Retry in exactly one layer.</li>
+      <li><strong>Make timeouts nest.</strong> The caller's total timeout must be longer than the mesh's per-try timeout times the number of attempts, or the app gives up while the mesh is still retrying.</li>
+      <li><strong>Propagate trace headers.</strong> The proxy creates spans, but only your app can copy the incoming <span class="t" data-t="traceparent">traceparent</span> header onto outgoing calls. Micrometer Tracing does this for <code>RestClient</code>, <code>WebClient</code> and Kafka templates.</li>
+      <li><strong>Probes and shutdown.</strong> With strict mTLS the kubelet cannot reach your app directly, so the mesh rewrites HTTP probes to go through the sidecar. On shutdown the sidecar must outlive the app or in-flight outbound calls fail; native Kubernetes sidecar containers (1.29+) solve this ordering.</li>
+    </ul>
+    <h3>Debugging the mesh</h3>
+    <p>Most mesh failures surface as a 503 with an Envoy <span class="t" data-t="responseflags">response flag</span> in the access log: <code>UF</code> (could not connect upstream), <code>UH</code> (no healthy upstream), <code>UT</code> (upstream timeout), <code>URX</code> (retry limit reached), <code>NR</code> (no route). A denied permission typically shows as <code>403 RBAC: access denied</code> or a reset connection. Start with <code>kumactl inspect dataplanes</code> and the mesh GUI, then look at the proxy's own view of its config through Envoy's admin <code>config_dump</code>.</p>
+  </div>
+  <details class="check"><summary>After enabling mTLS mode strict, a service that is not yet in the mesh can no longer call payment-api. Why?</summary><p>In strict mode the receiving sidecar accepts only mTLS connections with a valid mesh certificate. A service without a sidecar has no certificate, so it cannot prove an identity. Kuma's permissive mode accepts both plaintext and mTLS during a migration; switch to strict once every caller has a sidecar.</p></details>
+</section>
+
+<!-- ============================ PART IV ============================ -->
+<div class="part" id="part-4">
+  <p class="eyebrow">Part IV</p>
+  <h2 class="partname">OpenShift</h2>
+  <p class="lede">Kubernetes with Red Hat's opinions built in: security on by default, builds in the cluster, and a developer console.</p>
+</div>
+
+<section class="ch" id="c18" data-title="What OpenShift adds">
+  <header><span class="num">18</span><span class="kicker">The distribution</span><h2>What OpenShift adds to Kubernetes</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>Plain Kubernetes leaves many choices open: ingress, builds, registry, security defaults. <span class="t" data-t="openshift">OpenShift</span> makes those choices for you, and the strictest one is that your container may not decide who it runs as.</p></div>
+  <div class="prose">
+    <p>Everything from Part II still applies: Deployments, Services, ConfigMaps and probes work unchanged, and the <span class="t" data-t="oc">oc</span> CLI accepts every kubectl command. <span class="t" data-t="okd">OKD</span> is the community upstream. What you meet on top:</p>
+    <h3>Security Context Constraints and the random UID</h3>
+    <p>The default <span class="t" data-t="scc">SCC</span> (<code>restricted-v2</code>) runs your container as an <span class="t" data-t="arbitraryuid">arbitrary UID</span>, a high random number from the project's assigned range, with group <code>0</code>. Your Dockerfile's <code>USER 1001</code> is overridden. An image that expects to own <code>/app</code> as user 1001, or that runs as root, fails with "permission denied" or does not start at all.</p>
+    <p>The fix comes from first principles: the UID is unpredictable, but the group is always 0. So give group 0 the same rights as the owner on every directory the app writes to. That is the <code>chgrp -R 0 /app &amp;&amp; chmod -R g=u /app</code> line in the chapter 3 Dockerfile. Buildpack images already follow this rule.</p>
+    <h3>Routes</h3>
+    <p>A <span class="t" data-t="route">Route</span> predates Ingress and does the same job with built-in TLS modes, served by the HAProxy-based router: <code>edge</code> (TLS ends at the router), <code>passthrough</code> (TLS goes straight to your pod) and <code>reencrypt</code> (the router decrypts, then opens a new TLS connection to the pod). OpenShift also accepts Ingress objects and converts them into Routes.</p>
+  </div>
+  <div class="code"><div class="cap"><span>route.yaml · or simply: oc create route edge order-api --service=order-api</span><button class="copy">Copy</button></div><pre>apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: order-api
+spec:
+  host: orders.apps.example.com
+  to: { kind: Service, name: order-api }
+  port: { targetPort: http }
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect   <span class="c"># http → https</span></pre></div>
+  <div class="prose">
+    <h3>Builds inside the cluster</h3>
+    <p>A <span class="t" data-t="buildconfig">BuildConfig</span> builds images in the cluster itself. <span class="t" data-t="s2i">Source-to-Image</span> takes a Git URL and a builder image (for example <code>ubi9/openjdk-21</code>), runs Maven, and produces a runnable image with no Dockerfile. A binary build uploads a jar you built locally. Results land in an <span class="t" data-t="imagestream">ImageStream</span>, OpenShift's pointer to images in the internal registry, which can trigger a redeploy when a tag moves.</p>
+  </div>
+  <div class="code"><div class="cap"><span>Terminal · S2I from Git, then a binary build from your local jar</span><button class="copy">Copy</button></div><pre>oc new-project orders-dev                                   <span class="c"># a Project = namespace + defaults</span>
+oc new-app registry.access.redhat.com/ubi9/openjdk-21~https://github.com/you/order-api.git \
+  --name=order-api
+oc logs -f bc/order-api                                     <span class="c"># watch Maven run inside the cluster</span>
+
+<span class="c"># binary build: skip Git, upload target/ from your laptop</span>
+oc new-build --name=order-api-bin --binary --image-stream=openjdk-21
+oc start-build order-api-bin --from-dir=target --follow
+oc get is                                                   <span class="c"># ImageStreams and their tags</span></pre></div>
+  <div class="prose">
+    <h3>Other OpenShift pieces you will meet</h3>
+    <ul>
+      <li><strong><span class="t" data-t="project">Projects</span></strong>: namespaces with extra metadata, default quotas and the UID range used by the SCC.</li>
+      <li><strong><span class="t" data-t="deploymentconfig">DeploymentConfig</span></strong>: OpenShift's older deployment object, deprecated since 4.14. Use a standard Deployment; you will still read DCs in older projects.</li>
+      <li><strong><span class="t" data-t="template">Templates</span></strong>: parameterized object lists, OpenShift's answer before Helm. Helm charts now work everywhere, including OpenShift.</li>
+      <li><strong><span class="t" data-t="operator">Operators</span> and <span class="t" data-t="olm">OLM</span></strong>: a <span class="t" data-t="crd">CRD</span> plus a controller that runs a piece of software for you (Kafka via Strimzi/AMQ Streams, Postgres, Kong Mesh itself). OperatorHub in the console installs them.</li>
+      <li><strong>Web console</strong>: a Developer perspective with a Topology view of your apps, builds, routes and logs. Kubernetes has no built-in equivalent.</li>
+    </ul>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Kubernetes</th><th>OpenShift</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Namespace</td><td>Project</td><td>Project adds quotas, UID range, display name</td></tr>
+      <tr><td>kubectl</td><td>oc</td><td>oc is a superset; also <code>oc login</code>, <code>oc new-app</code>, <code>oc start-build</code></td></tr>
+      <tr><td>Ingress</td><td>Route</td><td>Both work; Routes have native TLS modes</td></tr>
+      <tr><td>Deployment</td><td>Deployment (DeploymentConfig is deprecated)</td><td>Use Deployment</td></tr>
+      <tr><td>docker build + push</td><td>BuildConfig (S2I, Docker, binary)</td><td>Builds run in the cluster</td></tr>
+      <tr><td>Image tag in a registry</td><td>ImageStreamTag</td><td>Can trigger redeploys on change</td></tr>
+      <tr><td>Helm chart</td><td>Helm chart or Template</td><td>Prefer Helm for portability</td></tr>
+      <tr><td>Pod Security Admission</td><td>SecurityContextConstraints</td><td><code>restricted-v2</code> = random UID, group 0, no privilege escalation</td></tr>
+    </tbody></table></div>
+  <details class="check"><summary>Your image works on kind but crashes on OpenShift with "mkdir /app/logs: permission denied". Explain and fix.</summary><p>OpenShift ran the container as a random UID that does not own <code>/app</code>. The UID is unpredictable but the group is always 0, so in the Dockerfile run <code>chgrp -R 0 /app &amp;&amp; chmod -R g=u /app</code>. Better still, log to stdout and write nothing to the image filesystem.</p></details>
+</section>
+
+<!-- ============================ PART V ============================ -->
+<div class="part" id="part-5">
+  <p class="eyebrow">Part V</p>
+  <h2 class="partname">Production craft</h2>
+  <p class="lede">The habits that keep containerized services secure, observable and fixable at 2 a.m.</p>
+</div>
+
+<section class="ch" id="c19" data-title="Security checklist">
+  <header><span class="num">19</span><span class="kicker">Defence in depth</span><h2>Security for containerized services</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>Assume one layer will fail. Each layer should limit what an attacker can do after breaking the one before it.</p></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Layer</th><th>Do this</th><th>Because</th></tr></thead>
+    <tbody>
+      <tr><td>Image</td><td>JRE-only or distroless base; scan with Trivy or Grype in CI; pin by digest; rebuild on base CVEs</td><td>Every package in the image is attack surface you must patch</td></tr>
+      <tr><td>Process</td><td>Non-root, <code>allowPrivilegeEscalation: false</code>, drop ALL capabilities, read-only root filesystem where possible</td><td>An exploit inherits the process's powers</td></tr>
+      <tr><td>Identity</td><td>One <span class="t" data-t="serviceaccount">ServiceAccount</span> per app; RBAC with least privilege; disable token automount if the app never calls the API</td><td>A stolen token is only as dangerous as its permissions</td></tr>
+      <tr><td>Secrets</td><td>Encryption at rest, external secret store, mount as files, never log them, never in images or Git</td><td>Secrets are base64, not encrypted</td></tr>
+      <tr><td>Network</td><td>Default-deny NetworkPolicy; mesh mTLS + MeshTrafficPermission; TLS at the edge</td><td>Stops lateral movement after one pod is compromised</td></tr>
+      <tr><td>Supply chain</td><td>Sign images (cosign), generate SBOMs, admit only signed images from your registry</td><td>Proves what runs is what you built</td></tr>
+    </tbody></table></div>
+</section>
+
+<section class="ch" id="c20" data-title="Observability and triage">
+  <header><span class="num">20</span><span class="kicker">When it breaks</span><h2>Observability and the triage playbook</h2></header>
+  <div class="first"><span class="lbl">First principle</span><p>In a fleet of disposable pods you cannot SSH in and look around later. Every answer you might need must be emitted while it happens: logs, metrics and traces, all tagged with the same IDs.</p></div>
+  <div class="prose">
+    <p>Logs go to stdout as structured JSON with the trace ID in every line (Spring Boot 3.4+ has built-in structured logging: <code>logging.structured.format.console=ecs</code>). Metrics come from Micrometer at <code>/actuator/prometheus</code>: request rate, errors and latency per endpoint, plus JVM memory, GC pauses and connection pool usage. Traces follow one request across services through the <code>traceparent</code> header; with a mesh, the proxies add spans for every hop.</p>
+    <p>Most incidents start with one of six pod states. <code>kubectl describe pod</code> shows the Events section, which answers most of them before you read a single log line.</p>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Symptom</th><th>Usual cause</th><th>First commands</th></tr></thead>
+    <tbody>
+      <tr><td><span class="t" data-t="crashloop">CrashLoopBackOff</span></td><td>App exits on start: bad config, missing secret, DB unreachable</td><td><code>kubectl logs POD --previous</code></td></tr>
+      <tr><td><span class="t" data-t="imagepull">ImagePullBackOff</span></td><td>Wrong tag, private registry without pull secret, network policy to registry</td><td><code>kubectl describe pod POD</code> (Events)</td></tr>
+      <tr><td>Pending</td><td>Requests do not fit any node; PVC not bound; taint without toleration</td><td><code>kubectl describe pod POD</code>, <code>kubectl get pvc</code></td></tr>
+      <tr><td>OOMKilled / exit 137</td><td>Process memory above the limit (see chapter 5)</td><td><code>kubectl describe pod POD</code> (Last State)</td></tr>
+      <tr><td>Running, 0/1 Ready</td><td>Readiness probe failing</td><td><code>kubectl describe pod POD</code>, <code>kubectl get endpointslices</code></td></tr>
+      <tr><td>Service returns nothing</td><td>Selector does not match labels; wrong targetPort</td><td><code>kubectl get pods --show-labels</code>, <code>kubectl port-forward svc/NAME 8080</code></td></tr>
+    </tbody></table></div>
+  <div class="code"><div class="cap"><span>Terminal · the ten commands you will type most</span><button class="copy">Copy</button></div><pre>kubectl get pods -o wide -n orders              <span class="c"># status, restarts, node, IP</span>
+kubectl describe pod order-api-7d9f-x2kq       <span class="c"># events: the story of the pod</span>
+kubectl logs order-api-7d9f-x2kq --previous    <span class="c"># logs from the crashed container</span>
+kubectl logs -l app=order-api -f --max-log-requests 10
+kubectl exec -it order-api-7d9f-x2kq -- sh     <span class="c"># if the image has a shell</span>
+kubectl debug -it order-api-7d9f-x2kq --image=busybox --target=app   <span class="c"># if it doesn't</span>
+kubectl port-forward svc/order-api 8080:80     <span class="c"># bypass ingress and mesh edge</span>
+kubectl get events -n orders --sort-by=.lastTimestamp
+kubectl rollout status deployment/order-api
+kubectl top pod -n orders                       <span class="c"># live CPU/memory (needs metrics-server)</span></pre></div>
+</section>
+
+<section class="ch" id="c21" data-title="Glossary">
+  <header><span class="num">21</span><span class="kicker">Every dotted word</span><h2>Glossary</h2></header>
+  <label for="glq" class="note" style="display:block">Filter terms</label>
+  <input id="glq" class="gl-search" type="search" placeholder="Try cgroup, Route, sidecar…" autocomplete="off">
+  <div class="gl" id="gl"></div>
+  <footer>Versions referenced: Java 21, Spring Boot 3.3+ jarmode tools and 3.4+ structured logging, Kubernetes 1.29–1.34 features (native sidecars, preStop sleep), OpenShift 4.14+ (DeploymentConfig deprecation), Kuma/Kong Mesh targetRef policies. Policy field names in Kong Mesh change between releases, so check the docs for your version.</footer>
+</section>
+
+</main>
+</div>
+
+<div id="pop" role="tooltip" hidden></div>
+
+<script>
+/* ---------------- glossary data ---------------- */
+const G={
+kernel:["Kernel","The core of the operating system. It owns the CPU, memory, disks and network, and every program asks it for them through system calls.","Programs cannot safely share hardware on their own; one referee has to."],
+process:["Process","A running instance of a program: its memory, open files, threads and an ID (PID) given by the kernel.","The kernel needs a unit it can schedule, account for and kill."],
+vm:["Virtual machine","Software that pretends to be a whole computer, so a full operating system with its own kernel can run on it.","Strong isolation between tenants on shared hardware, at the cost of booting and carrying a full OS."],
+namespace:["Namespace (Linux)","A kernel feature that gives a process its own private view of one global resource: PIDs, network, mounts, hostname, users or IPC.","Lets many processes on one kernel each believe they are alone."],
+pidns:["PID namespace","A private process-ID numbering. The first process inside sees itself as PID 1 and cannot see host processes.","Hides and protects other processes; makes the container's main process the one that receives signals."],
+cgroup:["cgroup","Control group: a kernel feature that limits and accounts CPU, memory, I/O and process count for a group of processes.","Namespaces hide things but do not stop a process from eating all memory. cgroups set the budget."],
+oomkiller:["OOM killer","The kernel routine that kills a process when memory runs out, either on the whole machine or inside a cgroup that hit its limit.","The kernel must reclaim memory somehow, and killing one process saves the rest."],
+exit137:["Exit code 137","128 + signal 9 (SIGKILL). The process was killed and could not react, usually by the OOM killer or after ignoring SIGTERM.","Shells report death-by-signal as 128 plus the signal number."],
+overlayfs:["OverlayFS","A Linux filesystem that stacks read-only directories (image layers) under one writable directory and shows them as a single tree.","Lets a hundred containers share one copy of the same image on disk."],
+cow:["Copy-on-write","A file from a read-only layer is copied into the writable layer only when it is first modified.","Sharing is free until someone changes something."],
+volume:["Volume","Storage that lives outside a container's writable layer and survives the container being removed or replaced.","Container filesystems are disposable; data is not."],
+bindmount:["Bind mount","A folder from the host made visible inside the container at a chosen path.","Handy for local config and source code during development."],
+capabilities:["Linux capabilities","Root's powers split into about 40 separate permissions (bind low ports, change file owners, load kernel modules…). Runtimes drop most by default.","All-or-nothing root is too dangerous; grant only the slices needed."],
+seccomp:["seccomp","A kernel filter that blocks system calls a process should never need.","Shrinks the kernel attack surface reachable from a compromised app."],
+image:["Image","A read-only template for containers: ordered filesystem layers plus a config (command, env, user, ports).","A reproducible, shippable environment."],
+layer:["Layer","A tar archive of filesystem changes produced by one build instruction, identified by its content hash.","Unchanged layers are reused from cache and never re-uploaded or re-downloaded."],
+digest:["Digest","A SHA-256 hash of an image's content, e.g. sha256:4f1c…. The same digest always means the same bytes.","Tags can move; digests cannot, so they make deploys reproducible."],
+tag:["Tag","A human-friendly name for an image version, e.g. order-api:1.4.2. It points to a digest and can be repointed.","People need readable names; machines need immutable hashes."],
+registry:["Registry","A server that stores and serves images (Docker Hub, Quay, Harbor, ECR, Nexus, the OpenShift internal registry).","Nodes need one place to pull images from."],
+oci:["OCI","Open Container Initiative: the open standards for image format, runtime and distribution.","Any compliant tool can build, push or run any compliant image."],
+dockerfile:["Dockerfile","A text recipe of instructions (FROM, COPY, RUN, ENTRYPOINT…) that builds an image layer by layer.","Makes image builds repeatable and reviewable."],
+multistage:["Multi-stage build","A Dockerfile with several FROM stages; later stages copy only the results they need from earlier ones.","Keep compilers and build tools out of the runtime image."],
+buildpack:["Cloud Native Buildpacks","Tools that turn source code into an image without a Dockerfile by detecting the language and applying tested build steps. Spring Boot uses them in spring-boot:build-image.","Consistent, secure images without every team hand-writing Dockerfiles."],
+jib:["Jib","Google's Maven/Gradle plugin that builds layered Java images directly, without a Docker daemon.","Fast, daemonless builds in CI."],
+fatjar:["Fat jar","A single executable jar containing your classes and every dependency jar. Spring Boot's default packaging.","One file to run: simple, but bad for layer caching."],
+layeredjar:["Layered jar","A Spring Boot jar with an index that splits contents into dependencies, spring-boot-loader, snapshot-dependencies and application layers.","Code changes then rebuild only the tiny application layer."],
+distroless:["Distroless image","A base image with only the runtime (e.g. a JRE) and its libraries: no shell, no package manager.","Less to patch and less for an attacker to use."],
+entrypoint:["ENTRYPOINT","The command a container runs at start. Exec form [\"java\",\"-jar\",\"app.jar\"] runs Java directly; shell form wraps it in /bin/sh.","Defines the container's main process, which receives the stop signal."],
+pid1:["PID 1","The first process in a PID namespace. It receives the stop signal and must reap child processes.","The platform stops a container by signalling PID 1, so your app must be it or be told by it."],
+sigterm:["SIGTERM","Signal 15: a polite request to stop. Programs can catch it and shut down cleanly.","Lets apps finish in-flight work before exiting."],
+sigkill:["SIGKILL","Signal 9: immediate termination. Cannot be caught or ignored.","The last resort when a process won't stop."],
+stdout:["stdout logging","Writing logs to standard output instead of files. The container runtime captures it and log shippers collect it.","Files inside containers vanish with the container; stdout is captured centrally."],
+twelvefactor:["Twelve-factor app","A set of principles for cloud apps, including config in the environment, stateless processes and logs as event streams.","Makes one build deployable unchanged to any environment."],
+heap:["Heap","JVM memory for Java objects, managed by the garbage collector. Sized by -Xmx or MaxRAMPercentage.","Where your application data lives."],
+metaspace:["Metaspace","Native memory holding class metadata. Grows with the number of loaded classes (Spring, Hibernate and proxies load many).","Class definitions must live somewhere outside the heap."],
+maxram:["-XX:MaxRAMPercentage","JVM flag setting the maximum heap as a percentage of available memory (the cgroup limit in a container). Default is 25.","Lets one image size its heap correctly in any container size."],
+javaoom:["java.lang.OutOfMemoryError","A JVM error thrown when the heap (or metaspace) cannot satisfy an allocation. Comes with a stack trace.","The JVM signals its own limit was reached."],
+oomkilled:["OOMKilled","Kubernetes' reason when the kernel killed a container for exceeding its memory limit. Exit code 137, no Java stack trace.","The cgroup budget is enforced by the kernel, not the JVM."],
+throttling:["CPU throttling","Pausing a container once it has used its CPU quota for the current 100 ms period.","CPU limits are enforced as time slices, not as slower cores."],
+cds:["Class Data Sharing (CDS)","A JVM feature that stores pre-parsed classes in an archive file so later starts load them faster.","Shorter startup when containers restart and scale often."],
+bridge:["Bridge network","A virtual switch on the host that connects container network interfaces to each other and, via NAT, to the outside.","Containers in separate network namespaces need a way to talk."],
+portpublish:["Port publishing","Mapping a host port to a container port (-p 8080:8080) so traffic from outside reaches the container.","The container's ports live in its own network namespace."],
+compose:["Docker Compose","A YAML file and tool that starts several related containers, networks and volumes on one machine.","Local multi-container setups in one command."],
+testcontainers:["Testcontainers","A Java library that starts real Docker containers (Postgres, Kafka, MQ) from JUnit tests and removes them afterwards.","Integration tests against real dependencies instead of mocks."],
+declarative:["Declarative","Describing the end state you want rather than the steps to reach it.","The system can re-derive the steps whenever reality drifts."],
+desiredstate:["Desired state","The spec you store in the Kubernetes API (e.g. replicas: 3) that controllers work to make true.","A target to converge on survives failures; a one-time command does not."],
+controller:["Controller","A program that watches some objects in the API and changes the world to match their spec.","Automates the repetitive work of keeping things as declared."],
+reconcile:["Reconcile loop","Observe actual state, compare to desired state, act on the difference, repeat.","Comparing levels rather than reacting to single events tolerates missed events and crashes."],
+kubectl:["kubectl","The command-line client for the Kubernetes API.","Humans and scripts need a way to read and write cluster objects."],
+apiserver:["kube-apiserver","The front door of the cluster. Authenticates, authorizes, validates and stores every object; all components talk only to it.","One consistent, secured place for all reads and writes."],
+etcd:["etcd","A distributed, consistent key-value store that holds all cluster state.","The cluster needs one reliable source of truth that survives node loss."],
+scheduler:["kube-scheduler","Picks a node for each new pod based on requests, affinity, taints and spread rules.","Someone must decide placement; doing it by hand doesn't scale."],
+kubelet:["kubelet","The agent on every node that starts pods assigned to it, runs probes and reports status.","The control plane decides; the kubelet makes it happen on the machine."],
+cri:["CRI","Container Runtime Interface: the API the kubelet uses to talk to any container runtime.","Lets Kubernetes use containerd, CRI-O or others interchangeably."],
+containerd:["containerd","A container runtime that pulls images and runs containers. The default under most Kubernetes clusters (and under Docker).","Kubernetes needs something to actually create the processes."],
+kubeproxy:["kube-proxy","A node agent that programs iptables/IPVS rules so traffic to a Service IP reaches one of its pods.","Service IPs are virtual; something must translate them."],
+cni:["CNI","Container Network Interface: plugins (Calico, Cilium, OVN-Kubernetes…) that give each pod an IP and connect pods across nodes.","Every pod must reach every other pod without NAT."],
+pod:["Pod","The smallest deployable unit: one or more containers sharing a network namespace (same IP, same localhost) and volumes.","Some helpers must sit right next to the app, sharing its network and files."],
+sidecar:["Sidecar","A helper container in the same pod as the app: a mesh proxy, log shipper or secret agent.","Adds capabilities without changing the app's code or image."],
+initcontainer:["Init container","A container that runs to completion before the app containers start (migrations, waiting for a dependency, fetching config).","Ordering guarantees at pod start."],
+replicaset:["ReplicaSet","Keeps a specified number of identical pods running, recreating any that disappear.","Pods are mortal; something must replace them."],
+deployment:["Deployment","Manages ReplicaSets to roll out new versions gradually and roll back.","Changing versions safely needs old and new pods managed together."],
+statefulset:["StatefulSet","Like a Deployment but with stable pod names, ordered start/stop and a dedicated volume per pod.","Databases and brokers need stable identity and storage."],
+daemonset:["DaemonSet","Runs one copy of a pod on every (or selected) node.","Node-level agents must be everywhere."],
+job:["Job","Runs pods until a set number complete successfully, with retries.","Batch work has an end; servers don't."],
+cronjob:["CronJob","Creates Jobs on a cron schedule.","Recurring batch work without an external scheduler."],
+label:["Label","A key/value tag on any object, e.g. app=order-api.","Loose coupling: objects find each other by query, not by hard-coded names."],
+selector:["Selector","A label query (app=order-api) used by ReplicaSets, Services and policies to find their targets.","Membership is computed continuously, so new pods join automatically."],
+configmap:["ConfigMap","An object holding non-secret configuration as key/value pairs or files.","Keeps environment-specific settings out of the image."],
+secret:["Secret","An object for sensitive values. Stored base64-encoded, which is encoding, not encryption.","Separates sensitive data so RBAC and encryption can treat it differently."],
+configtree:["configtree","A Spring Boot config import that reads a directory of files where each file name is a property and its content the value.","Matches how Kubernetes mounts Secrets and ConfigMaps as files."],
+service:["Service","A stable virtual IP and DNS name that load-balances to the ready pods matching a selector.","Pod IPs change constantly; clients need a fixed address."],
+clusterip:["ClusterIP","The default Service type, reachable only inside the cluster.","Most traffic is service to service."],
+nodeport:["NodePort","A Service exposed on a fixed high port on every node's IP.","A simple way in from outside, mainly for labs."],
+loadbalancer:["LoadBalancer Service","A Service that asks the cloud provider for an external load balancer.","Expose a service to the internet without a separate ingress."],
+headless:["Headless Service","A Service with clusterIP: None; DNS returns each pod's IP directly.","Clients that must reach specific replicas (DB members, Kafka brokers)."],
+endpointslice:["EndpointSlice","The live list of ready pod IPs and ports behind a Service.","Separates 'which pods match' from 'which pods are ready right now'."],
+coredns:["CoreDNS","The cluster's DNS server. Resolves service.namespace.svc.cluster.local to Service IPs.","Lets apps use names instead of IPs."],
+ingress:["Ingress","Layer 7 routing rules (host, path, TLS) for traffic entering the cluster, implemented by an ingress controller.","Many HTTP services can share one external entry point."],
+gatewayapi:["Gateway API","The successor to Ingress: Gateway (owned by the platform) plus HTTPRoute/GRPCRoute (owned by app teams).","Clearer ownership and richer routing than Ingress."],
+networkpolicy:["NetworkPolicy","Firewall rules for pods: which pods may talk to which, on which ports.","By default every pod can reach every other pod."],
+northsouth:["North-south traffic","Traffic entering or leaving the cluster (users, partners, the internet).","Needs edge concerns: TLS certs, auth, rate limits."],
+eastwest:["East-west traffic","Traffic between services inside the platform.","Needs service identity, retries and timeouts between peers."],
+liveness:["Liveness probe","A periodic check; repeated failure makes the kubelet restart the container.","Some failures (deadlocks) are only fixed by a restart."],
+readiness:["Readiness probe","A periodic check; failure removes the pod from Service endpoints without restarting it.","A pod can be alive but temporarily unable to serve."],
+startupprobe:["Startup probe","A check that holds off liveness and readiness until the app has started.","Slow JVM starts would otherwise be killed by liveness."],
+actuator:["Spring Boot Actuator","Spring module exposing operational endpoints: health, metrics, info, liveness and readiness groups.","The platform needs a standard way to ask the app about itself."],
+request:["Resource request","The CPU/memory a container is guaranteed; the scheduler only places pods where requests fit.","Safe bin-packing of pods onto nodes."],
+limit:["Resource limit","The maximum CPU/memory a container may use, enforced by its cgroup.","One noisy pod must not take down a node."],
+qos:["QoS class","Guaranteed, Burstable or BestEffort, derived from requests and limits. Sets eviction order under memory pressure.","When a node runs short, the kubelet needs a fair rule for who goes first."],
+hpa:["HorizontalPodAutoscaler","A controller that changes a Deployment's replica count based on metrics like CPU or custom metrics.","Match capacity to load automatically."],
+pdb:["PodDisruptionBudget","Limits how many pods of an app may be voluntarily evicted at once (e.g. during node drains).","Cluster maintenance must not take an app below safe capacity."],
+rollingupdate:["Rolling update","Replacing pods a few at a time so the app stays available during a deploy.","Zero-downtime upgrades."],
+pv:["PersistentVolume","A piece of real storage (cloud disk, NFS share) registered in the cluster.","Represents the infrastructure side of storage."],
+pvc:["PersistentVolumeClaim","An app's request for storage of a given size and access mode, bound to a PV.","Apps ask for storage without knowing the infrastructure."],
+storageclass:["StorageClass","Describes a kind of storage and how to create it on demand.","Dynamic provisioning: claims create volumes automatically."],
+helm:["Helm","A package manager for Kubernetes: templated manifests (charts) plus values, installed as versioned releases.","Reuse one app definition across environments with rollback."],
+kustomize:["Kustomize","Patches a base set of plain YAML with per-environment overlays. Built into kubectl.","Environment differences without a template language."],
+gitops:["GitOps","Keeping cluster state in Git and having an agent continuously apply it.","Every change is reviewed, versioned and reversible."],
+argocd:["Argo CD","A GitOps controller that syncs Kubernetes clusters to manifests in Git.","Automates deploys and reverts drift."],
+servicemesh:["Service mesh","Infrastructure that handles service-to-service traffic through proxies configured by a central control plane.","Consistent security and resilience without changing each app."],
+envoy:["Envoy","A high-performance L4/L7 proxy configured dynamically over an API. The data plane of most meshes, including Kong Mesh.","A programmable proxy that can be reconfigured without restarts."],
+dataplane:["Data plane","The proxies that actually carry traffic.","Work happens on the request path, next to each service."],
+controlplane:["Control plane","The components that compute and distribute configuration (and certificates) to the data plane.","Central policy, decentralized enforcement."],
+transparentproxy:["Transparent proxy","iptables (or CNI) rules that redirect a pod's traffic through the sidecar without the app knowing.","Apps keep calling normal addresses; the mesh still sees every request."],
+mtls:["mTLS","Mutual TLS: both client and server present certificates, so each side proves its identity and traffic is encrypted.","Zero-trust networks authenticate every connection, not just the edge."],
+circuitbreaker:["Circuit breaker","Stops sending requests to a failing dependency for a while instead of piling on.","Prevents one slow service from exhausting callers' threads."],
+kongmesh:["Kong Mesh","Kong's enterprise service mesh built on Kuma and Envoy, adding Vault/PCA CAs, OPA, FIPS, RBAC and support.","Enterprises need the open-source mesh plus compliance and support."],
+kuma:["Kuma","Open-source CNCF service mesh on Envoy, running on Kubernetes and VMs, with multi-zone support.","A mesh that also covers non-Kubernetes workloads."],
+kumacp:["kuma-cp","The Kuma/Kong Mesh control plane. Stores policies, issues certificates and pushes Envoy config.","Proxies need one source of configuration."],
+kumadp:["kuma-dp","The data plane agent in each sidecar; it bootstraps and supervises Envoy.","Connects Envoy to the control plane with its identity."],
+dataplaneobj:["Dataplane (object)","The mesh's record of one proxy: its address, inbound ports and tags like app or kuma.io/service.","Policies select proxies through these records."],
+multizone:["Multi-zone","A global control plane holds policies; zone control planes in each cluster or data centre apply them; zone ingress/egress carry cross-zone traffic.","One mesh across clusters, regions and VMs."],
+targetref:["targetRef","The selector in Kuma/Kong Mesh policies that picks which proxies a policy configures, and in to/from sections which peers it applies to.","One consistent way to scope every policy."],
+konggateway:["Kong Gateway","Kong's API gateway for north-south traffic: auth, rate limits, transformations via plugins.","Edge concerns differ from service-to-service concerns."],
+retrystorm:["Retry storm","Retries at several layers multiplying: 3 retries at each of 3 hops is 27 attempts.","Retries help single failures but amplify overload."],
+traceparent:["traceparent","The W3C Trace Context HTTP header carrying trace and span IDs between services.","Links spans from many services into one trace."],
+responseflags:["Envoy response flags","Short codes in Envoy access logs explaining why a request failed: UF, UH, UT, URX, NR, and others.","A 503 alone doesn't say which hop failed or why."],
+openshift:["OpenShift","Red Hat's Kubernetes distribution with built-in security defaults, routing, builds, registry, console and Operators.","Enterprises want a supported, opinionated platform rather than assembling parts."],
+okd:["OKD","The community upstream distribution of OpenShift.","Open-source OpenShift without a subscription."],
+oc:["oc","The OpenShift CLI. A superset of kubectl with commands like login, new-app, new-project and start-build.","OpenShift adds resources and workflows kubectl doesn't know."],
+project:["Project","OpenShift's namespace with extra metadata, default quotas and an assigned UID range.","Multi-tenant clusters need per-team defaults."],
+route:["Route","OpenShift's object for exposing a Service by hostname via the router, with edge, passthrough or reencrypt TLS.","Predates Ingress and covers TLS modes natively."],
+scc:["SecurityContextConstraints","OpenShift admission rules for what a pod may do: which UIDs, capabilities, volumes. Default restricted-v2.","Prevent images from running as root or with host access by default."],
+arbitraryuid:["Arbitrary UID","OpenShift runs containers as a random high UID from the project's range, with group 0, ignoring the image's USER.","Even if two images both say USER 1001, they can never act as the same user."],
+s2i:["Source-to-Image (S2I)","Builds an image from source code using a builder image that knows how to compile that language.","Developers ship code; the platform produces consistent images."],
+buildconfig:["BuildConfig","OpenShift object describing how to build an image (S2I, Dockerfile or binary) and where to put it.","Builds run inside the cluster, under its security rules."],
+imagestream:["ImageStream","OpenShift's pointer to image tags, possibly in external registries, that can trigger redeploys on change.","Decouples deployments from registry details and enables automatic rollouts."],
+deploymentconfig:["DeploymentConfig","OpenShift's original deployment object with built-in triggers. Deprecated since 4.14.","Replaced by the standard Deployment."],
+template:["Template","OpenShift's parameterized list of objects, instantiated with oc process.","Reusable app definitions before Helm existed."],
+operator:["Operator","A controller plus custom resources that encode how to run a specific piece of software (install, upgrade, back up, fail over).","Captures operations knowledge as code, using the reconcile loop."],
+olm:["OLM","Operator Lifecycle Manager: installs and upgrades Operators; powers OpenShift's OperatorHub.","Operators themselves need managing."],
+crd:["CRD","CustomResourceDefinition: adds a new object type to the Kubernetes API, such as KafkaTopic or MeshRetry.","Extends the API so operators and meshes can use the same declarative model."],
+rbac:["RBAC","Role-based access control: Roles grant verbs on resources; RoleBindings give Roles to users or ServiceAccounts.","Least privilege for people and workloads."],
+serviceaccount:["ServiceAccount","An identity for pods, used when they call the Kubernetes API or cloud services.","Workloads need identities separate from humans."],
+crashloop:["CrashLoopBackOff","The container keeps exiting, and the kubelet waits longer between each restart.","Back-off avoids hammering a node with endless restarts."],
+imagepull:["ImagePullBackOff","The kubelet cannot pull the image and is waiting before trying again.","Wrong names or missing credentials shouldn't hammer the registry."]
+};
+
+/* ---------------- popover ---------------- */
+const pop=document.getElementById('pop');let pinned=null,cur=null;
+function showPop(el){
+  const d=G[el.dataset.t];if(!d)return;
+  pop.innerHTML='<b></b><span class="def"></span><span class="why"></span>';
+  pop.querySelector('b').textContent=d[0];pop.querySelector('.def').textContent=d[1];pop.querySelector('.why').textContent=d[2];
+  pop.hidden=false;cur&&cur.classList.remove('on');cur=el;el.classList.add('on');
+  const r=el.getBoundingClientRect(),pw=pop.offsetWidth,ph=pop.offsetHeight;
+  let left=r.left+window.scrollX+r.width/2-pw/2;left=Math.max(window.scrollX+12,Math.min(left,window.scrollX+document.documentElement.clientWidth-pw-12));
+  let top=r.bottom+window.scrollY+8;if(r.bottom+ph+16>window.innerHeight&&r.top>ph+16)top=r.top+window.scrollY-ph-8;
+  pop.style.left=left+'px';pop.style.top=top+'px';
+}
+function hidePop(){pop.hidden=true;cur&&cur.classList.remove('on');cur=null;pinned=null}
+document.querySelectorAll('.t').forEach(el=>{
+  if(!G[el.dataset.t])console.warn('missing term',el.dataset.t);
+  el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-describedby','pop');
+  el.addEventListener('mouseenter',()=>{if(!pinned)showPop(el)});
+  el.addEventListener('mouseleave',()=>{if(!pinned)hidePop()});
+  el.addEventListener('focus',()=>{if(!pinned)showPop(el)});
+  el.addEventListener('blur',()=>{if(!pinned)hidePop()});
+  el.addEventListener('click',e=>{e.stopPropagation();if(pinned===el){hidePop();return}showPop(el);pinned=el});
+  el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click()}});
+});
+document.addEventListener('click',e=>{if(pinned&&!pop.contains(e.target))hidePop()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')hidePop()});
+window.addEventListener('resize',()=>{if(cur)showPop(cur)});
+
+/* ---------------- glossary list ---------------- */
+const glEl=document.getElementById('gl');
+const keys=Object.keys(G).sort((a,b)=>G[a][0].localeCompare(G[b][0]));
+function renderGl(q=''){q=q.trim().toLowerCase();glEl.innerHTML='';
+  keys.filter(k=>!q||(G[k][0]+' '+G[k][1]).toLowerCase().includes(q)).forEach(k=>{
+    const d=document.createElement('div');d.id='g-'+k;
+    const b=document.createElement('b');b.textContent=G[k][0];const s=document.createElement('span');s.textContent=G[k][1];const em=document.createElement('em');em.textContent='Why: '+G[k][2];
+    d.append(b,s,em);glEl.append(d)});
+  if(!glEl.children.length){const p=document.createElement('p');p.className='note';p.textContent='No term matches "'+q+'".';glEl.append(p)}
+}
+renderGl();document.getElementById('glq').addEventListener('input',e=>renderGl(e.target.value));
+
+/* ---------------- TOC + rail + progress ---------------- */
+const parts=[...document.querySelectorAll('.part')];const chs=[...document.querySelectorAll('section.ch')];
+const toc=document.getElementById('toc'),rail=document.getElementById('railList');
+parts.forEach((p,i)=>{
+  const name=p.querySelector('.partname').textContent,next=parts[i+1];
+  const mine=chs.filter(c=>c.compareDocumentPosition(p)&Node.DOCUMENT_POSITION_PRECEDING&&(!next||c.compareDocumentPosition(next)&Node.DOCUMENT_POSITION_FOLLOWING));
+  const box=document.createElement('div');box.innerHTML='<h3><small>'+p.querySelector('.eyebrow').textContent+'</small></h3><ol></ol>';box.querySelector('h3').append(name);
+  const h=document.createElement('h4');h.textContent=name;const ol=document.createElement('ol');
+  mine.forEach(c=>{const n=c.querySelector('.num').textContent;
+    const li=document.createElement('li');li.innerHTML='<span>'+n+'</span><a href="#'+c.id+'"></a>';li.querySelector('a').textContent=c.dataset.title;box.querySelector('ol').append(li);
+    const li2=document.createElement('li');const a=document.createElement('a');a.href='#'+c.id;a.innerHTML='<span>'+n+'</span>';a.append(c.dataset.title);li2.append(a);ol.append(li2)});
+  toc.append(box);rail.append(h,ol)});
+const railLinks=[...rail.querySelectorAll('a')];
+const prog=document.getElementById('prog');
+function onScroll(){const h=document.documentElement;prog.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';
+  let active=null;for(const c of chs){if(c.getBoundingClientRect().top<160)active=c.id}
+  railLinks.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+active))}
+window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+
+/* ---------------- copy buttons ---------------- */
+document.querySelectorAll('.code').forEach(c=>{const b=c.querySelector('.copy'),pre=c.querySelector('pre');
+  b.addEventListener('click',()=>{const txt=pre.innerText;
+    const done=()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1400)};
+    try{navigator.clipboard.writeText(txt).then(done,()=>{sel(pre);b.textContent='Selected'})}catch(e){sel(pre);b.textContent='Selected'}})});
+function sel(el){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r)}
+
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------------- namespace widget ---------------- */
+(()=>{const st={pid:0,net:0,mnt:0,uts:0,cg:0};
+const cells=[
+ ['pid','Processes it can see','1 systemd · 412 sshd · 988 postgres · 1204 chrome · 2231 java (you)','1 java (you). Nothing else exists.'],
+ ['net','Network','eth0 192.168.1.20 · wlan0 · docker0 · ports 22, 5432 already taken','eth0 172.17.0.5 · lo · every port free'],
+ ['mnt','Filesystem root','/home/rushi · host /etc · /usr/lib/jvm/jdk-17 (host JDK)','/app · /opt/java/openjdk (JRE 21 from the image) · nothing from the host'],
+ ['uts','Hostname','laptop-rushi','order-api-7d9f'],
+ ['cg','Budget','all 8 GiB RAM and every core','512 MiB RAM · 1 CPU · 200 PIDs. Exceed memory and the kernel kills it.']];
+const grid=document.getElementById('nsGrid'),note=document.getElementById('nsNote');
+function render(){grid.innerHTML='';cells.forEach(([k,h,a,b])=>{const d=document.createElement('div');d.className='ns-cell'+(st[k]?' iso':'');
+  d.innerHTML='<h5></h5><p></p>';d.querySelector('h5').textContent=h;d.querySelector('p').textContent=st[k]?b:a;grid.append(d)});
+  const n=Object.values(st).filter(Boolean).length;
+  note.textContent=n===0?'Nothing isolated yet: this is a plain java -jar on your laptop.':n===5?'All five on: this is what docker run gives you. Same kernel, same java binary format, fenced world.':n+' of 5 isolations on. Each toggle is a separate kernel feature; a container is just all of them together.';
+  document.querySelectorAll('[data-ns]').forEach(b=>b.setAttribute('aria-pressed',st[b.dataset.ns]?'true':'false'))}
+document.querySelectorAll('[data-ns]').forEach(b=>b.addEventListener('click',()=>{st[b.dataset.ns]^=1;render()}));
+document.getElementById('nsAll').addEventListener('click',()=>{const all=Object.values(st).every(Boolean);for(const k in st)st[k]=all?0:1;render()});
+render()})();
+
+/* ---------------- layer widget ---------------- */
+(()=>{let mode='layered';
+const L={layered:[['base OS (ubuntu noble)',78,0],['JRE 21 (eclipse-temurin)',140,0],['dependencies/',62,1],['spring-boot-loader/',0.4,1],['snapshot-dependencies/',2,1],['application/ (your classes, yml)',0.3,1]],
+ fat:[['base OS (ubuntu noble)',78,0],['JRE 21 (eclipse-temurin)',140,0],['app.jar (dependencies + your code)',64.7,1]]};
+const lvl={layered:{src:5,pom:2,base:0},fat:{src:2,pom:2,base:0}};
+const box=document.getElementById('layers');let from=null;
+function fmt(x){return x<1?x.toFixed(1)+' MB':Math.round(x)+' MB'}
+function render(){const ls=L[mode];box.innerHTML='';
+  [...ls].reverse().forEach((l,ri)=>{const i=ls.length-1-ri;const re=from!==null&&i>=from;
+    const row=document.createElement('div');row.className='layer'+(re?' re':'');
+    const w=Math.max(4,Math.sqrt(l[1]/140)*100);
+    row.innerHTML='<div class="lb"><i style="width:'+w+'%"></i><span></span></div><div class="sz"></div><div class="st"></div>';
+    row.querySelector('span').textContent=l[0];row.querySelector('.sz').textContent=fmt(l[1]);
+    row.querySelector('.st').innerHTML=from===null?'<span class="pill net">in image</span>':re?'<span class="pill warn">rebuilt</span>':'<span class="pill ok">cached</span>';
+    box.append(row)});
+  const push=from===null?0:ls.slice(from).reduce((a,l)=>a+l[1],0);
+  document.getElementById('layPush').textContent=from===null?'–':fmt(push);
+  document.getElementById('layPull').textContent=from===null?'–':fmt(push);}
+function msg(t){document.getElementById('layMsg').textContent=t}
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;from=null;
+  document.querySelectorAll('[data-mode]').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+  msg(mode==='fat'?'Fat jar: dependencies and code share one layer.':'Layered jar: four layers, ordered by how often they change.');render()}));
+document.querySelectorAll('[data-chg]').forEach(b=>b.addEventListener('click',()=>{from=lvl[mode][b.dataset.chg];render();
+  const c=b.dataset.chg;
+  msg(c==='base'?'A base-image patch invalidates everything above it. This is why rebuilding regularly for CVEs costs real bandwidth.':
+   mode==='fat'?(c==='src'?'One changed line re-ships every dependency, because they live in the same layer as your code.':'New dependency: the whole jar layer changes either way.'):
+   (c==='src'?'Only application/ changed. Every node already has the 280 MB below it cached.':'dependencies/ changed, so it and everything above it rebuild. Still far less often than code edits.'))}));
+render()})();
+
+/* ---------------- JVM widget ---------------- */
+(()=>{const sL=document.getElementById('sLim'),sP=document.getElementById('sPct'),sT=document.getElementById('sThr'),old=document.getElementById('jvmOld');
+const bar=document.getElementById('memBar'),[hp,ms,th,ot]=bar.querySelectorAll('div'),lim=bar.querySelector('.lim');let isOld=false;
+function upd(){const L=+sL.value,P=+sP.value,T=+sT.value;
+  document.getElementById('oLim').textContent=L+' MiB';document.getElementById('oPct').textContent=P+' %';document.getElementById('oThr').textContent=T;
+  const heap=isOld?4096:Math.round(L*P/100),meta=150,thr=T,other=70,tot=heap+meta+thr+other;
+  const scale=Math.max(L,tot)*1.04;
+  [[hp,heap],[ms,meta],[th,thr],[ot,other]].forEach(([el,v])=>{el.style.width=(v/scale*100)+'%';el.textContent=v/scale>.08?v+' MiB':''});
+  lim.style.left=(L/scale*100)+'%';
+  document.getElementById('jHeap').textContent=heap+' MiB';document.getElementById('jTot').textContent=tot+' MiB';
+  const s=document.getElementById('jState'),m=document.getElementById('jMsg');
+  if(tot>L){s.className='pill bad';s.textContent='OOMKilled · exit 137';
+    m.textContent=isOld?'The JVM sized its heap from the 16 GiB host, not the container. The kernel kills it long before the heap fills.':'Heap plus everything outside it exceeds the limit. Lower MaxRAMPercentage, use fewer threads, or raise the limit.'}
+  else if(tot>L*0.92){s.className='pill warn';s.textContent='Tight';m.textContent='Fits, with under 8% headroom. A burst of threads or a Netty buffer pool could still tip it over.'}
+  else{s.className='pill ok';s.textContent='Fits';m.textContent=P<=30?'Safe, but most of the container is wasted: the heap is small and GC will run often.':'Healthy budget: heap gets most of the space and non-heap memory has room.'}}
+[sL,sP,sT].forEach(e=>e.addEventListener('input',upd));
+old.addEventListener('click',()=>{isOld=!isOld;old.setAttribute('aria-pressed',isOld);sP.disabled=isOld;upd()});upd()})();
+
+/* ---------------- reconcile widget ---------------- */
+(()=>{let des=3,id=0,paused=false;let pods=[];const box=document.getElementById('recPods'),log=document.getElementById('recLog');
+const mk=s=>({id:(++id).toString(36).padStart(3,'k'),s});pods=[mk('running'),mk('running'),mk('running')];
+function L(t){const d=document.createElement('div');d.innerHTML=t;log.prepend(d);while(log.children.length>5)log.lastChild.remove()}
+function render(){document.getElementById('recDes').textContent=des;box.innerHTML='';
+  pods.forEach(p=>{const d=document.createElement('div');d.className='pod '+p.s;d.textContent='order-api\n'+p.id;d.style.whiteSpace='pre';d.title=p.s;box.append(d)})}
+function phase(p){document.querySelectorAll('.loop span').forEach(s=>s.classList.toggle('on',s.dataset.p===p))}
+let step=0;
+function tick(){if(paused){phase(null);return}
+  const ph=['obs','diff','act'][step%3];phase(ph);
+  if(ph==='act'){
+    pods=pods.filter(p=>p.s!=='terminating');
+    pods.forEach(p=>{if(p.s==='creating')p.s='running'});
+    const live=pods.length;
+    if(live<des){pods.push(mk('creating'));L('<span class="k">act</span>   actual '+live+' &lt; desired '+des+' → create pod '+pods[pods.length-1].id)}
+    else if(live>des){const r=pods.find(p=>p.s==='running');if(r){r.s='terminating';L('<span class="k">act</span>   actual '+live+' &gt; desired '+des+' → delete pod '+r.id)}}
+    else L('<span class="k">act</span>   actual '+live+' = desired '+des+' → nothing to do');
+    render()}
+  step++}
+setInterval(tick,RM?1200:800);
+document.getElementById('recPlus').onclick=()=>{if(des<8){des++;L('spec   replicas set to '+des);render()}};
+document.getElementById('recMinus').onclick=()=>{if(des>0){des--;L('spec   replicas set to '+des);render()}};
+document.getElementById('recKill').onclick=()=>{const r=pods.filter(p=>p.s==='running');if(!r.length)return;const v=r[Math.floor(Math.random()*r.length)];pods=pods.filter(p=>p!==v);L('<span class="k">event</span> node lost pod '+v.id+' (OOM, node crash…)');render()};
+const pb=document.getElementById('recPause');pb.onclick=()=>{paused=!paused;pb.setAttribute('aria-pressed',paused);pb.textContent=paused?'Resume controller':'Pause controller';L(paused?'controller stopped: nobody is watching':'controller running again')};
+L('controller started, watching Deployment order-api');render()})();
+
+/* ---------------- rolling update ---------------- */
+(()=>{let preset='a',steps=[],i=0,timer=null;const box=document.getElementById('rollPods');
+function build(){const s=[];let pods=[1,2,3,4].map(n=>({v:1,s:'ready',n}));let k=5;const snap=(m)=>s.push({pods:pods.map(p=>({...p})),m});
+  snap('Start: 4 × v1 ready. Deployment spec changes image to v2.');
+  if(preset==='a'){for(let r=0;r<4;r++){const p={v:2,s:'creating',n:k++};pods.push(p);snap('Surge: create one v2 pod (5 total). Nothing removed yet.');
+    p.s='ready';snap('v2 pod passes readiness and joins the Service endpoints.');
+    const o=pods.find(x=>x.v===1);o.s='terminating';snap('Now remove one v1 pod: SIGTERM, drain, gone.');pods=pods.filter(x=>x!==o)}}
+  else{for(let r=0;r<4;r++){const o=pods.find(x=>x.v===1&&x.s==='ready');o.s='terminating';snap('No surge allowed: terminate one v1 first (capacity drops to 3).');pods=pods.filter(x=>x!==o);
+    const p={v:2,s:'creating',n:k++};pods.push(p);snap('Create a v2 pod in the freed slot.');p.s='ready';snap('v2 pod becomes ready; capacity back to 4.')}}
+  snap('Done: 4 × v2. The old ReplicaSet is kept at 0 replicas for rollback.');return s}
+function render(){const st=steps[i];box.innerHTML='';st.pods.forEach(p=>{const d=document.createElement('div');d.className='pod'+(p.v===2?' v2':'')+(p.s!=='ready'?' '+p.s:'');d.style.whiteSpace='pre';d.textContent='v'+p.v+'\n'+(p.s==='ready'?'ready':p.s==='creating'?'starting':'stopping');box.append(d)});
+  document.getElementById('rollReady').textContent=st.pods.filter(p=>p.s==='ready').length;document.getElementById('rollTotal').textContent=st.pods.length;
+  document.getElementById('rollMsg').textContent='Step '+i+' of '+(steps.length-1)+': '+st.m}
+function reset(){clearInterval(timer);timer=null;steps=build();i=0;render()}
+document.getElementById('rollNext').onclick=()=>{if(i<steps.length-1){i++;render()}};
+document.getElementById('rollReset').onclick=reset;
+document.getElementById('rollPlay').onclick=()=>{clearInterval(timer);if(i>=steps.length-1)i=0;timer=setInterval(()=>{if(i<steps.length-1){i++;render()}else{clearInterval(timer)}},RM?1400:900)};
+document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{preset=b.dataset.preset;document.querySelectorAll('[data-preset]').forEach(x=>x.setAttribute('aria-pressed',x===b));reset()});
+reset()})();
+
+/* ---------------- service routing ---------------- */
+(()=>{const NS='http://www.w3.org/2000/svg';const ys=[40,115,190];
+const pods=ys.map((y,i)=>({name:'pod-'+'abc'[i],y,db:true,hung:false,fails:0,restarts:0,starting:0}));
+const gP=document.getElementById('svcPods'),gD=document.getElementById('svcDots'),ctr=document.getElementById('svcCtrls'),log=document.getElementById('svcLog');
+const ready=p=>p.db&&!p.hung&&!p.starting;
+function L(t){const d=document.createElement('div');d.textContent=t;log.prepend(d);while(log.children.length>4)log.lastChild.remove()}
+function draw(){gP.innerHTML='';pods.forEach(p=>{const g=document.createElementNS(NS,'g');
+  const ln=document.createElementNS(NS,'path');ln.setAttribute('d','M350 115 C 400 115, 410 '+p.y+', 460 '+p.y);ln.setAttribute('class','s-line');if(!ready(p))ln.setAttribute('stroke-dasharray','3 5');g.append(ln);
+  const r=document.createElementNS(NS,'rect');r.setAttribute('x',460);r.setAttribute('y',p.y-24);r.setAttribute('width',146);r.setAttribute('height',48);r.setAttribute('rx',5);r.setAttribute('class',ready(p)?'s-pod-ready':'s-pod-unready');g.append(r);
+  const t=document.createElementNS(NS,'text');t.setAttribute('x',533);t.setAttribute('y',p.y-4);t.setAttribute('text-anchor','middle');t.setAttribute('class','s-h');t.textContent=p.name+(p.restarts?' ↻'+p.restarts:'');g.append(t);
+  const s=document.createElementNS(NS,'text');s.setAttribute('x',533);s.setAttribute('y',p.y+13);s.setAttribute('text-anchor','middle');s.setAttribute('class','s-m');
+  s.textContent=p.starting?'restarting…':p.hung?'live fail '+p.fails+'/3':!p.db?'ready: false':'ready';g.append(s);gP.append(g)});
+  document.getElementById('svcEp').textContent=pods.filter(ready).length;
+  ctr.innerHTML='';pods.forEach(p=>{const a=document.createElement('button');a.className='btn';a.setAttribute('aria-pressed',!p.db);a.textContent=p.name+': '+(p.db?'DB down':'DB back');a.onclick=()=>{p.db=!p.db;L(p.name+(p.db?' readiness OK → added to endpoints':' readiness FAIL → removed from endpoints, not restarted'));draw()};
+    const b=document.createElement('button');b.className='btn';b.textContent=p.name+': hang JVM';b.disabled=p.hung||p.starting>0;b.onclick=()=>{p.hung=true;p.fails=0;L(p.name+' deadlocked: liveness starts failing');draw()};ctr.append(a,b)})}
+let rr=0;
+function send(){const R=pods.filter(ready);if(!R.length){L('503: Service has no ready endpoints');return}
+  const p=R[rr++%R.length];if(RM){return}
+  const c=document.createElementNS(NS,'circle');c.setAttribute('r',5);c.setAttribute('class','s-dot');gD.append(c);
+  const t0=performance.now(),dur=1100;
+  (function f(t){const k=Math.min(1,(t-t0)/dur);let x,y;
+    if(k<.45){const q=k/.45;x=110+q*(285-110);y=115}else{const q=(k-.45)/.55;x=285+q*(533-285);y=115+(p.y-115)*q}
+    c.setAttribute('cx',x);c.setAttribute('cy',y);if(k<1)requestAnimationFrame(f);else c.remove()})(t0)}
+setInterval(send,650);
+setInterval(()=>{let ch=false;pods.forEach(p=>{
+  if(p.starting){p.starting--;if(!p.starting)L(p.name+' started, readiness OK → back in endpoints');ch=true}
+  else if(p.hung){p.fails++;ch=true;if(p.fails>=3){p.hung=false;p.fails=0;p.restarts++;p.starting=2;L('kubelet: '+p.name+' liveness failed 3× → restart container')}}});if(ch)draw()},1500);
+draw();L('3 pods ready; kube-proxy balances across all three')})();
+
+/* ---------------- mesh ---------------- */
+(()=>{const st={mtls:true,perm:true,retry:true,fault:false};const log=document.getElementById('meshLog'),wire=document.getElementById('meshWire'),dot=document.getElementById('meshDot'),go=document.getElementById('meshGo');
+const N=[0,1,2,3].map(i=>document.getElementById('mn'+i));
+const labels={mtls:['mTLS on','mTLS off'],perm:['Permission: allow order-api','Permission: deny order-api'],retry:['MeshRetry: 3 attempts','No retry policy'],fault:['payment-api returns 503 once','payment-api returns 503 once']};
+document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const k=b.dataset.m;st[k]=!st[k];b.setAttribute('aria-pressed',st[k]);b.textContent=st[k]?labels[k][0]:labels[k][1];wire.classList.toggle('tls',st.mtls)});
+wire.classList.add('tls');
+function L(t,cls){const d=document.createElement('div');d.textContent=t;if(cls)d.style.color=cls;log.append(d)}
+const wait=ms=>new Promise(r=>setTimeout(r,RM?0:ms));
+function hot(i){N.forEach((n,j)=>n.classList.toggle('hot',j===i))}
+function move(a,b){if(RM)return Promise.resolve();return new Promise(r=>{const t0=performance.now();(function f(t){const k=Math.min(1,(t-t0)/450);dot.style.left=((a+(b-a)*k)*26)+'%';if(k<1)requestAnimationFrame(f);else r()})(t0)})}
+let busy=false;
+go.onclick=async()=>{if(busy)return;busy=true;go.disabled=true;log.innerHTML='';N.forEach(n=>n.classList.remove('fail'));
+  hot(0);L('order-api  GET http://payment-api.payments:8080/payments/42');await wait(400);
+  await move(0,1);hot(1);L('envoy-out  intercepted by iptables; route to payment-api found');await wait(350);
+  let attempt=1,failOnce=st.fault;const max=st.retry?3:1;
+  while(true){
+    L('envoy-out  attempt '+attempt+'/'+max+(st.mtls?' over mTLS (cert: spiffe://default/order-api)':' in plaintext'));
+    await move(1,2);hot(2);await wait(300);
+    if(st.mtls&&!st.perm){N[2].classList.add('fail');L('envoy-in   identity order-api not allowed by MeshTrafficPermission → 403 RBAC: access denied','var(--bad)');await move(2,0);hot(0);L('order-api  received 403. Retrying would not help: this is policy, not a fault.','var(--bad)');break}
+    if(!st.mtls)L('envoy-in   no client certificate: caller identity unknown, permissions cannot be enforced',st.perm?null:'var(--warn)');
+    else L('envoy-in   certificate valid, caller = order-api, permission Allow');
+    await move(2,3);hot(3);await wait(300);
+    if(failOnce){failOnce=false;N[3].classList.add('fail');L('payment-api 503 Service Unavailable (pool exhausted)','var(--bad)');await move(3,1);hot(1);
+      if(attempt<max){attempt++;L('envoy-out  503 matches retryOn 5XX → back off 100 ms and retry');await wait(450);N[3].classList.remove('fail');continue}
+      await move(1,0);hot(0);L('order-api  received 503. No mesh retry: your code decides what to do.','var(--bad)');break}
+    L('payment-api 200 OK {"status":"CAPTURED"}','var(--ok)');await move(3,0);hot(0);
+    L('order-api  received 200 after '+attempt+' attempt'+(attempt>1?'s (the app never saw the failure)':''),'var(--ok)');break}
+  await wait(300);hot(-1);busy=false;go.disabled=false};
+})();
+</script>
+
+</body></html>
