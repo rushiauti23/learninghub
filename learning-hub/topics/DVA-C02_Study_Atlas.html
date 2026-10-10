@@ -1,0 +1,869 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>DVA-C02 Study Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: sticky topic rail on the left, one long column of topic sections on the right. Each topic = animated diagram panel + plain-language detail. Domain colour tags every section. */
+:root{
+  --bg:#eceff3; --panel:#ffffff; --panel2:#f4f6f9; --ink:#131a24; --muted:#546174; --line:#d3dae3;
+  --d0:#2f5fd0; --d1:#0b7a6f; --d2:#c0304f; --d3:#9a5505; --d4:#6b46c1;
+  --k-client:#0e7490; --k-svc:#15803d; --k-store:#6d28d9; --k-queue:#c2410c; --k-sec:#be123c; --k-ext:#475569; --k-fail:#dc2626; --ok:#15803d;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --c:var(--d0);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1218; --panel:#151c26; --panel2:#1a2330; --ink:#e7ecf3; --muted:#93a1b4; --line:#263142;
+  --d0:#7ba3ff; --d1:#3fd3c2; --d2:#ff7f97; --d3:#f4b04d; --d4:#b79bff;
+  --k-client:#38bdf8; --k-svc:#4ade80; --k-store:#a78bfa; --k-queue:#fb923c; --k-sec:#fb7185; --k-ext:#94a3b8; --k-fail:#f87171; --ok:#4ade80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1218; --panel:#151c26; --panel2:#1a2330; --ink:#e7ecf3; --muted:#93a1b4; --line:#263142;
+  --d0:#7ba3ff; --d1:#3fd3c2; --d2:#ff7f97; --d3:#f4b04d; --d4:#b79bff;
+  --k-client:#38bdf8; --k-svc:#4ade80; --k-store:#a78bfa; --k-queue:#fb923c; --k-sec:#fb7185; --k-ext:#94a3b8; --k-fail:#f87171; --ok:#4ade80; color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.6 var(--f-body);padding-inline:16px;padding-block:0;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em;line-height:1.1}
+p{margin:0}
+code{font:500 .86em var(--f-mono);background:color-mix(in srgb,var(--c) 11%,var(--panel2));padding:.08em .35em;border-radius:4px;overflow-wrap:anywhere}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--c);outline-offset:2px;border-radius:4px}
+.progress{position:fixed;left:0;right:0;top:0;height:3px;z-index:30;background:transparent}
+.progress i{display:block;height:100%;width:0;background:var(--c);transition:background .3s}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:12px;padding-block:10px;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);margin-inline:-16px;padding-inline:16px}
+.topbar b{font:800 17px var(--f-display);letter-spacing:-.01em}
+.topbar .sp{flex:1}
+.pill{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 12px;font:500 12px var(--f-mono)}
+.pill:hover{border-color:var(--c)}
+.shell{max-width:1240px;margin-inline:auto;display:grid;grid-template-columns:250px minmax(0,1fr);gap:40px;padding-block:28px 80px}
+.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 62px);align-self:start;max-height:calc(100vh - 80px);overflow:auto;padding-right:6px;font-size:13px}
+.rail h4{margin:16px 0 4px;font:600 11px var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
+.rail h4:first-child{margin-top:0}
+.rail a{display:flex;gap:8px;align-items:center;padding:4px 8px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.3}
+.rail a:hover{background:var(--panel2)}
+.rail a.on{background:color-mix(in srgb,var(--c) 14%,var(--panel));font-weight:600}
+.rail a i{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--c);flex:none}
+.rail a.got i{background:var(--c)}
+main{min-width:0}
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:end;padding-bottom:28px;border-bottom:1px solid var(--line)}
+.hero h1{font-size:clamp(34px,5.4vw,60px);font-weight:800}
+.hero h1 em{font-style:normal;color:var(--d0);white-space:nowrap}
+.hero p.lead{margin-top:14px;color:var(--muted);max-width:52ch}
+.warn{margin-top:16px;padding:10px 14px;border-radius:8px;background:color-mix(in srgb,var(--d3) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--d3) 40%,var(--line));font-size:13.5px;max-width:60ch}
+.weights{display:grid;gap:10px}
+.w{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;font-size:13px}
+.w .bar{grid-column:1/-1;height:12px;border-radius:6px;background:var(--panel2);overflow:hidden;border:1px solid var(--line)}
+.w .bar i{display:block;height:100%;width:0;background:var(--wc);border-radius:6px;transition:width 1.3s cubic-bezier(.2,.8,.2,1)}
+.w span:last-child{font:600 12px var(--f-mono)}
+.facts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:22px}
+.fg{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.fg small{display:block;font:500 10.5px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.fg b{font:700 15px var(--f-display);display:block;margin-top:2px;overflow-wrap:anywhere}
+.dom{margin-top:56px;padding:22px;border-radius:14px;background:color-mix(in srgb,var(--c) 10%,var(--panel));border:1px solid color-mix(in srgb,var(--c) 35%,var(--line));display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 22px;align-items:center}
+.dom .pc{font:800 clamp(38px,6vw,56px)/1 var(--f-display);color:var(--c);grid-row:span 2}
+.dom h2{font-size:clamp(22px,3vw,30px)}
+.dom p{color:var(--muted);max-width:70ch}
+.dom .prog{grid-column:1/-1;height:6px;border-radius:3px;background:color-mix(in srgb,var(--c) 18%,var(--panel));overflow:hidden}
+.dom .prog i{display:block;height:100%;width:0;background:var(--c);transition:width .5s}
+.topic{margin-top:34px;padding-top:30px;border-top:1px solid var(--line)}
+.topic .eyebrow{font:500 11px var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--c);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.topic h3{font-size:clamp(24px,3.2vw,34px);font-weight:800;margin-top:6px}
+.topic .tl{margin-top:8px;color:var(--muted);max-width:70ch;font-size:16px}
+.panel{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.panel .ph{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel2);font:500 11px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.panel .ph .sp{flex:1}
+.panel .pb{padding:12px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:3px 10px;font:500 12px var(--f-mono);text-transform:none;letter-spacing:0}
+.btn:hover{border-color:var(--c);color:var(--c)}
+.btn[aria-pressed=true],.btn.on{background:var(--c);color:var(--panel);border-color:var(--c)}
+.dgwrap{overflow-x:auto}
+svg.dg{display:block;width:100%;min-width:560px;height:auto}
+.node rect{fill:color-mix(in srgb,var(--kc) 13%,var(--panel));stroke:var(--kc);stroke-width:1.5;transition:stroke-width .2s,fill .2s}
+.node text{fill:var(--ink);font:600 12px var(--f-body);text-anchor:middle}
+.node text.sub{font:400 9.5px var(--f-mono);fill:var(--muted)}
+.node.hit rect{stroke-width:3.5;fill:color-mix(in srgb,var(--kc) 28%,var(--panel))}
+.k-client{--kc:var(--k-client)}.k-svc{--kc:var(--k-svc)}.k-store{--kc:var(--k-store)}.k-queue{--kc:var(--k-queue)}.k-sec{--kc:var(--k-sec)}.k-ext{--kc:var(--k-ext)}.k-fail{--kc:var(--k-fail)}
+.edge line{stroke:var(--muted);stroke-width:2;transition:opacity .3s}
+.edge.dash line{stroke-dasharray:6 5}
+.edge.bad line{stroke:var(--k-fail)}
+.edge.done{opacity:.55}.edge.off{opacity:0}
+.edge text{font:600 10.5px var(--f-mono);fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--panel);stroke-width:5px;stroke-linejoin:round}
+.edge .pk{fill:var(--c)}.edge.bad .pk{fill:var(--k-fail)}
+.edge .xm{fill:var(--k-fail);font:700 16px var(--f-body);stroke:none}
+.ah{fill:var(--muted)}
+.cap{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-top:1px solid var(--line);min-height:68px}
+.cap .n{flex:none;font:700 12px var(--f-mono);color:var(--c);padding-top:2px;min-width:3.4em}
+.cap p{max-width:78ch;font-size:14.5px}
+.dots{display:flex;gap:4px}
+.dots button{width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font:600 11px var(--f-mono);padding:0}
+.dots button.on{background:var(--c);border-color:var(--c);color:var(--panel)}
+.cols{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:26px;margin-top:22px;align-items:start}
+.how p+p{margin-top:12px}
+.how p{max-width:68ch}
+.side{display:grid;gap:12px}
+.chips{display:grid;gap:6px}
+.chip{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:7px 10px;background:var(--panel);border:1px solid var(--line);border-radius:8px;font-size:13px}
+.chip span{color:var(--muted)}
+.chip b{font:600 12.5px var(--f-mono);text-align:right;overflow-wrap:anywhere}
+.trap{padding:12px 14px;border-radius:8px;background:color-mix(in srgb,var(--k-fail) 9%,var(--panel));border:1px solid color-mix(in srgb,var(--k-fail) 35%,var(--line));font-size:13.5px}
+.trap b{display:block;font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--k-fail);margin-bottom:3px}
+.got{display:inline-flex;gap:8px;align-items:center;font-size:13px;margin-top:6px;cursor:pointer;user-select:none}
+.got input{accent-color:var(--c);width:16px;height:16px}
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .6s,transform .6s}
+.reveal.in,.no-js .reveal{opacity:1;transform:none}
+/* widgets */
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.fld{display:grid;gap:3px;font:500 11px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;min-width:0}
+.fld input,.fld select{font:500 14px var(--f-mono);padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);color:var(--ink);width:100%;min-width:90px;text-transform:none;letter-spacing:0}
+.res{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px}
+.res div{padding:10px 12px;background:var(--panel2);border-radius:8px;font-size:13.5px}
+.res b{display:block;font:800 26px var(--f-display);color:var(--c)}
+.res small{display:block;font:400 12px var(--f-mono);color:var(--muted);margin-top:2px}
+.split{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:14px}
+.list{display:grid;gap:5px;align-content:start}
+.list button{text-align:left;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:13px;line-height:1.3}
+.list button:hover{border-color:var(--c)}
+.list button.on{background:color-mix(in srgb,var(--c) 14%,var(--panel));border-color:var(--c);font-weight:600}
+.detail{padding:14px;border-radius:10px;background:var(--panel2);animation:fade .35s}
+.detail h4{margin:0 0 4px;font:700 18px var(--f-display)}
+.detail .k{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.07em;color:var(--c);margin-top:10px;display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.fleet{display:grid;gap:8px}
+.fl{display:grid;grid-template-columns:76px repeat(6,minmax(0,1fr));gap:6px;align-items:center;font:500 11px var(--f-mono);color:var(--muted)}
+.sq{aspect-ratio:1.6;max-height:44px;border-radius:6px;border:1.5px solid var(--k-ext);background:color-mix(in srgb,var(--k-ext) 30%,var(--panel));transition:all .5s}
+.sq.n{border-color:var(--c);background:color-mix(in srgb,var(--c) 55%,var(--panel))}
+.sq.x{border-color:var(--k-fail);background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--k-fail) 35%,var(--panel)) 0 6px,var(--panel) 6px 12px)}
+.sq._{border-style:dashed;background:transparent;opacity:.45}
+.sq.s{background:transparent;border-style:dashed}
+.tbar{height:16px;border-radius:8px;background:color-mix(in srgb,var(--k-ext) 30%,var(--panel));overflow:hidden;border:1px solid var(--line);position:relative}
+.tbar i{position:absolute;left:0;top:0;bottom:0;background:var(--c);transition:width .6s}
+.tstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:6px}
+.tstats div{font-size:12.5px;padding:7px 9px;background:var(--panel2);border-radius:8px}
+.tstats small{display:block;font:500 10px var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.note{font-size:13.5px;min-height:2.6em}
+.hooks{display:flex;gap:6px;flex-wrap:wrap}
+.hooks span{padding:6px 10px;border:1px solid var(--line);border-radius:999px;font:500 12px var(--f-mono);background:var(--panel);transition:all .25s}
+.hooks span.on{background:var(--c);color:var(--panel);border-color:var(--c);transform:translateY(-2px)}
+.hooks span.past{border-color:var(--c);color:var(--c)}
+.chain{display:grid;gap:6px;margin:10px 0}
+.chain div{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);transition:all .3s;font-size:13.5px}
+.chain div.win{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--panel))}
+.chain div.skip{opacity:.4}
+.chain div.scan{border-color:var(--c)}
+.chain em{font:normal 600 11px var(--f-mono);color:var(--muted)}
+.bo{display:flex;gap:6px;align-items:flex-end;height:90px;margin-top:8px}
+.bo i{flex:1;background:var(--c);border-radius:4px 4px 0 0;min-width:0;transition:height .5s;position:relative}
+.bo i::after{content:attr(data-l);position:absolute;top:-17px;left:0;right:0;text-align:center;font:500 10px var(--f-mono);color:var(--muted)}
+.switches{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:6px}
+.sw{display:flex;gap:8px;align-items:center;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:13px;cursor:pointer}
+.sw input{accent-color:var(--c);width:16px;height:16px}
+.verdict{margin-top:10px;padding:12px 14px;border-radius:10px;font-weight:600;border:1px solid}
+.verdict.ok{background:color-mix(in srgb,var(--ok) 12%,var(--panel));border-color:var(--ok);color:var(--ok)}
+.verdict.no{background:color-mix(in srgb,var(--k-fail) 10%,var(--panel));border-color:var(--k-fail);color:var(--k-fail)}
+.trace{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:3px;font:400 12.5px var(--f-mono);color:var(--muted)}
+.trace li::before{content:"› ";color:var(--c)}
+.wf{display:grid;gap:6px;font:500 11.5px var(--f-mono)}
+.wf .r{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px;align-items:center;cursor:pointer;border-radius:6px;padding:2px}
+.wf .r:hover,.wf .r.on{background:var(--panel2)}
+.wf .t{height:16px;position:relative;background:repeating-linear-gradient(90deg,transparent 0 24.6%,var(--line) 24.6% 25%);border-radius:3px}
+.wf .t i{position:absolute;top:2px;bottom:2px;border-radius:3px;background:var(--c);width:0;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.wf .t i.slow{background:var(--k-fail)}
+.wf .r.sub .lb{padding-left:14px;color:var(--muted)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 11px var(--f-mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--panel2);position:sticky;top:0}
+td.v{font-family:var(--f-mono);font-weight:500;font-size:13px}
+tr:last-child td{border-bottom:0}
+tr.hl td{background:color-mix(in srgb,var(--c) 9%,var(--panel))}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.tools input[type=search]{flex:1;min-width:180px;font:14px var(--f-body);padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+.fc{display:flex;gap:6px;flex-wrap:wrap}
+.q{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px}
+.q h4{margin:0 0 8px;font:600 15px/1.45 var(--f-body)}
+.q h4 span{font:700 12px var(--f-mono);color:var(--c);margin-right:8px}
+.opts{display:grid;gap:6px}
+.opts button{text-align:left;display:flex;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:14px}
+.opts button b{font:600 12px var(--f-mono);color:var(--muted);padding-top:2px}
+.opts button:hover:not(:disabled){border-color:var(--c)}
+.opts button.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 13%,var(--panel))}
+.opts button.wrong{border-color:var(--k-fail);background:color-mix(in srgb,var(--k-fail) 11%,var(--panel))}
+.q .ex{margin-top:10px;font-size:13.5px;color:var(--muted);animation:fade .3s}
+.score{font:600 13px var(--f-mono)}
+.kw{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0}
+.kw>div{padding:9px 12px;border-bottom:1px solid var(--line);font-size:14px}
+.kw>div:nth-child(odd){font-family:var(--f-mono);font-size:12.5px;background:var(--panel2)}
+.kw.drill>div:nth-child(even):not(.shown){filter:blur(6px);cursor:pointer;user-select:none}
+.tact{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:14px}
+.tact div{padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;font-size:14px}
+.ck{display:grid;gap:6px;margin-top:12px}
+.ck label{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;cursor:pointer}
+.ck input{accent-color:var(--c);width:17px;height:17px;margin-top:2px}
+.ck label:has(input:checked){text-decoration:line-through;color:var(--muted)}
+footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+@media (max-width:980px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:0}
+  .rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 52px);z-index:15;max-height:none;display:flex;gap:4px;overflow-x:auto;padding:6px 0;margin-inline:-16px;padding-inline:16px;background:var(--bg);border-bottom:1px solid var(--line);white-space:nowrap}
+  .rail h4{display:none}
+  .rail a{flex:none;border:1px solid var(--line);background:var(--panel)}
+  .hero{grid-template-columns:minmax(0,1fr)}
+  .cols{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:560px){
+  .split{grid-template-columns:minmax(0,1fr)}
+  .dom{grid-template-columns:minmax(0,1fr)}.dom .pc{grid-row:auto}
+  .kw{grid-template-columns:minmax(0,1fr)}
+  .wf .r{grid-template-columns:100px minmax(0,1fr)}
+  .fl{grid-template-columns:54px repeat(6,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}.reveal{opacity:1;transform:none}}
+</style>
+<div class="progress" aria-hidden="true"><i></i></div>
+<header class="topbar"><b>DVA-C02 Study Atlas</b><span class="sp"></span><span class="pill" id="tot">0/26 topics</span><button class="pill" id="theme" type="button" aria-label="Toggle light and dark theme">Theme</button></header>
+<div class="shell"><nav class="rail" id="rail" aria-label="Topics"></nav><main id="main"></main></div>
+<script>
+const NUMS=[["Lambda", "Max timeout", "900 s (15 min)"], ["Lambda", "Memory", "128 MB – 10,240 MB"], ["Lambda", "/tmp storage", "512 MB – 10,240 MB"], ["Lambda", "Deployment package", "50 MB zipped upload, 250 MB unzipped, 10 GB container image"], ["Lambda", "Env vars total", "4 KB"], ["Lambda", "Layers per function", "5"], ["Lambda", "Default concurrency per Region", "1,000 (soft limit)"], ["Lambda", "Sync payload", "6 MB request and response"], ["Lambda", "Async event retries", "2"], ["API Gateway", "Integration timeout", "29 s default"], ["API Gateway", "Cache TTL", "300 s default, 3,600 s max"], ["API Gateway", "Default throttle", "10,000 rps, 5,000 burst per account per Region"], ["SQS", "Message size", "256 KB"], ["SQS", "Retention", "4 days default, 1 min – 14 days"], ["SQS", "Visibility timeout", "30 s default, max 12 h"], ["SQS", "Long poll wait", "max 20 s"], ["SQS", "Delay", "max 15 min"], ["SQS", "Batch", "10 messages"], ["SQS FIFO", "Throughput", "300 msg/s, 3,000 with batching (standard mode)"], ["SQS FIFO", "Dedup window", "5 min"], ["DynamoDB", "Item size", "400 KB"], ["DynamoDB", "RCU", "1 strong read/s of 4 KB, or 2 eventual"], ["DynamoDB", "WCU", "1 write/s of 1 KB"], ["DynamoDB", "Transactions", "up to 100 items, 2× capacity"], ["DynamoDB", "BatchGetItem / BatchWriteItem", "100 / 25 items"], ["DynamoDB", "Streams retention", "24 h"], ["DynamoDB", "LSI / GSI per table", "5 / 20 (default)"], ["S3", "Object size", "5 TB; multipart required above 5 GB"], ["S3", "Request rate per prefix", "3,500 writes, 5,500 reads per second"], ["KMS", "Direct Encrypt payload", "4 KB"], ["Kinesis", "Shard", "1 MB/s or 1,000 records/s in; 2 MB/s out"], ["Kinesis", "Retention", "24 h default, up to 365 days"], ["Step Functions", "Standard / Express duration", "1 year / 5 min"], ["CloudTrail", "Event history", "90 days"], ["STS", "AssumeRole session", "15 min – 12 h (1 h default)"], ["Cognito", "ID / access token", "1 h default"]],KW=[["\"least operational overhead\", \"minimal code changes\"", "Managed or serverless option; built-in feature over custom code"], ["\"most secure\"", "IAM role, temporary credentials, least privilege, KMS"], ["\"decouple\", \"buffer spikes\"", "SQS"], ["\"fan-out\", \"multiple subscribers\"", "SNS (+ SQS) or EventBridge"], ["\"ordered\", \"exactly-once\", \"no duplicates\"", "SQS FIFO"], ["\"real-time stream\", \"replay\", \"multiple consumers same data\"", "Kinesis Data Streams"], ["\"workflow\", \"retry steps\", \"human approval\"", "Step Functions"], ["\"rotate credentials automatically\"", "Secrets Manager"], ["\"encrypt large data with KMS\"", "Envelope encryption, GenerateDataKey"], ["\"sign-up / sign-in\", \"social login\"", "Cognito user pool"], ["\"temporary AWS credentials for app users\", \"guest access\"", "Cognito identity pool"], ["\"microsecond reads\", \"DynamoDB read-heavy\"", "DAX"], ["\"session store\", \"leaderboard\"", "ElastiCache Redis"], ["\"cold start\"", "Provisioned concurrency, SnapStart, init outside handler"], ["\"too many DB connections from Lambda\"", "RDS Proxy"], ["\"zero downtime, instant rollback\"", "Blue/green"], ["\"test on a small percentage of traffic\"", "Canary"], ["\"filter traces\", \"search by user\"", "X-Ray annotations"], ["\"who made this API call\"", "CloudTrail"], ["\"memory/disk metric on EC2\"", "CloudWatch agent"], ["\"throttling\", \"429\"", "Exponential backoff with jitter"], ["\"local testing of serverless\"", "sam local"], ["\"large message > 256 KB\"", "SQS Extended Client with S3"]],ERR=[["AccessDenied / 403", "Missing IAM permission, bucket or key policy", "Check role policy, resource policy, KMS key policy; decode the message with STS"], ["HTTP 429 / ThrottlingException", "Rate limit hit", "Exponential backoff with jitter; request quota increase; batch calls"], ["Lambda timeout", "Slow downstream or too little memory", "Raise memory (more CPU), raise timeout, check VPC/NAT reachability"], ["Lambda in VPC can't reach internet", "No NAT or endpoint", "NAT gateway in a public subnet, or VPC endpoints"], ["SQS messages processed twice", "Visibility timeout shorter than processing time", "Increase visibility timeout; make consumers idempotent"], ["API Gateway 504", "Integration exceeded 29 s", "Make it async (SQS, Step Functions) or speed up backend"], ["API Gateway 502", "Lambda proxy returned malformed response", "Return statusCode, headers, body (string)"], ["DynamoDB throttling on one key", "Hot partition", "Better partition key, write sharding, DAX for reads"], ["CodeDeploy fails on EC2", "Agent missing or instance role lacks S3 access", "Install agent; fix instance profile"]],QS=[{"n": 1, "d": 1, "q": "A Lambda function processes SQS messages in batches of 10. When one message fails, all 10 are retried. How do you retry only the failed message?", "o": ["Reduce batch size to 1", "Enable ReportBatchItemFailures and return the failed message IDs", "Add a DLQ", "Increase visibility timeout"], "a": 1, "x": "Partial batch responses report only failed items. A works but kills throughput; C and D don't stop the re-processing."}, {"n": 2, "d": 1, "q": "A DynamoDB table needs 80 strongly consistent reads per second of 6 KB items. How many RCUs?", "o": ["80", "120", "160", "240"], "a": 2, "x": "6 KB rounds up to 8 KB = 2 RCUs per read × 80 = 160. Eventually consistent would be 80."}, {"n": 3, "d": 1, "q": "You need to query a table by an attribute that isn't the key, and the table already exists. What do you add?", "o": ["LSI", "GSI", "Scan with filter", "DAX"], "a": 1, "x": "LSIs can only be created with the table. Scan works but is inefficient."}, {"n": 4, "d": 1, "q": "Two users update the same DynamoDB item concurrently and one overwrites the other. Fix?", "o": ["Strongly consistent reads", "Conditional writes on a version attribute", "DynamoDB Streams", "Increase WCUs"], "a": 1, "x": "Optimistic locking: the write succeeds only if the version hasn't changed."}, {"n": 5, "d": 1, "q": "An order system must process messages exactly once and in order per customer. Which?", "o": ["SQS Standard", "SQS FIFO with customer ID as message group ID", "SNS", "Kinesis with one shard"], "a": 1, "x": "Message group ID gives per-customer ordering while allowing parallelism across customers."}, {"n": 6, "d": 1, "q": "A Java Lambda has slow first invocations after idle periods. Lowest-effort fix for latency?", "o": ["Increase timeout", "Enable SnapStart or provisioned concurrency", "Move to a container image", "Add a layer"], "a": 1, "x": "Both target cold starts. Timeout doesn't affect start time."}, {"n": 7, "d": 1, "q": "A Lambda function makes a DB connection inside the handler and runs out of connections under load. Best fix?", "o": ["Increase memory", "Open the connection outside the handler and use RDS Proxy", "Reserved concurrency of 1", "Use DynamoDB"], "a": 1, "x": "Reuse across invocations plus pooling at the proxy."}, {"n": 8, "d": 1, "q": "One S3 upload must trigger three independent processing systems. Best design?", "o": ["Three S3 event notifications to the same event type", "S3 → SNS topic → three SQS queues", "S3 → one Lambda calling three services", "Polling"], "a": 1, "x": "Classic fan-out; S3 can't send the same event type for overlapping prefixes to multiple destinations (EventBridge is also valid if offered)."}, {"n": 9, "d": 1, "q": "Users upload files directly from a browser to a private bucket without AWS credentials. How?", "o": ["Make the bucket public", "Backend generates presigned PUT URLs", "Share an IAM user's keys", "Bucket ACL"], "a": 1, "x": "Time-limited and scoped; configure CORS too."}, {"n": 10, "d": 1, "q": "A consumer receives empty SQS responses most of the time, increasing cost. Fix?", "o": ["Short polling", "Long polling with WaitTimeSeconds=20", "Delay queue", "FIFO queue"], "a": 1, "x": ""}, {"n": 11, "d": 2, "q": "An application on EC2 needs to read from S3. Most secure way to provide credentials?", "o": ["Access keys in application.properties", "Environment variables with keys", "IAM role via instance profile", "Keys in Secrets Manager"], "a": 2, "x": "Temporary, auto-rotated credentials through the default credential chain."}, {"n": 12, "d": 2, "q": "You must encrypt a 2 MB file with KMS. What do you call?", "o": ["Encrypt", "GenerateDataKey, encrypt locally, store the encrypted data key with the file", "CreateKey", "ReEncrypt"], "a": 1, "x": "Envelope encryption; Encrypt handles only up to 4 KB."}, {"n": 13, "d": 2, "q": "Database credentials must rotate automatically every 30 days with minimal code. Which service?", "o": ["Parameter Store SecureString", "Secrets Manager", "KMS", "Lambda env vars"], "a": 1, "x": "Built-in rotation; Parameter Store has no native rotation."}, {"n": 14, "d": 2, "q": "A mobile app's signed-in users must upload directly to their own S3 prefix. Which combination?", "o": ["User pool only", "User pool + identity pool with IAM policy using ${cognito-identity.amazonaws.com:sub}", "IAM users per customer", "API keys"], "a": 1, "x": "Identity pools vend temporary credentials; the policy variable scopes the prefix."}, {"n": 15, "d": 2, "q": "An API must validate custom bearer tokens issued by a third-party IdP and pass user context to the backend. Which?", "o": ["IAM auth", "Lambda (token) authorizer", "API key", "Resource policy"], "a": 1, "x": "(If the IdP is OIDC and the API is an HTTP API, a JWT authorizer also fits.)"}, {"n": 16, "d": 2, "q": "Lambda in account A must write to a DynamoDB table in account B. Best approach?", "o": ["Copy keys from account B", "Role in B trusting A's Lambda role; Lambda calls sts:AssumeRole", "Make the table public", "VPC peering"], "a": 1, "x": "(DynamoDB also supports resource-based policies now; either is acceptable if offered.)"}, {"n": 17, "d": 2, "q": "A requirement says all S3 uploads must use HTTPS. How?", "o": ["SSE-S3", "Bucket policy denying requests where aws:SecureTransport is false", "Enable versioning", "KMS key policy"], "a": 1, "x": ""}, {"n": 18, "d": 2, "q": "An app using SSE-KMS on S3 gets ThrottlingException under heavy load. Cheapest fix?", "o": ["Switch to SSE-C", "Enable S3 Bucket Keys", "Disable encryption", "More KMS keys"], "a": 1, "x": "Bucket Keys cut KMS requests dramatically."}, {"n": 19, "d": 3, "q": "Elastic Beanstalk production update must keep full capacity and allow fastest rollback. Which policy?", "o": ["All at once", "Rolling", "Immutable", "Rolling with additional batch"], "a": 2, "x": "Full capacity, new instances in a temporary ASG; rollback = terminate them."}, {"n": 20, "d": 3, "q": "Shift 10% of Lambda traffic to a new version for 10 minutes, then all of it, with auto-rollback on errors. How?", "o": ["Two functions behind ALB", "CodeDeploy with Canary10Percent10Minutes on an alias + CloudWatch alarm", "API Gateway stage variable change", "Linear deployment"], "a": 1, "x": ""}, {"n": 21, "d": 3, "q": "Where does CodeBuild look for build instructions by default?", "o": ["appspec.yml", "buildspec.yml in the source root", ".ebextensions", "template.yaml"], "a": 1, "x": ""}, {"n": 22, "d": 3, "q": "In a CodeDeploy EC2 deployment, which hook runs scripts to verify the deployment succeeded?", "o": ["BeforeInstall", "AfterInstall", "ApplicationStart", "ValidateService"], "a": 3, "x": ""}, {"n": 23, "d": 3, "q": "A CloudFormation stack must reuse a VPC ID created by another stack. How?", "o": ["Hard-code it", "Outputs with Export in stack 1, !ImportValue in stack 2", "Mappings", "Parameters with defaults"], "a": 1, "x": ""}, {"n": 24, "d": 3, "q": "A developer wants to test a SAM Lambda and API locally before deploying. Which command?", "o": ["sam deploy", "sam local start-api", "sam package", "cdk synth"], "a": 1, "x": "(sam local invoke for a single function.)"}, {"n": 25, "d": 3, "q": "How do you install packages and set config on Beanstalk instances using the source bundle?", "o": ["User data", ".ebextensions/*.config", "appspec.yml", "buildspec.yml"], "a": 1, "x": ""}, {"n": 26, "d": 3, "q": "You need a prod deployment where you can switch back instantly and test the new version fully before users see it. Which?", "o": ["Rolling", "Blue/green", "All at once", "Canary"], "a": 1, "x": "Beanstalk implements it with \"swap environment URLs\"."}, {"n": 27, "d": 4, "q": "You need to filter X-Ray traces by customer ID. Where do you put it?", "o": ["Metadata", "Annotation", "Segment name", "Log line"], "a": 1, "x": "Annotations are indexed; metadata isn't."}, {"n": 28, "d": 4, "q": "Your team needs EC2 memory utilization alarms. What is required?", "o": ["Detailed monitoring", "CloudWatch agent publishing memory as a custom metric", "CloudTrail", "X-Ray daemon"], "a": 1, "x": "Memory isn't a default EC2 metric."}, {"n": 29, "d": 4, "q": "A Lambda emits business metrics; the team wants no extra API calls and minimal latency. Best?", "o": ["PutMetricData per invocation", "Embedded Metric Format in logs", "X-Ray annotations", "Custom DynamoDB table"], "a": 1, "x": ""}, {"n": 30, "d": 4, "q": "SQS messages are processed twice even though the consumer succeeds. Processing takes ~60 s. Cause?", "o": ["Queue is FIFO", "Visibility timeout (30 s) shorter than processing time", "Long polling", "DLQ misconfigured"], "a": 1, "x": "Message becomes visible again before deletion."}, {"n": 31, "d": 4, "q": "Who deleted an S3 bucket yesterday?", "o": ["CloudWatch Logs", "CloudTrail", "X-Ray", "Config rules"], "a": 1, "x": ""}, {"n": 32, "d": 4, "q": "A CPU-bound Java Lambda takes 8 s with 512 MB. Cheapest likely speed-up?", "o": ["Increase timeout", "Increase memory (more vCPU)", "Provisioned concurrency", "Move to VPC"], "a": 1, "x": "CPU scales with memory; it often finishes faster and costs about the same."}];const DOMS=[
+ {n:1,pc:32,q:16,title:'Development with AWS Services',intro:'Lambda, DynamoDB and messaging decide most of this domain. Know their limits and how they fail, not only what they do.'},
+ {n:2,pc:26,q:13,title:'Security',intro:'Almost every security question resolves to one of three answers: use a role instead of keys, use KMS envelope encryption, or keep secrets in Secrets Manager or Parameter Store.'},
+ {n:3,pc:24,q:12,title:'Deployment',intro:'Match a requirement (zero downtime, fast rollback, low cost, test on a slice of traffic) to the right strategy and the right file name.'},
+ {n:4,pc:18,q:9,title:'Troubleshooting and Optimization',intro:'CloudWatch tells you that something is wrong, X-Ray tells you where in a distributed call, CloudTrail tells you who did it.'}
+];
+const TOPICS=[
+/* ---------------- DOMAIN 1 ---------------- */
+{id:'lambda-invoke',d:1,title:'Lambda: invocation types',lead:'How a function is called decides who handles errors and retries.',
+ diagram:{h:250,nodes:[['apigw','API Gateway',90,50,'svc','sync caller'],['s3','S3 upload',90,125,'store','async source'],['sqs','SQS queue',90,200,'queue','poll-based'],['fn','Lambda',320,125,'svc','your function'],['caller','Client',550,50,'client'],['dlq','DLQ / on-failure',550,150,'fail','destination']],
+  steps:[
+   {cap:'Synchronous: API Gateway calls Lambda and waits. If the function fails, the error goes straight back to the caller, and the caller decides whether to retry.',edges:[['apigw','fn','invoke and wait'],['fn','caller','error returned','x']]},
+   {cap:'Asynchronous: S3 hands the event to Lambda and moves on. Lambda retries a failed run twice, then sends the event to a DLQ or an on-failure destination.',edges:[['s3','fn','event','dash'],['fn','dlq','after 2 retries']]},
+   {cap:'Poll-based: Lambda itself reads from SQS (or Kinesis, DynamoDB Streams) through an event source mapping and invokes your function with a batch.',edges:[['sqs','fn','poll, then batch']]}]},
+ body:[
+  `<p>Lambda has three invocation models, and the exam tests which one owns the retry. In a <b>synchronous</b> call (API Gateway, ALB, the SDK with <code>RequestResponse</code>) the caller waits for the result. Lambda does not retry for you, so the error comes back to whoever called.</p>`,
+  `<p>In an <b>asynchronous</b> call (S3, SNS, EventBridge) Lambda queues the event, acknowledges the sender and runs the function later. A failed run is retried <b>twice</b>. After that the event lands in a dead-letter queue (SQS or SNS) or an on-failure <b>destination</b>. Destinations can also fire on success and include richer context such as the error and the original payload.</p>`,
+  `<p><b>Poll-based</b> sources are different: an event source mapping runs inside the Lambda service, reads from SQS, Kinesis or DynamoDB Streams, and invokes your function with a batch. For SQS, turn on <code>ReportBatchItemFailures</code> and return the IDs of the failed messages so only those are retried. Set the queue visibility timeout to at least six times the function timeout.</p>`,
+  `<p>Concurrency has two knobs. <b>Reserved</b> concurrency both guarantees capacity and caps the function. <b>Provisioned</b> concurrency keeps execution environments initialised to remove cold starts. A throttled synchronous call returns HTTP 429.</p>`],
+ facts:[['Async retries','2'],['Throttled call','429 TooManyRequests'],['SQS visibility timeout','≥ 6× function timeout'],['Destinations','async invokes only']],
+ trap:'A DLQ only catches failures. If the question asks for success notifications or richer failure context, the answer is destinations.'},
+
+{id:'lambda-perf',d:1,title:'Lambda: cold starts, config and packaging',lead:'Memory buys CPU, init code runs once, and aliases make safe releases possible.',
+ diagram:{h:240,nodes:[['req','Request',70,125,'client'],['init','Init phase',260,45,'queue','runtime + static code'],['h','Handler',450,125,'svc','your logic'],['conn','Clients, DB conn',260,205,'store','created outside handler']],
+  steps:[
+   {cap:'Cold start: no warm environment exists, so Lambda downloads the code, starts the runtime and runs your static initialisation before the handler.',edges:[['req','init','cold start'],['init','h','then run']]},
+   {cap:'Warm invoke: the same environment is reused. The init phase is skipped, and anything created outside the handler is still there.',edges:[['req','h','warm: no init'],['h','conn','reuse','dash']]}]},
+ body:[
+  `<p>A <b>cold start</b> happens when Lambda has to build a new execution environment. For Java it hurts most, because the JVM and class loading dominate. The remedies the exam wants are <b>SnapStart</b> (restores a snapshot of an initialised environment), <b>provisioned concurrency</b>, and a light init phase.</p>`,
+  `<p>Create SDK clients, database connections and parsed config <b>outside the handler</b>. They are built once per environment and reused by later invocations. Opening a connection inside the handler multiplies connections under load, which is why <b>RDS Proxy</b> shows up in so many answers.</p>`,
+  `<p><b>Memory</b> is the only performance dial: CPU scales with it. A CPU-bound function that is slow at 512 MB often finishes sooner and costs about the same at a higher setting. Packaging is a zip (50 MB upload, 250 MB unzipped) or a container image up to 10 GB. <b>Layers</b> share libraries (five per function).</p>`,
+  `<p><b>Versions</b> are immutable snapshots. An <b>alias</b> points to a version and can split traffic by weight, which is how CodeDeploy runs canary and linear Lambda releases. A function in a VPC needs a NAT gateway or VPC endpoints to reach anything outside it.</p>`],
+ facts:[['Memory','128 – 10,240 MB'],['Timeout max','900 s'],['/tmp','512 – 10,240 MB'],['Env vars total','4 KB (KMS encrypted)'],['Zip / unzipped','50 MB / 250 MB'],['Container image','10 GB'],['Layers','5 per function']],
+ trap:'Raising the timeout never fixes slow starts. CPU-bound and slow? Raise memory.'},
+
+{id:'ddb-keys',d:1,title:'DynamoDB: keys, indexes and capacity',lead:'Pick keys for even access, add a GSI for new query shapes, and do the RCU maths with rounding.',
+ diagram:{h:230,nodes:[['app','Application',70,115,'client'],['tbl','Table',300,45,'store','PK + SK'],['gsi','GSI',300,185,'store','alt keys, own capacity']],
+  steps:[
+   {cap:'Writes go to the base table.',edges:[['app','tbl','PutItem']]},
+   {cap:'DynamoDB copies the item to each GSI asynchronously. That is why GSI reads are eventually consistent only.',edges:[['tbl','gsi','async copy','dash']]},
+   {cap:'A new access pattern on a non-key attribute queries the GSI. It can be added to an existing table, unlike an LSI.',edges:[['app','gsi','Query by other key']]}]},
+ widgets:[{type:'rcu'}],
+ body:[
+  `<p>The primary key is a <b>partition key</b> alone or a partition key plus <b>sort key</b>. Choose a high-cardinality partition key so traffic spreads across partitions. One popular key gives a hot partition and throttling even when the table has capacity to spare.</p>`,
+  `<p>An <b>LSI</b> shares the table's partition key with a different sort key, must be created with the table, and can do strongly consistent reads. A <b>GSI</b> can use any keys, can be added at any time, is eventually consistent, and has its own capacity.</p>`,
+  `<p>Capacity is a rounding exercise. One <b>RCU</b> is one strongly consistent read per second of up to 4 KB, or two eventually consistent reads. One <b>WCU</b> is one write per second of up to 1 KB. Transactional reads and writes cost double. Always round the item size up before multiplying. Try the calculator above with 6 KB items.</p>`,
+  `<p><b>On-demand</b> mode suits unpredictable traffic. <b>Provisioned</b> mode with auto scaling is cheaper for steady load. Going over provisioned throughput raises <code>ProvisionedThroughputExceededException</code>, and the SDK retries with exponential backoff.</p>`],
+ facts:[['1 RCU','1 strong read/s of 4 KB, or 2 eventual'],['1 WCU','1 write/s of 1 KB'],['Transactions','2× capacity'],['LSI / GSI per table','5 / 20']],
+ trap:'Strongly consistent reads are not available on a GSI, and an LSI cannot be added after the table exists.'},
+
+{id:'ddb-ops',d:1,title:'DynamoDB: queries, writes and locking',lead:'Query beats Scan, conditions give optimistic locking, and transactions are all-or-nothing.',
+ diagram:{h:240,nodes:[['a','User A',70,50,'client','reads version 2'],['b','User B',70,190,'client','reads version 2'],['t','Item',330,120,'store','version = 2'],['r','Retry flow',550,190,'svc','read, merge, write']],
+  steps:[
+   {cap:'Both users read the item at version 2. User A writes first, with a condition that the version is still 2.',edges:[['a','t','write v3 IF version=2']]},
+   {cap:'User B sends the same conditional write. The version is now 3, so DynamoDB rejects it and nothing is overwritten.',edges:[['b','t','write v3 IF version=2','x']]},
+   {cap:'User B re-reads the item, merges the change and tries again with the new version.',edges:[['b','r','ConditionalCheckFailed','dash']]}]},
+ body:[
+  `<p><b>Query</b> reads items for one partition key (optionally narrowed by sort key) and is efficient. <b>Scan</b> reads the whole table. A <code>FilterExpression</code> is applied after the read, so it shrinks the response but does <b>not</b> reduce RCUs consumed. <code>ProjectionExpression</code> limits the attributes returned. Use parallel scan only for large offline jobs.</p>`,
+  `<p><b>Conditional writes</b> use a <code>ConditionExpression</code>. With a version attribute you get optimistic locking: the write succeeds only if nobody changed the item. <b>TransactWriteItems</b> is ACID across up to 100 items. <b>BatchWriteItem</b> is not atomic, so retry anything listed in <code>UnprocessedItems</code>.</p>`,
+  `<p>Other features: items max 400 KB, <b>TTL</b> removes expired items at no write cost, <b>Streams</b> publish change events for 24 hours and trigger Lambda, and <b>DAX</b> is an in-memory cache that gives microsecond reads for read-heavy, eventually consistent workloads.</p>`],
+ facts:[['Item size','400 KB'],['TransactWrite','100 items, 2× capacity'],['BatchWrite / BatchGet','25 / 100 items'],['Streams retention','24 h']],
+ trap:'Lost updates are fixed with a conditional write on a version attribute. Strongly consistent reads, more WCUs and Streams do not stop the overwrite.'},
+
+{id:'s3',d:1,title:'S3: uploads, events and performance',lead:'Presigned URLs let a browser upload without AWS credentials.',
+ diagram:{h:260,nodes:[['br','Browser',80,60,'client'],['be','Backend',320,60,'svc','holds IAM role'],['s3','S3 bucket',320,190,'store','private'],['fn','Lambda',545,190,'svc']],
+  steps:[
+   {cap:'The browser has no AWS credentials, so it asks your backend for permission to upload.',edges:[['br','be','request upload URL']]},
+   {cap:'The backend signs a short-lived PUT URL using its own role. The URL carries only the permissions of the signer and expires.',edges:[['be','br','presigned URL']]},
+   {cap:'The browser uploads straight to S3 over HTTPS. The bucket needs a CORS rule because the call comes from another origin.',edges:[['br','s3','PUT file + CORS']]},
+   {cap:'The new object raises an event that can trigger Lambda, or go to SQS, SNS or EventBridge.',edges:[['s3','fn','ObjectCreated','dash']]}]},
+ body:[
+  `<p>S3 gives <b>strong read-after-write consistency</b> for all operations, so a new object is immediately readable. Objects can reach 5 TB. <b>Multipart upload</b> is recommended above 100 MB and required above 5 GB, and it uploads parts in parallel.</p>`,
+  `<p>A <b>presigned URL</b> grants time-limited access using the signer's permissions. If the signer's role loses access, the URL stops working. Use presigned PUT URLs for browser uploads and presigned GET URLs for private downloads.</p>`,
+  `<p>Performance scales per prefix: 3,500 write and 5,500 read requests per second for each prefix, so spread keys across prefixes. <b>Transfer Acceleration</b> uses edge locations for long-distance uploads. For reads, byte-range fetches parallelise downloads and S3 Select pulls a subset of an object.</p>`,
+  `<p>Event notifications go to Lambda, SQS, SNS or EventBridge. When one upload must feed several systems, send it to SNS (or EventBridge) and fan out.</p>`],
+ facts:[['Max object','5 TB'],['Multipart','> 100 MB advised, > 5 GB required'],['Per prefix','3,500 PUT / 5,500 GET per s']],
+ trap:'Making a bucket public or sharing IAM user keys is never the answer for browser uploads.'},
+
+{id:'messaging',d:1,title:'Messaging and orchestration: pick the service',lead:'Six services, six keywords. Choose by the property the question stresses.',
+ diagram:{h:250,nodes:[['up','S3 upload',70,125,'store'],['sns','SNS topic',260,125,'queue','push, filter policies'],['q1','SQS: thumbnails',470,45,'queue'],['q2','SQS: metadata',470,125,'queue'],['q3','SQS: audit',470,205,'queue']],
+  steps:[
+   {cap:'One upload produces one event, published to an SNS topic.',edges:[['up','sns','one event']]},
+   {cap:'SNS pushes a copy to every subscribed queue. Each consumer works independently and at its own pace. Filter policies can limit what each queue receives.',edges:[['sns','q1','copy'],['sns','q2','copy'],['sns','q3','copy']]}]},
+ widgets:[{type:'picker',title:'Which service fits?',items:[
+  {l:'SQS Standard',tag:'Decoupling and buffering',t:'Use it to decouple producers from consumers and absorb spikes. Delivery is at-least-once with best-effort ordering, so consumers must be idempotent. Throughput is effectively unlimited.',k:'"decouple", "buffer spikes"'},
+  {l:'SQS FIFO',tag:'Order and exactly-once',t:'Ordered per message group ID, with a deduplication ID over a 5-minute window. Use a customer ID as the group ID to keep order per customer while processing customers in parallel. 300 msg/s, or 3,000 with batching.',k:'"ordered", "exactly-once", "no duplicates"'},
+  {l:'SNS',tag:'Fan-out',t:'A push topic with many subscribers. Filter policies work per subscription. SNS plus several SQS queues is the classic fan-out pattern.',k:'"fan-out", "multiple subscribers"'},
+  {l:'EventBridge',tag:'Content-based routing',t:'Rules match event patterns to route events from AWS services, SaaS partners and your apps. Supports archive and replay, and Scheduler for cron-style jobs.',k:'"route by content", "SaaS events", "schedule"'},
+  {l:'Kinesis Data Streams',tag:'Ordered real-time streams',t:'Shards take 1 MB/s or 1,000 records/s in and give 2 MB/s out. Order holds per partition key. Retention is 24 hours up to 365 days, so many consumers can read and replay the same data.',k:'"real-time stream", "replay", "multiple consumers same data"'},
+  {l:'Step Functions',tag:'Workflows',t:'Multi-step workflows with retries, branching and human approval. Standard workflows run up to one year with exactly-once execution. Express runs up to 5 minutes at high volume.',k:'"workflow", "retry steps", "human approval"'}]}],
+ body:[
+  `<p>These services overlap, so the exam hides the answer in one phrase. Use the picker above: each entry gives the deciding property and the keyword that signals it.</p>`,
+  `<p>A rule of thumb that works for most questions: <b>SQS</b> holds work until a consumer pulls it, <b>SNS</b> pushes to many at once, <b>EventBridge</b> routes by what the event contains, <b>Kinesis</b> keeps an ordered log you can replay, and <b>Step Functions</b> coordinates steps that depend on each other.</p>`,
+  `<p>Fan-out is worth drawing yourself: S3 cannot send the same event type for overlapping prefixes to several destinations, so publish once to SNS and subscribe one queue per consumer.</p>`],
+ facts:[['SQS FIFO','300 msg/s (3,000 batched)'],['Kinesis shard in','1 MB/s or 1,000 rec/s'],['Kinesis shard out','2 MB/s'],['Step Functions','Standard 1 yr, Express 5 min']],
+ trap:'Kinesis with one shard is not the answer to "exactly once, ordered per customer". That is FIFO with a message group ID.'},
+
+{id:'sqs',d:1,title:'SQS in depth: visibility, polling and dead letters',lead:'A message is hidden, not removed, until the consumer deletes it.',
+ diagram:{h:240,nodes:[['p','Producer',70,120,'client'],['q','SQS queue',300,120,'queue','visibility timeout 30 s'],['c','Consumer',530,50,'svc'],['dlq','Dead-letter queue',530,200,'fail']],
+  steps:[
+   {cap:'The producer sends a message of up to 256 KB. Larger payloads go to S3 through the Extended Client Library.',edges:[['p','q','SendMessage']]},
+   {cap:'The consumer receives it. The message stays in the queue but becomes invisible for the visibility timeout. Long polling (up to 20 s) avoids empty responses.',edges:[['q','c','ReceiveMessage + hide']]},
+   {cap:'On success the consumer deletes the message. If it never does, the message reappears once the timeout ends.',edges:[['c','q','DeleteMessage']]},
+   {cap:'After maxReceiveCount failed receives, SQS moves the message to the dead-letter queue.',edges:[['q','dlq','maxReceiveCount exceeded','dash']]}]},
+ widgets:[{type:'sqsvis'}],
+ body:[
+  `<p>The <b>visibility timeout</b> (default 30 s, maximum 12 h) is the time a received message stays hidden from other consumers. If processing takes longer than the timeout, the message reappears and a second consumer handles it again. The fixes are a longer timeout and idempotent consumers. Move the sliders above to see the duplicate appear.</p>`,
+  `<p><b>Long polling</b> (<code>WaitTimeSeconds</code> up to 20) waits for a message and cuts empty responses and cost. <b>Delay queues</b> postpone delivery by up to 15 minutes. Retention defaults to 4 days and ranges from 1 minute to 14 days. <code>SendMessageBatch</code> and receive calls handle up to 10 messages.</p>`,
+  `<p>A <b>DLQ</b> catches messages that fail repeatedly, based on <code>maxReceiveCount</code>. Messages above 256 KB use the Extended Client Library, which stores the body in S3 and sends a pointer.</p>`],
+ facts:[['Message size','256 KB'],['Visibility timeout','30 s default, 12 h max'],['Retention','4 d default (1 min – 14 d)'],['Long poll','20 s max'],['Delay','15 min max'],['Batch','10 messages']],
+ trap:'Messages processed twice while the consumer succeeds? The visibility timeout is shorter than the processing time.'},
+
+{id:'apigw',d:1,title:'API Gateway: types, integrations and errors',lead:'REST, HTTP or WebSocket, proxy or mapped, and three status codes you must decode.',
+ diagram:{h:260,nodes:[['cl','Client',70,125,'client'],['gw','API Gateway',270,125,'sec','stage + throttle'],['ca','Stage cache',270,35,'store','TTL 300 s'],['fn','Lambda',500,125,'svc','proxy integration']],
+  steps:[
+   {cap:'The client calls a stage of the API.',edges:[['cl','gw','request']]},
+   {cap:'With caching enabled and a hit, the gateway answers without touching the backend.',edges:[['gw','ca','cache hit','dash']]},
+   {cap:'On a miss, the gateway calls Lambda. Integrations must answer within 29 seconds by default.',edges:[['gw','fn','miss: invoke (29 s limit)']]},
+   {cap:'If the proxy response is not shaped as statusCode, headers and a string body, the gateway returns 502 to the client.',edges:[['fn','gw','malformed response','x'],['gw','cl','502 Bad Gateway','x']]}]},
+ body:[
+  `<p><b>REST APIs</b> have the full feature set: usage plans, API keys, caching, request validation. <b>HTTP APIs</b> are cheaper and faster, with JWT authorizers. <b>WebSocket APIs</b> keep two-way connections open. With a <b>Lambda proxy integration</b> the gateway passes the whole request and Lambda builds the whole response. A non-proxy integration uses VTL mapping templates to transform each side.</p>`,
+  `<p><b>Stages</b> are deployment targets; <b>stage variables</b> can point each stage to a different Lambda alias, and a stage can run a <b>canary</b> release. The cache TTL defaults to 300 s (max 3,600 s), and an authorised client can bypass it with <code>Cache-Control: max-age=0</code>.</p>`,
+  `<p>Memorise the codes: <b>429</b> means throttled, <b>502</b> means the Lambda proxy response was malformed, <b>504</b> means the integration took longer than 29 s. For 504, make the work asynchronous with SQS or Step Functions.</p>`],
+ facts:[['Integration timeout','29 s default'],['Cache TTL','300 s default, 3,600 s max'],['Account throttle','10,000 rps, 5,000 burst'],['429 / 502 / 504','throttle / bad Lambda reply / timeout']],
+ trap:'A long-running job behind API Gateway cannot be fixed with a bigger Lambda timeout, because the gateway gives up at 29 s.'},
+
+{id:'cache',d:1,title:'Caching and data access',lead:'Lazy loading caches only what is asked for. Write-through keeps data fresh.',
+ diagram:{h:250,nodes:[['app','Application',70,125,'client'],['c','ElastiCache',300,45,'queue','Redis or Memcached'],['db','Database',300,205,'store']],
+  steps:[
+   {cap:'The app checks the cache first.',edges:[['app','c','GET key']]},
+   {cap:'Cache miss: the app reads the database. This first request is the slow one.',edges:[['app','db','miss: query DB']]},
+   {cap:'The app writes the result to the cache with a TTL, so stale entries age out.',edges:[['app','c','SET key + TTL']]},
+   {cap:'Next request: cache hit, the database is not touched.',edges:[['c','app','hit','dash']]}]},
+ body:[
+  `<p><b>Lazy loading</b> (cache-aside) loads data on a miss. Only requested data is cached, so memory is used well, but a miss costs three trips and entries can go stale. <b>Write-through</b> updates the cache on every write, so reads are always fresh, at the price of slower writes and cache space for data nobody reads. Add a <b>TTL</b> to both.</p>`,
+  `<p><b>Redis</b> offers persistence, replication and rich types such as sorted sets, which suits session stores and leaderboards. <b>Memcached</b> is simple and multi-threaded, with no persistence. For DynamoDB reads, DAX caches transparently; at the edge use CloudFront, and in front of APIs use the API Gateway cache.</p>`],
+ facts:[['Session store, leaderboard','ElastiCache Redis'],['Microsecond DynamoDB reads','DAX'],['Stale risk','lazy loading'],['Slower writes','write-through']],
+ trap:'"Persistence" or "sorted sets" points to Redis. "Simple, multi-threaded" points to Memcached.'},
+
+{id:'sdk',d:1,title:'SDK and CLI patterns',lead:'The credential chain stops at the first match, and throttling is solved with backoff plus jitter.',
+ widgets:[{type:'chain'}],
+ body:[
+  `<p>The SDKs look for credentials in a fixed order: values set in code, environment variables, the shared credentials and config files, and finally a container or instance role. The first source that has credentials wins. Never hard-code keys; running on a role means nothing at all is stored with your code.</p>`,
+  `<p>Throttling (429) and 5xx errors are retried with <b>exponential backoff and jitter</b>. The waits double on each attempt, and random jitter stops many clients from retrying at the same instant. The SDKs do this by default. Use pagination tokens for list calls.</p>`,
+  `<p>CLI helpers worth knowing: <code>--dry-run</code> checks permissions without making the change, and <code>aws sts decode-authorization-message</code> decodes the encoded text of an access-denied error.</p>`],
+ facts:[['Chain order','code → env → shared files → role'],['Retry rule','backoff + jitter'],['Permission check','--dry-run'],['Decode denial','sts decode-authorization-message']],
+ trap:'Environment variables beat the shared credentials file. A stale AWS_ACCESS_KEY_ID can silently override the role you expected.'},
+
+/* ---------------- DOMAIN 2 ---------------- */
+{id:'iam',d:2,title:'IAM: policies, roles and boundaries',lead:'Explicit deny always wins. Everything not allowed is denied.',
+ widgets:[{type:'iam'}],
+ body:[
+  `<p>Evaluation starts from an <b>implicit deny</b>. An <b>explicit Deny</b> in any applicable policy overrides every Allow. Identity-based policies attach to users, groups and roles. <b>Resource-based policies</b> (S3 bucket policy, SQS queue policy, Lambda resource policy, KMS key policy) attach to the resource and can grant cross-account access directly.</p>`,
+  `<p>Use <b>roles</b> everywhere: an instance profile for EC2, an execution role for Lambda, and for ECS a <b>task role</b> (permissions your app uses) separate from the <b>task execution role</b> (pull the image, write logs). Cross-account access calls <code>sts:AssumeRole</code> and returns temporary credentials (15 minutes to 12 hours, 1 hour by default).</p>`,
+  `<p><b>Permission boundaries</b> cap the maximum permissions an identity can receive. <b>SCPs</b> cap an entire account in AWS Organizations. Neither grants anything on its own. Policy variables such as <code>\${aws:username}</code> scope access per user, for example one S3 prefix each. <b>Access Analyzer</b> finds resources shared outside your account and the <b>Policy Simulator</b> tests policies.</p>`],
+ facts:[['Winner','explicit Deny'],['Default','implicit deny'],['AssumeRole session','15 min – 12 h (1 h default)'],['ECS','task role vs execution role']],
+ trap:'A boundary or SCP never grants access. It only limits what other policies can allow.'},
+
+{id:'cognito',d:2,title:'Cognito: user pools vs identity pools',lead:'User pools answer who you are. Identity pools answer what AWS resources you can touch.',
+ diagram:{h:260,nodes:[['app','Mobile app',70,130,'client'],['up','User pool',290,45,'sec','who are you?'],['ip','Identity pool',290,215,'sec','what can you touch?'],['s3','S3 / DynamoDB',545,130,'store']],
+  steps:[
+   {cap:'The user signs up or signs in to the user pool. It handles MFA and social or SAML federation.',edges:[['app','up','sign in']]},
+   {cap:'The user pool returns JWTs: an ID token, an access token and a refresh token.',edges:[['up','app','JWTs']]},
+   {cap:'The app exchanges the token with the identity pool.',edges:[['app','ip','exchange token']]},
+   {cap:'The identity pool returns temporary AWS credentials for an IAM role. Guest access is also possible here.',edges:[['ip','app','temporary credentials']]},
+   {cap:'The app calls S3 or DynamoDB directly with those credentials, limited by the role.',edges:[['app','s3','scoped by IAM role']]}]},
+ body:[
+  `<p>A <b>user pool</b> is a user directory: sign-up, sign-in, MFA, social and SAML federation. Its output is a set of <b>JWTs</b>. ID and access tokens last one hour by default. API Gateway can validate those tokens with a Cognito authorizer, with no code.</p>`,
+  `<p>An <b>identity pool</b> swaps a token (from a user pool, a social provider or even nobody, for guests) for <b>temporary AWS credentials</b> tied to an IAM role. The role's policy can scope access per user with the variable <code>\${cognito-identity.amazonaws.com:sub}</code>, so each user reaches only their own S3 prefix.</p>`],
+ facts:[['User pools','JWTs: ID, access, refresh'],['Identity pools','temporary AWS credentials'],['Token lifetime','1 h default'],['Guest access','identity pool']],
+ trap:'"Sign-up and sign-in" means a user pool. "Temporary credentials for app users" means an identity pool. Many answers need both.'},
+
+{id:'apigw-auth',d:2,title:'API Gateway authorization',lead:'Four ways to protect an API. Choose by who the caller is.',
+ widgets:[{type:'picker',title:'Choose an authorizer',items:[
+  {l:'IAM authorization',tag:'AWS principals',t:'Callers sign requests with SigV4 using IAM credentials. Best for service-to-service calls or users with IAM roles. Access is controlled by IAM policies on the caller.',k:'"signed requests", "IAM role calls the API"'},
+  {l:'Cognito user pool authorizer',tag:'No code',t:'API Gateway validates the JWT issued by your user pool and rejects bad tokens before your backend runs. Needs no Lambda.',k:'"Cognito", "sign-in users", "no code"'},
+  {l:'Lambda authorizer',tag:'Custom logic',t:'Your function checks the caller and returns an IAM policy. Token-based variant reads a bearer token or JWT; request-based variant reads headers, query strings or stage variables. Results can be cached to save invocations.',k:'"custom tokens", "third-party IdP"'},
+  {l:'Resource policy',tag:'Network and account limits',t:'A JSON policy on the API that allows or denies by source IP range, VPC or endpoint, or AWS account. It complements the authorizers above.',k:'"restrict by IP", "restrict by VPC", "cross-account"'}]}],
+ body:[
+  `<p>Pick the lightest option that matches the caller. AWS callers use <b>IAM</b>. Users of your own app with Cognito use the <b>user pool authorizer</b>. Any other identity system, including a third-party IdP with custom tokens, needs a <b>Lambda authorizer</b>. Network-level limits use a <b>resource policy</b>. For HTTP APIs with an OIDC provider, a JWT authorizer also fits.</p>`,
+  `<p>Caching the authorizer result (by token or by request values) keeps latency and cost down, but a cached policy remains in force until its TTL expires.</p>`],
+ facts:[['SigV4','IAM auth'],['No code','Cognito authorizer'],['Custom token','Lambda authorizer'],['IP / VPC limit','resource policy']],
+ trap:'API keys identify a client for usage plans and throttling. They are not authentication.'},
+
+{id:'kms',d:2,title:'KMS and envelope encryption',lead:'KMS protects keys. Your app encrypts data locally with a data key.',
+ diagram:{h:260,nodes:[['app','Application',70,130,'client'],['kms','KMS key',300,45,'sec','never leaves KMS'],['st','S3 / database',545,130,'store','ciphertext + encrypted key']],
+  steps:[
+   {cap:'Ask KMS for a data key under a KMS key. Direct Encrypt works only up to 4 KB, so large data needs this route.',edges:[['app','kms','GenerateDataKey']]},
+   {cap:'KMS returns two copies: a plaintext data key and the same key encrypted under the KMS key.',edges:[['kms','app','plaintext key + encrypted key']]},
+   {cap:'The app encrypts the data locally with the plaintext key, then discards that key and stores the ciphertext with the encrypted key.',edges:[['app','st','store both']]},
+   {cap:'To read later: send the encrypted data key to KMS to decrypt, then decrypt the data locally.',edges:[['app','kms','Decrypt(encrypted key)','dash'],['kms','app','plaintext key','dash']]}]},
+ body:[
+  `<p><b>Envelope encryption</b> keeps the big work out of KMS. You call <code>GenerateDataKey</code>, encrypt the data locally with the plaintext key, throw that key away, and keep the encrypted copy beside the data. Only KMS can unlock that copy, so access to the data follows access to the KMS key.</p>`,
+  `<p>Key types: <b>AWS owned</b>, <b>AWS managed</b> (such as <code>aws/s3</code>) and <b>customer managed</b>, where you control the key policy and rotation (automatic yearly rotation is on by default for customer managed keys when enabled). For S3: <b>SSE-S3</b> is the default AES-256, <b>SSE-KMS</b> adds a CloudTrail audit trail and key-policy control, <b>SSE-C</b> means you send the key on every request over HTTPS, and client-side encryption happens before upload.</p>`,
+  `<p>High request rates with SSE-KMS can hit <code>ThrottlingException</code>. Enable <b>S3 Bucket Keys</b>, or use data-key caching in the Encryption SDK. Enforce HTTPS with a bucket policy that denies requests when <code>aws:SecureTransport</code> is false. ACM issues free certificates for ALB, CloudFront and API Gateway.</p>`],
+ facts:[['Direct Encrypt','4 KB payload'],['Large data','GenerateDataKey'],['KMS throttling','S3 Bucket Keys'],['Force HTTPS','aws:SecureTransport']],
+ trap:'Encrypting a 2 MB file is never a direct Encrypt call. It is GenerateDataKey.'},
+
+{id:'secrets',d:2,title:'Secrets and configuration',lead:'Three services, one question each: rotate it, store it, or toggle it.',
+ widgets:[{type:'picker',title:'Where does it belong?',items:[
+  {l:'Secrets Manager',tag:'Automatic rotation',t:'Built-in rotation using a Lambda function and native RDS integration. Choose it when the requirement says rotate database credentials automatically with minimal code. It costs more per secret.',k:'"rotate credentials automatically"'},
+  {l:'SSM Parameter Store',tag:'Cheap hierarchical config',t:'Stores String, StringList and SecureString (KMS) values under paths such as /prod/db/url. Good for plain configuration and low cost. It has no native secret rotation.',k:'"configuration values", "hierarchy", "lowest cost"'},
+  {l:'AWS AppConfig',tag:'Dynamic config and flags',t:'Deploys feature flags and configuration to running apps without a redeploy, with gradual rollout and validation.',k:'"feature flags", "no redeploy"'}]}],
+ body:[
+  `<p>Never place secrets in plaintext environment variables, source code or AMIs. A Lambda function should read secrets at init time and cache them. The <b>Parameters and Secrets Lambda extension</b> does the caching for you.</p>`,
+  `<p>For environments, keep config in Parameter Store paths such as <code>/prod/db/url</code> and <code>/dev/db/url</code>, so the same code runs in each stage and only the path prefix changes.</p>`],
+ facts:[['Rotation','Secrets Manager'],['Plain config','Parameter Store'],['Flags','AppConfig']],
+ trap:'Parameter Store SecureString is encrypted, but it does not rotate. Rotation questions go to Secrets Manager.'},
+
+{id:'netsec',d:2,title:'Private access, WAF and safe logging',lead:'Keep traffic on the AWS network and keep sensitive values out of logs.',
+ diagram:{h:260,nodes:[['fn','Lambda in VPC',80,130,'svc'],['ep','Gateway endpoint',310,45,'sec','free'],['nat','NAT gateway',310,215,'ext','hourly + data cost'],['s3','S3 / DynamoDB',545,45,'store'],['net','Public internet',545,215,'ext']],
+  steps:[
+   {cap:'For S3 and DynamoDB, a gateway endpoint gives private access at no charge.',edges:[['fn','ep','S3 / DynamoDB'],['ep','s3','private route']]},
+   {cap:'For anything else on the internet, the function needs a NAT gateway in a public subnet. Most other AWS services can use interface endpoints (PrivateLink).',edges:[['fn','nat','other destinations'],['nat','net','out']]}]},
+ body:[
+  `<p><b>Gateway endpoints</b> exist for S3 and DynamoDB and are free. <b>Interface endpoints</b> (PrivateLink) cover most other services. A Lambda function inside a VPC has no internet by default, so give it a NAT gateway or the right endpoints.</p>`,
+  `<p><b>AWS WAF</b> protects API Gateway, ALB and CloudFront from common web attacks. <b>Sanitise logs</b>: never write tokens, passwords or personal data to CloudWatch Logs. CloudWatch Logs data protection can mask sensitive values that slip through.</p>`],
+ facts:[['Gateway endpoints','S3, DynamoDB (free)'],['Interface endpoints','most other services'],['Web attacks','AWS WAF']],
+ trap:'A VPC Lambda that times out calling an AWS API is almost always missing a NAT gateway or an endpoint.'},
+
+/* ---------------- DOMAIN 3 ---------------- */
+{id:'cicd',d:3,title:'CI/CD services and their files',lead:'Know each service by its job and its configuration file.',
+ diagram:{h:270,nodes:[['src','GitHub',70,60,'ext','source'],['b','CodeBuild',210,60,'svc','buildspec.yml'],['ap','Manual approval',350,60,'sec'],['dp','CodeDeploy',490,60,'svc','appspec.yml'],['art','S3 artifacts',210,205,'store'],['tg','EC2 / Lambda / ECS',490,205,'client']],
+  steps:[
+   {cap:'A commit starts CodePipeline. CodeBuild reads buildspec.yml from the repo root and runs install, pre_build, build and post_build.',edges:[['src','b','commit triggers']]},
+   {cap:'Build output is stored as an artifact in S3. Artifacts move between stages through this bucket.',edges:[['b','art','artifacts','dash']]},
+   {cap:'Tests pass, and a manual approval action can pause the pipeline for a person.',edges:[['b','ap','tests pass']]},
+   {cap:'After approval, CodeDeploy takes over.',edges:[['ap','dp','approved']]},
+   {cap:'CodeDeploy follows appspec.yml to update EC2, Lambda or ECS, running lifecycle hooks.',edges:[['dp','tg','appspec hooks']]}]},
+ widgets:[{type:'hooks'},{type:'picker',title:'The services at a glance',items:[
+  {l:'CodeCommit / GitHub',tag:'Source',t:'CodeCommit is closed to new customers, but questions may still mention it. GitHub is a common source.',k:''},
+  {l:'CodeBuild',tag:'Build and test',t:'Runs buildspec.yml from the repo root. Phases: install, pre_build, build, post_build. Artifacts go to S3, and caches can go to S3 or local.',k:'buildspec.yml'},
+  {l:'CodeDeploy',tag:'Deploy',t:'Deploys to EC2/on-premises, Lambda and ECS. Configured by appspec.yml (YAML or JSON). EC2 needs the CodeDeploy agent installed.',k:'appspec.yml'},
+  {l:'CodePipeline',tag:'Orchestrate',t:'Stages such as Source → Build → Test → Deploy, with manual approval actions. Artifacts pass through an S3 bucket.',k:'stages'},
+  {l:'CodeArtifact',tag:'Packages',t:'A package repository that proxies public ones: Maven, npm, PyPI.',k:'Maven, npm, PyPI'},
+  {l:'CodeGuru / Amazon Q Developer',tag:'Review and profiling',t:'The reviewer finds code issues; the profiler finds the expensive lines in running Java apps.',k:'profiling'}]}],
+ body:[
+  `<p>Two file names matter most. <code>buildspec.yml</code> belongs to <b>CodeBuild</b> and lives in the source root. <code>appspec.yml</code> belongs to <b>CodeDeploy</b>. Mixing them up is a standard distractor, as are <code>.ebextensions</code> (Beanstalk) and <code>template.yaml</code> (SAM/CloudFormation).</p>`,
+  `<p>Pipelines are linear flows of stages. The sequence of the pipeline is real, so the diagram steps above follow it in order. Use the hook explorer to see the order CodeDeploy runs scripts on EC2.</p>`],
+ facts:[['CodeBuild file','buildspec.yml (repo root)'],['CodeDeploy file','appspec.yml'],['EC2 needs','CodeDeploy agent'],['Hook to verify','ValidateService']],
+ trap:'CodeDeploy fails on EC2? Look for a missing agent or an instance profile without S3 access.'},
+
+{id:'strategies',d:3,title:'Deployment strategies',lead:'Watch each strategy move a fleet from version 1 to version 2.',
+ widgets:[{type:'fleet'}],
+ body:[
+  `<p>Read the requirement, then match the strategy. <b>All at once</b> is fastest and cheapest and has downtime, so it fits dev. <b>Rolling</b> updates batches and runs at reduced capacity. <b>Rolling with additional batch</b> launches extra instances first to keep full capacity. <b>Immutable</b> builds a fresh set in a new Auto Scaling group, which makes rollback fast: terminate the new group.</p>`,
+  `<p><b>Blue/green</b> runs two full environments and switches traffic, giving zero downtime and instant rollback by switching back, at roughly double cost. <b>Canary</b> sends a small share first (for example 10% for 5 minutes) and watches alarms. <b>Linear</b> shifts equal increments (for example 10% every minute). Beanstalk calls its canary <b>traffic splitting</b>.</p>`,
+  `<p>For Lambda, canary and linear releases run through CodeDeploy using alias traffic shifting, and CloudWatch alarms can trigger an automatic rollback.</p>`],
+ facts:[['Dev','all at once'],['Safest Beanstalk update','immutable'],['Instant rollback + zero downtime','blue/green'],['Test on a small slice','canary']],
+ trap:'Rolling and all-at-once roll back by redeploying the old version. That is slow, so they are wrong for "fast rollback".'},
+
+{id:'beanstalk',d:3,title:'Elastic Beanstalk',lead:'Platform-as-a-service with config files in the source bundle.',
+ diagram:{h:260,nodes:[['u','Users',70,130,'client'],['dns','Environment URL',270,130,'ext','CNAME'],['bl','Env v1 (blue)',500,45,'svc'],['gr','Env v2 (green)',500,215,'svc']],
+  steps:[
+   {cap:'Users reach the current environment through its URL.',edges:[['u','dns','request'],['dns','bl','live traffic']]},
+   {cap:'Clone the environment and deploy version 2 to the clone. Test it without affecting users.',edges:[['bl','gr','clone + deploy v2','dash']]},
+   {cap:'Swap environment URLs. The CNAME now points to green and traffic switches.',edges:[['dns','gr','swap URLs']]},
+   {cap:'Problem found? Swap back. Blue is still running, so rollback is immediate.',edges:[['dns','bl','swap back','dash']]}]},
+ body:[
+  `<p>Customise instances with <code>.ebextensions/*.config</code> files inside the source bundle (packages, files, commands). <code>env.yaml</code> defines environment settings and <code>cron.yaml</code> defines scheduled jobs for the worker tier. The <b>web server tier</b> serves HTTP; the <b>worker tier</b> pulls jobs from an SQS queue.</p>`,
+  `<p>Beanstalk blue/green means <b>clone the environment and swap environment URLs</b>. A database created inside a Beanstalk environment is deleted with it. For production, create RDS separately and pass the connection through environment properties. A lifecycle policy limits stored application versions (quota 1,000).</p>`],
+ facts:[['Customise instances','.ebextensions/*.config'],['Worker tier','reads an SQS queue'],['Blue/green','swap environment URLs'],['App versions quota','1,000']],
+ trap:'Do not create the production database inside the Beanstalk environment. Terminating the environment deletes it.'},
+
+{id:'iac',d:3,title:'Infrastructure as code: CloudFormation, SAM and CDK',lead:'CDK and SAM both end up as CloudFormation.',
+ diagram:{h:270,nodes:[['cdk','CDK app',70,60,'svc','Java, TypeScript…'],['sam','SAM template',70,205,'svc','Transform: Serverless'],['cfn','CloudFormation template',300,130,'queue'],['stk','Stack',520,55,'sec'],['res','AWS resources',520,205,'store']],
+  steps:[
+   {cap:'cdk synth turns your code into a CloudFormation template.',edges:[['cdk','cfn','cdk synth']]},
+   {cap:'SAM is a CloudFormation extension. The transform expands AWS::Serverless::* resources into standard ones.',edges:[['sam','cfn','Transform expands']]},
+   {cap:'CloudFormation creates or updates a stack. Change sets preview an update before you apply it.',edges:[['cfn','stk','create / change set']]},
+   {cap:'The stack provisions resources. A failed create rolls back by default. DeletionPolicy: Retain or Snapshot protects data.',edges:[['stk','res','provision']]}]},
+ widgets:[{type:'picker',title:'Cheat commands and concepts',items:[
+  {l:'CloudFormation',tag:'Template anatomy',t:'Sections: Parameters, Mappings, Conditions, Resources (the only required one), Outputs. Functions: !Ref, !GetAtt, !Sub, !FindInMap, !ImportValue, !Join. Exports plus !ImportValue share values between stacks. Nested stacks reuse templates, StackSets deploy across accounts and Regions.',k:'Resources is required'},
+  {l:'SAM',tag:'Serverless shorthand',t:'Needs Transform: AWS::Serverless-2016-10-31. Resources: AWS::Serverless::Function, ::Api, ::SimpleTable. CLI: sam init, sam build, sam local invoke, sam local start-api (local testing), sam deploy --guided, sam sync for fast dev updates. AutoPublishAlias plus DeploymentPreference gives canary Lambda deploys.',k:'sam local = local testing'},
+  {l:'CDK',tag:'Real programming languages',t:'Write infrastructure in Java, TypeScript and more. cdk synth produces CloudFormation, cdk bootstrap runs once per account and Region, then cdk diff and cdk deploy. Constructs: L1 (raw CFN), L2 (sensible defaults), L3 (patterns).',k:'cdk bootstrap once'}]}],
+ body:[
+  `<p>All three produce CloudFormation stacks, so stack behaviour is shared: parameterise for environments, use change sets to preview, and protect data with <code>DeletionPolicy</code>. To pass a value between stacks, <b>export</b> it in one stack's Outputs and <code>!ImportValue</code> it in another.</p>`,
+  `<p>For local work, <code>sam local invoke</code> runs one function and <code>sam local start-api</code> serves the whole API on your machine before you deploy.</p>`],
+ facts:[['Required section','Resources'],['Share across stacks','Export + !ImportValue'],['Local API test','sam local start-api'],['CDK first step','cdk bootstrap']],
+ trap:'Hard-coding a VPC ID or using Mappings does not reuse another stack\'s output. Exports do.'},
+
+{id:'containers',d:3,title:'Containers: ECR, ECS and Fargate',lead:'Two IAM roles confuse people: execution role vs task role.',
+ diagram:{h:240,nodes:[['dev','Developer',70,125,'client'],['ecr','ECR',260,125,'store','image registry'],['task','ECS task',440,125,'svc','Fargate or EC2'],['s3','S3 bucket',575,45,'store']],
+  steps:[
+   {cap:'Authenticate Docker with aws ecr get-login-password piped to docker login, then push the image.',edges:[['dev','ecr','docker push']]},
+   {cap:'ECS pulls the image and writes logs using the task execution role.',edges:[['ecr','task','pull (execution role)']]},
+   {cap:'Your application code calls AWS services with the task role.',edges:[['task','s3','task role']]}]},
+ body:[
+  `<p><b>ECR</b> stores images. <b>ECS on EC2</b> means you manage the instances; <b>Fargate</b> is serverless compute for containers. A <b>task definition</b> contains the image, CPU and memory, ports, environment variables and the task role.</p>`,
+  `<p>The <b>task role</b> carries permissions for your application. The <b>task execution role</b> lets ECS itself pull the image and write logs. ECS blue/green deployments use CodeDeploy with an ALB and two target groups.</p>`],
+ facts:[['Registry','ECR'],['Serverless compute','Fargate'],['App permissions','task role'],['Pull image, logs','execution role']],
+ trap:'If the container cannot pull its image, fix the execution role. If the app is denied calling S3, fix the task role.'},
+
+{id:'envs',d:3,title:'Testing and environments',lead:'One API, several stages, each tied to its own alias and config.',
+ diagram:{h:250,nodes:[['cl','Client',70,125,'client'],['gw','API Gateway',260,125,'sec'],['dev','dev stage',470,50,'svc','alias DEV'],['pr','prod stage',470,200,'svc','alias PROD']],
+  steps:[
+   {cap:'The client calls a stage URL such as /dev or /prod.',edges:[['cl','gw','request']]},
+   {cap:'The dev stage variable points to the DEV alias, so testers hit the latest code.',edges:[['gw','dev','stageVar = DEV']]},
+   {cap:'The prod stage variable points to the PROD alias, which can shift weight between versions for a canary release.',edges:[['gw','pr','stageVar = PROD']]}]},
+ body:[
+  `<p>Separate environments with stages and aliases, or better, with separate accounts. <b>Stage variables</b>, Lambda environment variables and Parameter Store paths such as <code>/prod/db/url</code> carry environment-specific config so the code does not change.</p>`,
+  `<p>An API Gateway <b>mock integration</b> returns a canned response, so front-end developers can test before any backend exists.</p>`],
+ facts:[['Per-stage config','stage variables'],['Backend not ready','mock integration'],['Per-env values','/prod/db/url']],
+ trap:'Do not copy code between functions per environment. Use aliases and variables.'},
+
+/* ---------------- DOMAIN 4 ---------------- */
+{id:'cloudwatch',d:4,title:'CloudWatch: metrics, logs and alarms',lead:'Embedded Metric Format turns structured logs into metrics for free.',
+ diagram:{h:260,nodes:[['fn','Lambda',70,60,'svc'],['lg','Logs (JSON)',240,60,'store','EMF'],['m','Metrics',410,60,'queue'],['al','Alarm',410,200,'sec','OK → ALARM'],['sn','SNS / Auto Scaling',560,200,'ext']],
+  steps:[
+   {cap:'The function prints one structured JSON log line in Embedded Metric Format. No extra API call, no added latency.',edges:[['fn','lg','EMF log line']]},
+   {cap:'CloudWatch extracts the metric values from the log automatically.',edges:[['lg','m','extracted']]},
+   {cap:'An alarm watches the metric and changes state: OK, ALARM or INSUFFICIENT_DATA.',edges:[['m','al','threshold']]},
+   {cap:'The alarm triggers an action: notify through SNS, scale with Auto Scaling, or act on EC2.',edges:[['al','sn','action']]}]},
+ body:[
+  `<p>EC2 sends standard metrics every 5 minutes and detailed metrics every 1 minute. <b>Memory and disk usage are not default metrics</b>: install the CloudWatch agent. Custom metrics use <code>PutMetricData</code> and can be high resolution down to 1 second. <b>EMF</b> avoids those API calls by writing metrics inside log lines.</p>`,
+  `<p>Logs live in groups and streams. Retention is <b>never expire</b> by default, so set it. <b>Logs Insights</b> queries logs, <b>metric filters</b> turn patterns into metrics and alarms, and <b>subscription filters</b> stream logs to Lambda, Kinesis or OpenSearch. <b>Composite alarms</b> cut noise by combining alarms. Synthetics canaries run scripted endpoint checks.</p>`],
+ facts:[['EC2 metrics','5 min (1 min detailed)'],['Memory / disk','CloudWatch agent'],['Low-latency Lambda metrics','EMF'],['Alarm states','OK / ALARM / INSUFFICIENT_DATA']],
+ trap:'PutMetricData per invocation adds calls and latency. EMF is the efficient answer.'},
+
+{id:'xray',d:4,title:'X-Ray: traces, annotations and sampling',lead:'Annotations are indexed and searchable. Metadata is not.',
+ widgets:[{type:'xray'}],
+ body:[
+  `<p>A <b>trace</b> follows one request. It is split into <b>segments</b> (one per service) and <b>subsegments</b> (one per downstream call). The <b>service map</b> shows latency and errors between components, so you can see where time goes.</p>`,
+  `<p><b>Annotations</b> are indexed key-value pairs, so you can filter traces by them, for example by customer ID. <b>Metadata</b> is extra detail that is not indexed. This distinction is a frequent question.</p>`,
+  `<p><b>Sampling rules</b> control cost. The default records the first request each second plus 5% of the rest. To enable tracing: Lambda has active tracing (a setting plus IAM permission), API Gateway has a tracing toggle, and EC2 or ECS need the X-Ray daemon or the ADOT collector (UDP port 2000). OpenTelemetry through ADOT is the modern instrumentation path.</p>`],
+ facts:[['Searchable','annotations'],['Not indexed','metadata'],['Default sampling','1/s + 5%'],['Daemon port','UDP 2000']],
+ trap:'"Filter traces by user" is always an annotation.'},
+
+{id:'cloudtrail',d:4,title:'CloudTrail',lead:'Who made this API call, and when?',
+ diagram:{h:230,nodes:[['u','Someone',70,115,'client'],['api','AWS API',225,115,'ext','DeleteBucket'],['ct','CloudTrail',380,115,'sec'],['s3','S3 trail bucket',545,115,'store']],
+  steps:[
+   {cap:'A user or role calls an AWS API.',edges:[['u','api','DeleteBucket']]},
+   {cap:'CloudTrail records who, what, when and from where. Management events appear in Event history for 90 days by default.',edges:[['api','ct','event recorded']]},
+   {cap:'Create a trail to deliver events to S3 for longer retention.',edges:[['ct','s3','trail','dash']]}]},
+ body:[
+  `<p>CloudTrail is the audit log of API calls. Use it for questions such as "who deleted this bucket?" or "which call was denied?". Management events are on by default and visible for 90 days in Event history. For longer retention, create a trail that delivers to S3.</p>`,
+  `<p>Pairing: CloudWatch says <i>that</i> something is wrong, X-Ray says <i>where</i> in a distributed call, CloudTrail says <i>who</i> did it.</p>`],
+ facts:[['Event history','90 days'],['Longer retention','trail to S3'],['Answers','who / what / when / from where']],
+ trap:'CloudWatch Logs and Config rules do not tell you who made an API call. CloudTrail does.'},
+
+{id:'errors',d:4,title:'Common errors and fixes',lead:'Pick a symptom to see the likely cause and the fix.',
+ widgets:[{type:'errors'}],
+ body:[
+  `<p>The troubleshooting questions follow a small catalogue. Learn the symptom-to-cause mapping above until you can say it without looking, especially the three API Gateway codes (429, 502, 504) and the Lambda VPC timeout.</p>`,
+  `<p>For access-denied errors, remember to check three places: the role policy, the resource policy and the KMS key policy. An encoded denial message can be decoded with <code>aws sts decode-authorization-message</code>.</p>`],
+ facts:[['429 / throttling','backoff + jitter'],['504','async or speed up'],['502','fix response shape'],['Hot key','better partition key, DAX']],
+ trap:'Do not raise the Lambda timeout to fix an API Gateway 504. The gateway still stops at 29 s.'},
+
+{id:'optimize',d:4,title:'Optimization levers',lead:'Right-size, reuse, cache, batch.',
+ widgets:[{type:'picker',title:'What to pull',items:[
+  {l:'Lambda',tag:'Latency and cost',t:'Right-size memory with AWS Lambda Power Tuning. Reuse connections outside the handler. Use RDS Proxy for database connection pooling. Use provisioned concurrency or SnapStart for cold-start latency.',k:'"slow Java Lambda", "too many DB connections"'},
+  {l:'Caching layers',tag:'Reads',t:'CloudFront at the edge, API Gateway cache in front of the backend, ElastiCache or DAX in front of data, plus client-side caching.',k:'"reduce read load"'},
+  {l:'Messaging',tag:'Efficiency',t:'Batch operations such as SQS SendMessageBatch (up to 10 messages). Use long polling. Use SNS filter policies to avoid unnecessary invocations.',k:'"reduce cost of empty polls"'},
+  {l:'S3',tag:'Throughput',t:'Byte-range fetches for parallel downloads, S3 Select to retrieve subsets of data, multipart for large uploads.',k:'"download faster", "only part of a file"'},
+  {l:'Cost signals',tag:'Recommendations',t:'Compute Optimizer recommends instance and Lambda sizes. Trusted Advisor flags idle resources.',k:'"recommend right size"'}]}],
+ body:[
+  `<p>Optimization answers rarely need new architecture. They ask for the smallest change that removes the bottleneck: more memory for CPU-bound Lambda, a proxy for connection storms, a cache for repeated reads, batching for chatty calls.</p>`],
+ facts:[['Connection storms','RDS Proxy'],['CPU-bound Lambda','more memory'],['Right-size tool','Lambda Power Tuning'],['SQS batch','10 messages']],
+ trap:'Provisioned concurrency fixes cold starts, not a CPU-bound handler.'}
+];
+(function(){
+'use strict';
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const dvar=n=>`var(--d${n})`;
+
+/* ---------- diagram engine ---------- */
+const NW=118,NH=48; let uid=0; const live=new Set();
+function clip(a,b,pad){const dx=b.x-a.x,dy=b.y-a.y;const sx=dx?(NW/2+pad)/Math.abs(dx):1e9,sy=dy?(NH/2+pad)/Math.abs(dy):1e9;const s=Math.min(sx,sy);return{x:a.x+dx*s,y:a.y+dy*s}}
+function Diagram(host,spec){
+  const id=++uid,W=640,H=spec.h||240,N={};
+  spec.nodes.forEach(n=>N[n[0]]={id:n[0],l:n[1],x:n[2],y:n[3],k:n[4]||'svc',s:n[5]||''});
+  const pairs=new Set();spec.steps.forEach(s=>s.edges.forEach(e=>pairs.add(e[0]+'>'+e[1])));
+  const steps=spec.steps.map((s,si)=>({cap:s.cap,edges:s.edges.map((e,ei)=>{
+    const a=N[e[0]],b=N[e[1]],opt=e[3]||'';
+    let p0=clip(a,b,3),p1=clip(b,a,6);
+    if(pairs.has(e[1]+'>'+e[0])){const dx=p1.x-p0.x,dy=p1.y-p0.y,L=Math.hypot(dx,dy)||1,ox=-dy/L*9,oy=dx/L*9;p0={x:p0.x+ox,y:p0.y+oy};p1={x:p1.x+ox,y:p1.y+oy};var off=[ox,oy]}
+    return{to:e[1],label:e[2]||'',opt,p0,p1,off:typeof off!=='undefined'&&pairs.has(e[1]+'>'+e[0])?off:null,key:si+'-'+ei}})}));
+  const total=steps.map(s=>(s.edges.length-1)*520+800+1500);
+  let h=`<div class="dgwrap"><svg class="dg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(spec.title||'Animated diagram')}"><defs><marker id="ah${id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker></defs>`;
+  steps.forEach(s=>s.edges.forEach(e=>{
+    const mx=(e.p0.x+e.p1.x)/2,my=(e.p0.y+e.p1.y)/2,horiz=Math.abs(e.p1.x-e.p0.x)>=Math.abs(e.p1.y-e.p0.y);
+    h+=`<g class="edge ${e.opt.includes('dash')?'dash':''} ${e.opt.includes('x')?'bad':''}" data-k="${e.key}"><line x1="${e.p0.x}" y1="${e.p0.y}" x2="${e.p1.x}" y2="${e.p1.y}" marker-end="url(#ah${id})"/><circle class="pk" r="5.5" cx="${e.p0.x}" cy="${e.p0.y}" opacity="0"/>${e.opt.includes('x')?`<text class="xm" x="${e.p1.x}" y="${e.p1.y-9}" text-anchor="middle" opacity="0">✕</text>`:''}${e.label?`<text x="${mx+(e.off?e.off[0]*1.9:0)}" y="${my+(e.off?e.off[1]*1.9+4:(horiz?-9:4))}">${esc(e.label)}</text>`:''}</g>`}));
+  Object.values(N).forEach(n=>{h+=`<g class="node k-${n.k}" data-n="${n.id}"><rect x="${n.x-NW/2}" y="${n.y-NH/2}" width="${NW}" height="${NH}" rx="9"/><text x="${n.x}" y="${n.y+(n.s?-2:4)}">${esc(n.l)}</text>${n.s?`<text class="sub" x="${n.x}" y="${n.y+13}">${esc(n.s)}</text>`:''}</g>`});
+  h+=`</svg></div><div class="cap" aria-live="polite"><span class="n"></span><p></p></div>`;
+  host.innerHTML=`<div class="ph"><span>Animated walkthrough</span><span class="sp"></span><div class="dots">${steps.map((_,i)=>`<button type="button" aria-label="Step ${i+1}">${i+1}</button>`).join('')}</div><button type="button" class="btn back">Back</button><button type="button" class="btn play" aria-pressed="false">Pause</button><button type="button" class="btn next">Next</button></div>`+h;
+  const edgeEls={};$$('.edge',host).forEach(g=>edgeEls[g.dataset.k]=g);
+  const nodeEls={};$$('.node',host).forEach(g=>nodeEls[g.dataset.n]=g);
+  const capN=$('.cap .n',host),capP=$('.cap p',host),dots=$$('.dots button',host),playB=$('.play',host);
+  const D={host,cur:-1,t:0,playing:!RM,visible:false,
+    show(){ // render state at (cur,t)
+      const hit=new Set();
+      steps.forEach((s,si)=>s.edges.forEach((e,ei)=>{
+        const g=edgeEls[e.key],ln=g.firstElementChild,pk=$('.pk',g),xm=$('.xm',g);
+        let p=1,cls='done';
+        if(D.cur<0){cls='done';p=1;g.style.opacity=.85}
+        else if(si<D.cur){cls='done';p=1;g.style.opacity=''}
+        else if(si>D.cur){cls='off';p=0;g.style.opacity=''}
+        else{cls='';g.style.opacity='';p=Math.max(0,Math.min(1,(D.t-ei*520)/800)); p=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2; if(p>=1)hit.add(e.to)}
+        g.setAttribute('class',`edge ${e.opt.includes('dash')?'dash':''} ${e.opt.includes('x')?'bad':''} ${cls}`);
+        ln.setAttribute('x2',e.p0.x+(e.p1.x-e.p0.x)*p);ln.setAttribute('y2',e.p0.y+(e.p1.y-e.p0.y)*p);
+        const moving=D.cur===si&&p>0&&p<1;
+        pk.setAttribute('cx',e.p0.x+(e.p1.x-e.p0.x)*p);pk.setAttribute('cy',e.p0.y+(e.p1.y-e.p0.y)*p);pk.setAttribute('opacity',moving?1:0);
+        if(xm)xm.setAttribute('opacity',(D.cur<0||si<D.cur||(D.cur===si&&p>=1))?1:0);
+      }));
+      Object.keys(nodeEls).forEach(k=>nodeEls[k].classList.toggle('hit',hit.has(k)));
+      dots.forEach((b,i)=>b.classList.toggle('on',i===D.cur));
+      if(D.cur<0){capN.textContent='All steps';capP.textContent=steps.length>1?'The full picture. Press Next or a number to walk through it one step at a time.':steps[0].cap}
+      else{capN.textContent=`Step ${D.cur+1}/${steps.length}`;capP.textContent=steps[D.cur].cap}
+    },
+    go(i){D.cur=((i%steps.length)+steps.length)%steps.length;D.t=D.playing?0:9e3;D.show()},
+    tick(dt){if(!D.playing||D.cur<0)return;D.t+=dt;if(D.t>=total[D.cur]){D.cur=(D.cur+1)%steps.length;D.t=0}D.show()},
+    setPlay(v){D.playing=v;playB.textContent=v?'Pause':'Play';playB.setAttribute('aria-pressed',String(!v));if(!v&&D.cur>=0)D.t=Math.max(D.t,9e3);else if(v&&D.cur<0)D.go(0);else if(v)D.t=0}
+  };
+  dots.forEach((b,i)=>b.onclick=()=>D.go(i));
+  $('.back',host).onclick=()=>D.go(D.cur<0?0:D.cur-1);
+  $('.next',host).onclick=()=>D.go(D.cur+1);
+  playB.onclick=()=>D.setPlay(!D.playing);
+  playB.textContent=D.playing?'Pause':'Play';playB.setAttribute('aria-pressed',String(!D.playing));
+  D.show();
+  new IntersectionObserver(es=>es.forEach(e=>{D.visible=e.isIntersecting;if(e.isIntersecting){live.add(D);if(D.cur<0&&D.playing)D.go(0)}else live.delete(D)}),{threshold:.35}).observe(host);
+  return D;
+}
+let last=performance.now();
+(function loop(now){const dt=Math.min(80,now-last);last=now;live.forEach(d=>d.tick(dt));requestAnimationFrame(loop)})(last);
+
+/* ---------- widgets ---------- */
+const W={};
+W.rcu=(h)=>{
+  h.innerHTML=`<div class="ph"><span>Capacity calculator</span></div><div class="pb"><div class="row">
+  <label class="fld">Item size (KB)<input id="r-size" type="number" min="0.1" step="0.1" value="6"></label>
+  <label class="fld">Reads / second<input id="r-rps" type="number" min="0" value="80"></label>
+  <label class="fld">Read type<select id="r-type"><option value="1">Strongly consistent</option><option value="0.5">Eventually consistent</option><option value="2">Transactional</option></select></label>
+  <label class="fld">Writes / second<input id="r-wps" type="number" min="0" value="50"></label>
+  <label class="fld">Write type<select id="r-wtype"><option value="1">Standard</option><option value="2">Transactional</option></select></label></div>
+  <div class="res"><div><b id="r-rcu">0</b><span>RCUs needed</span><small id="r-rx"></small></div><div><b id="r-wcu">0</b><span>WCUs needed</span><small id="r-wx"></small></div></div></div>`;
+  const f=()=>{const s=+$('#r-size',h).value||0,rps=+$('#r-rps',h).value||0,rt=+$('#r-type',h).value,wps=+$('#r-wps',h).value||0,wt=+$('#r-wtype',h).value;
+    const ru=Math.ceil(s/4),wu=Math.ceil(s);
+    $('#r-rcu',h).textContent=Math.ceil(ru*rt*rps);$('#r-wcu',h).textContent=wu*wt*wps;
+    $('#r-rx',h).textContent=`ceil(${s} KB ÷ 4) = ${ru} units × ${rt} × ${rps}/s`;
+    $('#r-wx',h).textContent=`ceil(${s} KB ÷ 1) = ${wu} units × ${wt} × ${wps}/s`};
+  $$('input,select',h).forEach(e=>e.oninput=f);f();
+};
+W.sqsvis=(h)=>{
+  h.innerHTML=`<div class="ph"><span>Visibility timeout lab</span></div><div class="pb"><div class="row">
+  <label class="fld">Processing time: <span id="pv"></span> s<input id="p-proc" type="range" min="5" max="150" value="60"></label>
+  <label class="fld">Visibility timeout: <span id="vv"></span> s<input id="p-vis" type="range" min="5" max="150" value="30"></label></div>
+  <svg class="dg" viewBox="0 0 620 150" style="min-width:520px;margin-top:8px" id="p-svg" role="img" aria-label="Timeline of processing versus visibility timeout"></svg>
+  <p class="note" id="p-note"></p></div>`;
+  const f=()=>{const P=+$('#p-proc',h).value,V=+$('#p-vis',h).value,x=t=>20+t*(580/300),dup=V<P;
+    $('#pv',h).textContent=P;$('#vv',h).textContent=V;
+    let s='';for(let t=0;t<=300;t+=50)s+=`<line x1="${x(t)}" x2="${x(t)}" y1="18" y2="130" stroke="var(--line)"/><text x="${x(t)}" y="144" font-size="10" text-anchor="middle" fill="var(--muted)" font-family="var(--f-mono)">${t}s</text>`;
+    const bar=(t0,t1,y,c,l)=>`<rect x="${x(t0)}" y="${y}" width="${Math.max(2,x(t1)-x(t0))}" height="22" rx="5" fill="${c}" opacity=".85"/><text x="${x(t0)+6}" y="${y+15}" font-size="10.5" fill="var(--panel)" font-family="var(--f-mono)" font-weight="600">${l}</text>`;
+    s+=bar(0,P,22,'var(--k-svc)','Consumer A processing');
+    s+=bar(0,V,52,'var(--k-queue)','Hidden from others');
+    if(dup){s+=bar(V,V+P,82,'var(--k-fail)','Consumer B: duplicate');s+=`<line x1="${x(V)}" x2="${x(V)}" y1="18" y2="110" stroke="var(--k-fail)" stroke-width="2" stroke-dasharray="4 3"/>`}
+    else s+=`<text x="${x(P)+8}" y="38" font-size="11" fill="var(--ok)" font-family="var(--f-mono)" font-weight="600">✓ deleted at ${P}s</text>`;
+    $('#p-svg',h).innerHTML=s;
+    $('#p-note',h).innerHTML=dup?`<b style="color:var(--k-fail)">Duplicate processing.</b> The message became visible again at ${V}s, before consumer A finished at ${P}s. Raise the visibility timeout above ${P}s and make consumers idempotent.`:`<b style="color:var(--ok)">Safe.</b> Consumer A deletes the message at ${P}s, inside the ${V}s window. For a Lambda consumer, use at least 6× the function timeout.`};
+  $$('input',h).forEach(e=>e.oninput=f);f();
+};
+const FLEET={
+ allatonce:{n:'All at once',dt:'Yes',rb:'Redeploy',co:'Lowest',ty:'Dev environments',f:[['oooooo','______',0,'All six instances serve version 1.'],['xxxxxx','______',0,'All instances stop while version 2 installs. Users see downtime.'],['nnnnnn','______',100,'All run version 2. Rolling back means redeploying version 1.']]},
+ rolling:{n:'Rolling',dt:'No, reduced capacity',rb:'Redeploy',co:'Low',ty:'Default safe update',f:[['oooooo','______',0,'Batch size of two instances.'],['xxoooo','______',0,'Batch 1 is out of service: capacity is 4 of 6.'],['nnoooo','______',33,'Batch 1 is back on version 2.'],['nnxxoo','______',33,'Batch 2 updating: capacity is 4 of 6.'],['nnnnoo','______',67,'Two batches done.'],['nnnnxx','______',67,'Final batch updating.'],['nnnnnn','______',100,'Done. Rollback is another rolling deploy.']]},
+ rollingbatch:{n:'Rolling + extra batch',dt:'No, full capacity',rb:'Redeploy',co:'Small extra',ty:'Keep capacity in production',f:[['oooooo','______',0,'Six instances on version 1.'],['oooooo','nn____',0,'An extra batch of version 2 launches first, so capacity never drops.'],['nnoooo','nn____',45,'Existing instances update in batches, always at full capacity.'],['nnnnoo','nn____',60,'Second batch updated.'],['nnnnnn','nn____',100,'All updated.'],['nnnnnn','______',100,'The extra batch is terminated.']]},
+ immutable:{n:'Immutable',dt:'No',rb:'Fast (terminate new ASG)',co:'Double briefly',ty:'Safest Beanstalk update',f:[['oooooo','______',0,'Version 1 serves traffic.'],['oooooo','nnnnnn',0,'A fresh Auto Scaling group of version 2 launches beside the old one.'],['oooooo','nnnnnn',100,'Health checks pass and version 2 takes traffic.'],['______','nnnnnn',100,'Old instances are terminated. If the new group had failed, terminating it would be the whole rollback.']]},
+ bluegreen:{n:'Blue/green',dt:'No',rb:'Instant (swap back)',co:'Double',ty:'Zero downtime + instant rollback',f:[['oooooo','______',0,'Blue serves all traffic.'],['oooooo','nnnnnn',0,'Green is fully built and tested with no user traffic.'],['oooooo','nnnnnn',100,'Switch traffic: environment URL swap or load balancer listener.'],['ssssss','nnnnnn',100,'Blue is kept on standby. Swap back for an instant rollback.']]},
+ canary:{n:'Canary',dt:'No',rb:'Instant',co:'Low',ty:'Test on small % first',f:[['oooooo','______',0,'Version 1 serves everything.'],['oooooo','nnnnnn',10,'Canary: 10% of traffic goes to version 2 for a set time (for example 5 minutes) while alarms watch.'],['oooooo','nnnnnn',10,'An alarm firing here shifts all traffic back automatically.'],['ssssss','nnnnnn',100,'No alarm: the remaining traffic shifts.']]},
+ linear:{n:'Linear',dt:'No',rb:'Instant',co:'Low',ty:'Equal increments',f:[['oooooo','nnnnnn',0,'Version 2 is ready.'],['oooooo','nnnnnn',10,'10% of traffic.'],['oooooo','nnnnnn',20,'+10% every minute.'],['oooooo','nnnnnn',40,'Alarms are watched at each step.'],['oooooo','nnnnnn',70,'Still shifting.'],['oooooo','nnnnnn',90,'Almost there.'],['ssssss','nnnnnn',100,'Fully shifted.']]},
+ split:{n:'Traffic splitting (Beanstalk)',dt:'No',rb:'Fast',co:'Extra instances',ty:'Canary testing in Beanstalk',f:[['oooooo','______',0,'Existing instances serve version 1.'],['oooooo','nnnnnn',10,'New instances launch and receive a percentage of traffic for an evaluation period.'],['oooooo','nnnnnn',10,'Health is evaluated. Failing means the new instances are terminated.'],['______','nnnnnn',100,'Healthy: all traffic moves and the old instances go away.']]}
+};
+W.fleet=(h)=>{
+  h.innerHTML=`<div class="ph"><span>Fleet simulator</span></div><div class="pb"><div class="split"><div class="list" id="fl-list">${Object.entries(FLEET).map(([k,v],i)=>`<button type="button" data-k="${k}" class="${i?'':'on'}">${v.n}</button>`).join('')}</div>
+  <div><div class="fleet"><div class="fl"><span>v1 fleet</span><i class="sq"></i><i class="sq"></i><i class="sq"></i><i class="sq"></i><i class="sq"></i><i class="sq"></i></div>
+  <div class="fl"><span>v2 fleet</span><i class="sq"></i><i class="sq"></i><i class="sq"></i><i class="sq"></i><i class="sq"></i><i class="sq"></i></div>
+  <div class="fl" style="grid-template-columns:76px 1fr"><span>to v2</span><div class="tbar"><i style="width:0"></i></div></div></div>
+  <p class="note" id="fl-note" aria-live="polite" style="margin-top:8px"></p><div class="tstats" id="fl-st"></div></div></div></div>`;
+  let key='allatonce',i=0,timer=null,vis=false;
+  const rows=$$('.fl',h),draw=()=>{const s=FLEET[key],fr=s.f[i];
+    [fr[0],fr[1]].forEach((str,r)=>$$('.sq',rows[r]).forEach((q,c)=>q.className='sq '+(str[c]==='o'?'':str[c])));
+    $('.tbar i',h).style.width=fr[2]+'%';$('#fl-note',h).textContent=`${i+1}/${s.f.length}: ${fr[3]}`};
+  const stats=()=>{const s=FLEET[key];$('#fl-st',h).innerHTML=[['Downtime',s.dt],['Rollback',s.rb],['Cost',s.co],['Typical answer',s.ty]].map(a=>`<div><small>${a[0]}</small>${a[1]}</div>`).join('')};
+  const start=()=>{clearInterval(timer);if(RM||!vis)return;timer=setInterval(()=>{i=(i+1)%FLEET[key].f.length;draw()},1700)};
+  $$('#fl-list button',h).forEach(b=>b.onclick=()=>{$$('#fl-list button',h).forEach(x=>x.classList.toggle('on',x===b));key=b.dataset.k;i=0;draw();stats();start()});
+  draw();stats();
+  if(RM){h.addEventListener('click',e=>{if(e.target.closest('.fleet')){i=(i+1)%FLEET[key].f.length;draw()}})}
+  new IntersectionObserver(es=>es.forEach(e=>{vis=e.isIntersecting;vis?start():clearInterval(timer)})).observe(h);
+};
+W.chain=(h)=>{
+  const src=[['Code','values passed to the SDK client builder'],['Environment variables','AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY'],['Shared credentials and config files','~/.aws/credentials'],['Container or instance role','ECS task role, EC2 instance profile, Lambda execution role']];
+  h.innerHTML=`<div class="ph"><span>Credential chain and retry lab</span></div><div class="pb"><div class="row"><label class="fld">Where are credentials set?<select id="c-sel">${src.map((s,i)=>`<option value="${i}">${s[0]}</option>`).join('')}</select></label></div>
+  <div class="chain" id="c-chain">${src.map((s,i)=>`<div><em>${i+1}</em><span><b>${s[0]}</b><br><small style="color:var(--muted)">${s[1]}</small></span><em></em></div>`).join('')}</div>
+  <div class="row"><button type="button" class="btn" id="b-go">Simulate throttled retries</button><span class="note" id="b-note" style="min-height:0">Waits double each attempt; jitter randomises them.</span></div><div class="bo" id="b-bars"></div></div>`;
+  const rows=$$('#c-chain div',h);
+  const run=(w)=>{rows.forEach((r,i)=>{r.className=i<w?'skip':i===w?'win':'';$$('em',r)[1].textContent=i<w?'not set':i===w?'used ✓':'never reached'});};
+  $('#c-sel',h).onchange=e=>run(+e.target.value);run(3);$('#c-sel',h).value=3;
+  const bars=()=>{const n=6;let hs=[];for(let a=0;a<n;a++){const base=100*Math.pow(2,a),j=Math.random()*base;hs.push([base,j])}
+    const mx=Math.max(...hs.map(x=>x[0]));$('#b-bars',h).innerHTML=hs.map((x,a)=>`<i data-l="${Math.round(x[1])}ms" style="height:${Math.max(6,x[1]/mx*72)}px"></i>`).join('');};
+  $('#b-go',h).onclick=bars;bars();
+};
+W.iam=(h)=>{
+  const opts=[['id','Identity policy allows the action',1],['res','Resource-based policy allows the action',0],['deny','An explicit Deny applies',0],['pb','Permission boundary allows the action',1],['scp','SCP allows the action',1]];
+  h.innerHTML=`<div class="ph"><span>Policy evaluation lab (same-account, simplified)</span></div><div class="pb"><div class="switches">${opts.map(o=>`<label class="sw"><input type="checkbox" data-k="${o[0]}" ${o[2]?'checked':''}> ${o[1]}</label>`).join('')}</div><div class="verdict" id="i-v" aria-live="polite"></div><ul class="trace" id="i-t"></ul></div>`;
+  const f=()=>{const s={};$$('input',h).forEach(i=>s[i.dataset.k]=i.checked);const t=[];let ok;
+    if(s.deny){ok=false;t.push('Explicit Deny found: it overrides every Allow. Stop.')}
+    else{t.push('No explicit Deny.');
+      if(!s.scp){ok=false;t.push('The SCP does not allow it, so the account cannot use the action.')}
+      else{t.push('SCP allows it.');const idOk=s.id&&s.pb;t.push(s.id?(s.pb?'Identity policy allows it and the boundary permits it.':'Identity policy allows it, but the boundary cuts it off.'):'No identity-based allow.');
+        if(idOk)ok=true;else if(s.res){ok=true;t.push('A resource-based policy allows the principal.')}else{ok=false;t.push('Nothing allows it: implicit deny.')}}}
+    const v=$('#i-v',h);v.className='verdict '+(ok?'ok':'no');v.textContent=ok?'ALLOWED':'DENIED';$('#i-t',h).innerHTML=t.map(x=>`<li>${x}</li>`).join('')};
+  $$('input',h).forEach(i=>i.onchange=f);f();
+};
+W.hooks=(h)=>{
+  const sets={ec2:{n:'EC2 / on-premises',hk:[['ApplicationStop','Stop the currently running application.'],['DownloadBundle','The agent downloads the revision.'],['BeforeInstall','Pre-install tasks such as backups.'],['Install','Agent copies files to their destination.'],['AfterInstall','Configure the new files.'],['ApplicationStart','Start the application.'],['ValidateService','Verify the deployment succeeded.']]},
+   lam:{n:'Lambda / ECS',hk:[['BeforeAllowTraffic','Run checks before any traffic reaches the new version.'],['AfterAllowTraffic','Run checks after traffic has shifted.']]}};
+  h.innerHTML=`<div class="ph"><span>AppSpec lifecycle hooks</span><span class="sp"></span><button class="btn on" data-k="ec2" type="button">EC2</button><button class="btn" data-k="lam" type="button">Lambda / ECS</button></div><div class="pb"><div class="hooks" id="h-l"></div><p class="note" id="h-n" style="margin-top:10px"></p></div>`;
+  let k='ec2',i=0,timer,vis=false;
+  const draw=()=>{const hk=sets[k].hk;$('#h-l',h).innerHTML=hk.map((x,j)=>`<span class="${j===i?'on':j<i?'past':''}">${x[0]}</span>`).join('');$('#h-n',h).innerHTML=`<b>${hk[i][0]}</b>: ${hk[i][1]}${k==='lam'?' (ECS adds a few more hooks, but these two are the exam pair.)':''}`};
+  const start=()=>{clearInterval(timer);if(RM||!vis)return;timer=setInterval(()=>{i=(i+1)%sets[k].hk.length;draw()},1500)};
+  $$('.btn',h).forEach(b=>b.onclick=()=>{$$('.btn',h).forEach(x=>x.classList.toggle('on',x===b));k=b.dataset.k;i=0;draw();start()});
+  $('#h-l',h).onclick=e=>{const s=e.target.closest('span');if(!s)return;i=[...s.parentNode.children].indexOf(s);draw();clearInterval(timer)};
+  draw();new IntersectionObserver(es=>es.forEach(e=>{vis=e.isIntersecting;vis?start():clearInterval(timer)})).observe(h);
+};
+W.picker=(h,c)=>{
+  h.innerHTML=`<div class="ph"><span>${esc(c.title)}</span></div><div class="pb"><div class="split"><div class="list">${c.items.map((x,i)=>`<button type="button" class="${i?'':'on'}">${esc(x.l)}</button>`).join('')}</div><div class="detail" aria-live="polite"></div></div></div>`;
+  const bs=$$('.list button',h),d=$('.detail',h);
+  const show=i=>{const x=c.items[i];bs.forEach((b,j)=>b.classList.toggle('on',i===j));d.style.animation='none';void d.offsetWidth;d.style.animation='';d.innerHTML=`<h4>${esc(x.l)}</h4><span style="color:var(--muted);font-size:13px">${esc(x.tag)}</span><p style="margin-top:8px">${esc(x.t)}</p>${x.k?`<span class="k">Exam keyword</span><p>${esc(x.k)}</p>`:''}`};
+  bs.forEach((b,i)=>b.onclick=()=>show(i));show(0);
+};
+W.errors=(h)=>{
+  h.innerHTML=`<div class="ph"><span>Symptom explorer</span></div><div class="pb"><div class="split"><div class="list">${ERR.map((x,i)=>`<button type="button" class="${i?'':'on'}">${esc(x[0])}</button>`).join('')}</div><div class="detail" aria-live="polite"></div></div></div>`;
+  const bs=$$('.list button',h),d=$('.detail',h);
+  const show=i=>{const x=ERR[i];bs.forEach((b,j)=>b.classList.toggle('on',i===j));d.style.animation='none';void d.offsetWidth;d.style.animation='';d.innerHTML=`<h4>${esc(x[0])}</h4><span class="k">Likely cause</span><p>${esc(x[1])}</p><span class="k">Fix</span><p>${esc(x[2])}</p>`};
+  bs.forEach((b,i)=>b.onclick=()=>show(i));show(0);
+};
+W.xray=(h)=>{
+  const R=[['API Gateway',0,420,0,'segment'],['Lambda: orders',20,400,0,'segment'],['DynamoDB GetItem',40,120,1,'subsegment'],['SQS SendMessage',130,180,1,'subsegment'],['Payment API (HTTP)',190,390,1,'subsegment',1]];
+  h.innerHTML=`<div class="ph"><span>Trace waterfall (example)</span><span class="sp"></span><span>0 – 420 ms</span></div><div class="pb"><div class="wf" id="x-wf">${R.map((r,i)=>`<div class="r ${r[3]?'sub':''}" data-i="${i}" tabindex="0" role="button"><span class="lb">${r[0]}</span><div class="t"><i class="${r[5]?'slow':''}" style="left:${r[1]/420*100}%;" data-w="${(r[2]-r[1])/420*100}"></i></div></div>`).join('')}</div>
+  <div class="row" style="margin-top:12px"><button type="button" class="btn" id="x-a">Filter by annotation customerId</button><button type="button" class="btn" id="x-m">Filter by metadata</button></div><div class="detail" id="x-d" style="margin-top:10px" aria-live="polite"></div></div>`;
+  const d=$('#x-d',h),sel=i=>{$$('.r',h).forEach(r=>r.classList.toggle('on',+r.dataset.i===i));const r=R[i];d.innerHTML=`<h4>${r[0]}</h4><span style="color:var(--muted);font-size:13px">${r[4]}, ${r[2]-r[1]} ms${r[5]?' (the slow one)':''}</span><p style="margin-top:6px">${r[5]?'The service map would show this edge in red with the highest latency. Look here first.':'Part of the request path shown on the service map.'}</p>`};
+  sel(4);
+  $$('.r',h).forEach(r=>{r.onclick=()=>sel(+r.dataset.i);r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();sel(+r.dataset.i)}}});
+  $('#x-a',h).onclick=()=>d.innerHTML=`<h4>Annotation: found 3 traces</h4><p>Annotations are indexed. <code>annotation.customerId = "c-1042"</code> returns just those traces from thousands.</p>`;
+  $('#x-m',h).onclick=()=>d.innerHTML=`<h4>Metadata: no filter available</h4><p>Metadata is stored on the trace for extra detail, but it is not indexed, so you cannot search by it.</p>`;
+  const grow=()=>$$('.t i',h).forEach((b,i)=>setTimeout(()=>b.style.width=b.dataset.w+'%',RM?0:i*220));
+  new IntersectionObserver((es,o)=>es.forEach(e=>{if(e.isIntersecting){grow();o.disconnect()}})).observe(h);
+  setTimeout(()=>{if(!$('.t i',h).style.width)grow()},2500);
+};
+
+/* ---------- page assembly ---------- */
+const main=$('#main'),rail=$('#rail');
+const got=store.get('dva-got',{});
+let html='';
+html+=`<section class="hero" id="overview" data-d="0"><div><h1>Learn the <em>DVA-C02</em> blueprint by watching it work.</h1><p class="lead">Every topic from your cheat sheet, with a moving diagram, the reasoning behind it, the numbers, and the trap the exam sets for it.</p>
+<div class="warn"><b>Timing.</b> DVA-C02 can be taken until 30 November 2026. Registration for DVA-C03 opens 27 October 2026. If you can be ready in about 7 weeks, book DVA-C02 now. Otherwise plan for DVA-C03; the core services should carry over.</div></div>
+<div class="weights" id="weights">${DOMS.map(d=>`<div class="w" style="--wc:${dvar(d.n)}"><span>${d.n}. ${d.title}</span><span>${d.pc}% · ~${d.q} Q</span><div class="bar"><i data-w="${d.pc*2.8}"></i></div></div>`).join('')}</div></section>
+<div class="facts-grid">${[['Questions','65 (50 scored)'],['Duration','130 minutes'],['Pass mark','720 / 1,000'],['Cost','150 USD'],['Validity','3 years'],['Format','1 of 4, or 2+ of 5+']].map(a=>`<div class="fg"><small>${a[0]}</small><b>${a[1]}</b></div>`).join('')}</div>
+<p style="margin-top:16px;color:var(--muted);max-width:75ch">The pass mark is compensatory, so there is no per-domain minimum. There is no penalty for guessing. Out of scope: designing architectures, VPC networking design and administering IAM users and servers.</p>`;
+let railH=`<h4>Start</h4><a href="#overview" data-d="0"><i></i>Exam overview</a>`;
+DOMS.forEach(D=>{
+  html+=`<section class="dom reveal" id="domain-${D.n}" data-d="${D.n}" style="--c:${dvar(D.n)}"><span class="pc">${D.pc}%</span><h2>Domain ${D.n}: ${D.title}</h2><p>${D.intro}</p><div class="prog"><i id="prog-${D.n}"></i></div></section>`;
+  railH+=`<h4><span>Domain ${D.n}</span><span id="rp-${D.n}"></span></h4>`;
+  TOPICS.filter(t=>t.d===D.n).forEach(t=>{
+    railH+=`<a href="#${t.id}" data-d="${D.n}" data-id="${t.id}" style="--c:${dvar(D.n)}"><i></i>${t.title}</a>`;
+    html+=`<article class="topic reveal" id="${t.id}" data-d="${D.n}" style="--c:${dvar(D.n)}"><div class="eyebrow"><span>Domain ${D.n}</span></div><h3>${t.title}</h3><p class="tl">${t.lead}</p>
+    ${t.diagram?`<div class="panel" data-dg></div>`:''}${(t.widgets||[]).map((w,i)=>`<div class="panel" data-w="${i}"></div>`).join('')}
+    <div class="cols"><div class="how">${t.body.join('')}</div><div class="side"><div class="chips">${t.facts.map(f=>`<div class="chip"><span>${f[0]}</span><b>${f[1]}</b></div>`).join('')}</div><div class="trap"><b>Exam trap</b>${t.trap}</div><label class="got"><input type="checkbox" data-id="${t.id}" ${got[t.id]?'checked':''}> I can explain this</label></div></div></article>`;
+  });
+});
+railH+=`<h4>Reference</h4><a href="#numbers" data-d="0"><i></i>Numbers to memorise</a><a href="#keywords" data-d="0"><i></i>Keyword patterns</a><a href="#practice" data-d="0"><i></i>Practice Q&amp;A</a><a href="#tactics" data-d="0"><i></i>Exam-day tactics</a>`;
+html+=`<section class="dom reveal" id="ref" data-d="0" style="--c:var(--d0);margin-top:64px"><span class="pc">∑</span><h2>Reference and drills</h2><p>The numbers table, the keyword map, 32 practice questions and the final-week checklist.</p></section>
+<article class="topic" id="numbers" data-d="0" style="--c:var(--d0)"><h3>Numbers to memorise</h3><p class="tl">These show up as distractors. If an option says Lambda can run 30 minutes, it is wrong. Soft limits can be raised through Service Quotas; hard limits (Lambda timeout, DynamoDB item size) cannot.</p>
+<div class="tools" style="margin-top:14px"><input type="search" id="n-q" placeholder="Filter, e.g. lambda, 4 KB, retention" aria-label="Filter limits"><div class="fc" id="n-f"></div></div><div class="tbl"><table><thead><tr><th>Service</th><th>Limit</th><th>Value</th></tr></thead><tbody id="n-b"></tbody></table></div></article>
+<article class="topic" id="keywords" data-d="0" style="--c:var(--d0)"><h3>Keyword patterns</h3><p class="tl">Most questions hide the answer in one phrase. Turn on drill mode, read the phrase, say the answer, then click to reveal it.</p>
+<div class="tools" style="margin-top:14px"><input type="search" id="k-q" placeholder="Search phrases" aria-label="Search keywords"><button class="btn" id="k-d" type="button" aria-pressed="false">Drill mode</button></div><div class="tbl"><div class="kw" id="k-b"></div></div></article>
+<article class="topic" id="practice" data-d="0" style="--c:var(--d0)"><h3>Practice questions</h3><p class="tl">32 questions weighted like the real exam. Choose an answer, then read why each wrong option is wrong.</p>
+<div class="tools" style="margin-top:14px"><div class="fc" id="q-f"></div><span class="score" id="q-s"></span><button class="btn" id="q-r" type="button">Reset</button></div><div id="q-l"></div></article>
+<article class="topic" id="tactics" data-d="0" style="--c:var(--d0)"><h3>Exam-day tactics and final week</h3><p class="tl">Process beats cramming in the last days.</p>
+<div class="tact">${['Read the last sentence first: it holds the real requirement (cost, security, speed, least effort).','Eliminate options that break a hard limit or need hard-coded keys. Usually two die immediately.','Between two plausible answers, pick the native feature over custom code.','"Choose two" or "Choose three" questions have no partial credit.','Pace about 2 minutes per question. Flag and move on after 3. Finish with 20 minutes for flagged items.','Answer every question. There is no penalty for guessing.','Online proctoring: clear desk, stable connection, run the system check a day early.'].map(t=>`<div>${t}</div>`).join('')}</div>
+<h3 style="font-size:22px;margin-top:30px">Final-week checklist</h3><div class="ck" id="ck">${['Re-read the numbers table daily','Score 80%+ on the official AWS Practice Exam','Redo every practice question you missed and explain the distractors aloud','Build one small SAM app (API Gateway + Lambda + DynamoDB + SQS) and deploy a canary update','Confirm which exam version (DVA-C02 or DVA-C03) you are booked for'].map((t,i)=>`<label><input type="checkbox" data-c="${i}"> ${t}</label>`).join('')}</div></article>
+<footer>Built from your AWS Developer Associate (DVA-C02) cheat sheet. Sources: AWS Certified Developer – Associate exam page and DVA-C02 exam guide. Service limits are from AWS documentation as of mid-2026; verify any you plan to rely on in production.</footer>`;
+main.innerHTML=html;rail.innerHTML=railH;
+
+TOPICS.forEach(t=>{
+  const art=$('#'+t.id);
+  if(t.diagram)Diagram($('[data-dg]',art),t.diagram);
+  $$('[data-w]',art).forEach(p=>{const c=t.widgets[+p.dataset.w];W[c.type](p,c)});
+});
+/* weights */
+const wio=new IntersectionObserver((es,o)=>es.forEach(e=>{if(e.isIntersecting){$$('.bar i',e.target).forEach(i=>i.style.width=i.dataset.w+'%');o.disconnect()}}));wio.observe($('#weights'));
+setTimeout(()=>$$('#weights .bar i').forEach(i=>{if(!i.style.width)i.style.width=i.dataset.w+'%'}),1800);
+/* reveal */
+const rio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');rio.unobserve(e.target)}}),{rootMargin:'0px 0px -8% 0px'});
+$$('.reveal').forEach(el=>{const r=el.getBoundingClientRect();if(r.top<innerHeight)el.classList.add('in');else rio.observe(el)});
+setTimeout(()=>$$('.reveal').forEach(el=>el.classList.add('in')),4000);
+/* progress */
+function prog(){
+  for(let n=1;n<=4;n++){const ts=TOPICS.filter(t=>t.d===n),c=ts.filter(t=>got[t.id]).length;$('#prog-'+n).style.width=(c/ts.length*100)+'%';$('#rp-'+n).textContent=c+'/'+ts.length}
+  $$('#rail a[data-id]').forEach(a=>a.classList.toggle('got',!!got[a.dataset.id]));
+  const all=TOPICS.length,c=TOPICS.filter(t=>got[t.id]).length;$('#tot').textContent=`${c}/${all} topics`;
+}
+$$('.got input').forEach(i=>i.onchange=()=>{got[i.dataset.id]=i.checked;store.set('dva-got',got);prog()});prog();
+/* scroll spy */
+const secs=$$('article.topic[data-d],section[data-d]');const links={};$$('#rail a').forEach(a=>links[a.getAttribute('href').slice(1)]=a);
+const bar=$('.progress i');
+function spy(){
+  const y=scrollY+120;let cur=secs[0];for(const s of secs){if(s.offsetTop<=y)cur=s}
+  const a=links[cur.id];$$('#rail a.on').forEach(x=>x.classList.remove('on'));
+  if(a){a.classList.add('on');if(innerWidth>980){const r=a.getBoundingClientRect(),rr=rail.getBoundingClientRect();if(r.top<rr.top+10||r.bottom>rr.bottom-10)a.scrollIntoView({block:'center'})}else{rail.scrollLeft=a.offsetLeft-40}}
+  const d=cur.dataset.d||'0';document.documentElement.style.setProperty('--c',dvar(d));
+  bar.style.width=(scrollY/(document.documentElement.scrollHeight-innerHeight)*100)+'%';
+}
+let tk=0;addEventListener('scroll',()=>{if(!tk){tk=requestAnimationFrame(()=>{tk=0;spy()})}},{passive:true});spy();
+/* numbers */
+const svcs=[...new Set(NUMS.map(n=>n[0]))];let nf='All';
+$('#n-f').innerHTML=['All',...svcs].map(s=>`<button class="btn ${s==='All'?'on':''}" type="button">${s}</button>`).join('');
+function nrender(){const q=$('#n-q').value.toLowerCase();$('#n-b').innerHTML=NUMS.filter(n=>(nf==='All'||n[0]===nf)&&n.join(' ').toLowerCase().includes(q)).map(n=>`<tr><td>${esc(n[0])}</td><td>${esc(n[1])}</td><td class="v">${esc(n[2])}</td></tr>`).join('')||'<tr><td colspan="3">No matches.</td></tr>'}
+$('#n-q').oninput=nrender;$$('#n-f .btn').forEach(b=>b.onclick=()=>{nf=b.textContent;$$('#n-f .btn').forEach(x=>x.classList.toggle('on',x===b));nrender()});nrender();
+/* keywords */
+let drill=false;
+function krender(){const q=$('#k-q').value.toLowerCase();$('#k-b').className='kw'+(drill?' drill':'');$('#k-b').innerHTML=KW.filter(k=>k.join(' ').toLowerCase().includes(q)).map(k=>`<div>${esc(k[0])}</div><div>${esc(k[1])}</div>`).join('')}
+$('#k-q').oninput=krender;$('#k-d').onclick=e=>{drill=!drill;e.target.setAttribute('aria-pressed',drill);e.target.classList.toggle('on',drill);krender()};
+$('#k-b').onclick=e=>{const c=e.target.closest('.drill>div:nth-child(even)');if(c)c.classList.toggle('shown')};krender();
+/* practice */
+let qf=0;const ans={};
+$('#q-f').innerHTML=['All',1,2,3,4].map(x=>`<button class="btn ${x==='All'?'on':''}" type="button" data-f="${x==='All'?0:x}">${x==='All'?'All':'Domain '+x}</button>`).join('');
+function qrender(){
+  $('#q-l').innerHTML=QS.filter(q=>!qf||q.d===qf).map(q=>{const a=ans[q.n];return`<div class="q" style="--c:${dvar(q.d)}" data-n="${q.n}"><h4><span>Q${q.n}</span>${esc(q.q)}</h4><div class="opts">${q.o.map((o,i)=>`<button type="button" data-i="${i}" ${a!=null?'disabled':''} class="${a!=null?(i===q.a?'right':i===a?'wrong':''):''}"><b>${'ABCD'[i]}</b><span>${esc(o)}</span></button>`).join('')}</div>${a!=null?`<p class="ex"><b style="color:${a===q.a?'var(--ok)':'var(--k-fail)'}">${a===q.a?'Correct.':'Not quite. The answer is '+'ABCD'[q.a]+'.'}</b> ${esc(q.x)}</p>`:''}</div>`}).join('');
+  const done=Object.keys(ans).length,ok=QS.filter(q=>ans[q.n]===q.a).length;$('#q-s').textContent=done?`Score ${ok}/${done} · ${QS.length-done} left`:`${QS.length} questions`;
+}
+$('#q-l').onclick=e=>{const b=e.target.closest('.opts button');if(!b)return;ans[+b.closest('.q').dataset.n]=+b.dataset.i;qrender()};
+$('#q-r').onclick=()=>{for(const k in ans)delete ans[k];qrender()};
+$$('#q-f .btn').forEach(b=>b.onclick=()=>{qf=+b.dataset.f;$$('#q-f .btn').forEach(x=>x.classList.toggle('on',x===b));qrender()});qrender();
+/* checklist */
+const ck=store.get('dva-ck',{});$$('#ck input').forEach(i=>{i.checked=!!ck[i.dataset.c];i.onchange=()=>{ck[i.dataset.c]=i.checked;store.set('dva-ck',ck)}});
+/* theme */
+$('#theme').onclick=()=>{const r=document.documentElement,dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;r.dataset.theme=dark?'light':'dark'};
+})();
+</script>
+
+</body></html>

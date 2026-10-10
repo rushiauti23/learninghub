@@ -1,0 +1,842 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>JVM Internals Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: lesson rail on the left (code + narration + controls), live JVM memory board on the right with wires drawn from references to objects. */
+:root{
+  --bg:#EBEFF3; --panel:#FFFFFF; --ink:#15202B; --muted:#5A6774; --line:#D2D9E0;
+  --accent:#0D7480; --accent-soft:#DDF0F1;
+  --live:#24804F; --dead:#97A2AD; --warn:#C0420E; --warn-soft:#FBE6DC;
+  --eden:#EAF5EC; --surv:#FBF3DF; --old:#EEEAF6; --meta:#E8EEF6;
+  --wire:#0D7480; --wire-hot:#C0420E;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F161D; --panel:#17212B; --ink:#E4EAF0; --muted:#93A1AE; --line:#2A3743;
+  --accent:#4FC2CC; --accent-soft:#16363B;
+  --live:#5BC98A; --dead:#5D6A76; --warn:#FF8A55; --warn-soft:#3A2218;
+  --eden:#152A1E; --surv:#2C2614; --old:#231F33; --meta:#18243A;
+  --wire:#4FC2CC; --wire-hot:#FF8A55; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F161D; --panel:#17212B; --ink:#E4EAF0; --muted:#93A1AE; --line:#2A3743;
+  --accent:#4FC2CC; --accent-soft:#16363B;
+  --live:#5BC98A; --dead:#5D6A76; --warn:#FF8A55; --warn-soft:#3A2218;
+  --eden:#152A1E; --surv:#2C2614; --old:#231F33; --meta:#18243A;
+  --wire:#4FC2CC; --wire-hot:#FF8A55; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;padding-block:24px 40px;padding-inline:18px}
+.wrap{max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(1.7rem,3.4vw,2.4rem);letter-spacing:-.02em;margin:0;line-height:1.1}
+header p{margin:0;color:var(--muted);max-width:60ch}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tab{font:inherit;font-size:.9rem;font-weight:500;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 13px;border-radius:999px;cursor:pointer}
+.tab:hover{border-color:var(--accent)}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.tab:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.lab{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,8fr);gap:18px;align-items:start}
+@media (max-width:980px){.lab{grid-template-columns:minmax(0,1fr)}}
+
+.rail{display:flex;flex-direction:column;gap:14px;min-width:0}
+.code{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow-x:auto;padding-block:10px}
+.ln{display:grid;grid-template-columns:2.4em 1fr;font-family:var(--f-mono);font-size:.8rem;line-height:1.7;white-space:pre;padding-right:14px;border-left:3px solid transparent}
+.ln .n{color:var(--dead);text-align:right;padding-right:10px;user-select:none}
+.ln.cm{color:var(--muted)}
+.ln.hl{background:var(--accent-soft);border-left-color:var(--accent)}
+.kw{color:var(--accent);font-weight:600}
+.str{color:var(--warn)}
+
+.narr{display:flex;flex-direction:column;gap:8px}
+.narr h2{font-family:var(--f-display);font-weight:500;font-size:1.25rem;margin:0;line-height:1.25;text-wrap:balance}
+.bc{align-self:flex-start;font-family:var(--f-mono);font-size:.76rem;background:var(--ink);color:var(--bg);padding:3px 9px;border-radius:5px;max-width:100%;overflow-x:auto;white-space:pre}
+.narr p{margin:0;max-width:62ch}
+.narr p code,.narr td code{background:var(--accent-soft);padding:1px 5px;border-radius:4px}
+.tw{overflow-x:auto;max-width:100%}
+.narr table{border-collapse:collapse;font-size:.85rem;min-width:420px}
+.narr th,.narr td{text-align:left;vertical-align:top;padding:5px 10px 5px 0;border-bottom:1px solid var(--line)}
+.narr th{font-weight:600;color:var(--muted)}
+
+.ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.btn{font:inherit;font-weight:600;font-size:.9rem;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:8px;cursor:pointer}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.count{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.88rem;margin-left:auto}
+.dots{display:flex;gap:4px;flex-wrap:wrap;width:100%}
+.dot{flex:1 1 14px;min-width:10px;height:6px;border-radius:3px;background:var(--line);border:0;padding:0;cursor:pointer}
+.dot.done{background:var(--accent);opacity:.45}
+.dot.on{background:var(--accent);opacity:1}
+.hint{font-size:.8rem;color:var(--muted)}
+
+/* memory board */
+.vis{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.1fr);gap:14px;min-width:0}
+@media (max-width:620px){.vis{grid-template-columns:minmax(0,1fr)}}
+.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:3}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.ctitle{font-family:var(--f-display);font-weight:500;font-size:.95rem;margin:0;display:flex;justify-content:space-between;gap:8px}
+.ctitle small{font-family:var(--f-body);font-weight:400;color:var(--muted);font-size:.78rem}
+
+.frame{border:1px solid var(--line);border-radius:8px;background:var(--bg);overflow:hidden}
+.frame.top{border-color:var(--accent)}
+.fh{font-family:var(--f-mono);font-size:.74rem;padding:5px 9px;border-bottom:1px solid var(--line);color:var(--muted)}
+.frame.top .fh{color:var(--accent);font-weight:600}
+.var{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 9px;font-family:var(--f-mono);font-size:.76rem}
+.var+.var{border-top:1px dashed var(--line)}
+.var .k{color:var(--muted)}
+.ops{padding:4px 9px;font-family:var(--f-mono);font-size:.7rem;color:var(--muted);border-top:1px solid var(--line);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.empty{font-size:.8rem;color:var(--muted);font-style:italic;padding:4px 2px}
+.val{color:var(--ink)}
+.ref{display:inline-block;font-family:var(--f-mono);font-size:.72rem;padding:1px 7px;border-radius:4px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+.ref.nul{background:transparent;color:var(--dead);font-weight:400}
+.chg{animation:flash 1.4s ease-out}
+.var.chg,.f.chg,.cell.chg{background:var(--accent-soft)}
+@keyframes flash{0%{box-shadow:0 0 0 2px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
+
+.exc{border:1px solid var(--warn);background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:7px 9px;font-family:var(--f-mono);font-size:.74rem;font-weight:600;word-break:break-word}
+
+.meta{border-radius:8px;background:var(--meta);padding:8px;display:flex;flex-direction:column;gap:6px}
+.mi{font-family:var(--f-mono);font-size:.72rem;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 8px}
+.mi b{display:block;font-weight:600;color:var(--ink)}
+.mi span{color:var(--muted);white-space:pre-wrap}
+.mi.chg{border-color:var(--accent)}
+
+.phase{border-radius:8px;padding:7px 10px;font-weight:600;font-size:.82rem;background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}
+.heap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.heap.simple{grid-template-columns:minmax(0,1fr)}
+@media (max-width:760px){.heap{grid-template-columns:minmax(0,1fr)}}
+.region{border-radius:8px;padding:8px;min-height:84px;display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);min-width:0}
+.region.eden{background:var(--eden)} .region.s0,.region.s1{background:var(--surv)} .region.old{background:var(--old);grid-column:1/-1} .region.heapall{background:var(--bg)}
+.rl{display:flex;justify-content:space-between;gap:6px;font-size:.74rem;font-weight:600;color:var(--muted)}
+.rl em{font-style:normal;font-weight:400;font-variant-numeric:tabular-nums}
+.bar{height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--muted)}
+.objs{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+
+.obj{background:var(--panel);border:1.5px solid var(--line);border-radius:7px;min-width:118px;max-width:100%;font-family:var(--f-mono);font-size:.72rem;position:relative}
+.obj.live{border-color:var(--live);box-shadow:0 0 0 2px color-mix(in srgb,var(--live) 25%,transparent)}
+.obj.dead{opacity:.5;border-style:dashed;border-color:var(--dead)}
+.obj.dead .oh{text-decoration:line-through}
+.oh{display:flex;justify-content:space-between;gap:8px;padding:4px 7px;border-bottom:1px solid var(--line);font-weight:600}
+.oh .ad{color:var(--muted);font-weight:400}
+.hdr{padding:2px 7px;font-size:.64rem;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--line)}
+.f{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:3px 7px}
+.f .k{color:var(--muted)}
+.cells{display:flex;gap:3px;padding:5px 7px;flex-wrap:wrap}
+.cell{min-width:26px;text-align:center;border:1px solid var(--line);border-radius:3px;padding:1px 4px;position:relative}
+.cell small{position:absolute;top:-1.25em;left:0;right:0;font-size:.58rem;color:var(--muted)}
+.cells.idx{padding-top:16px}
+.tag{padding:2px 7px 4px;font-size:.64rem;color:var(--muted);font-family:var(--f-body)}
+.badge{position:absolute;top:-8px;right:-6px;font-size:.6rem;background:var(--ink);color:var(--panel);border-radius:999px;padding:0 6px;font-family:var(--f-body);font-weight:600}
+.legend{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.74rem;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:1.5px solid var(--line)}
+.legend .lv::before{border-color:var(--live)} .legend .dd::before{border-style:dashed;border-color:var(--dead)} .legend .cg::before{background:var(--accent-soft);border-color:var(--accent)}
+
+.zone{display:flex;flex-direction:column;gap:10px;border-radius:10px;transition:opacity .35s}
+.zone.dim{opacity:.3}
+.zone.focus{outline:2px solid var(--accent);outline-offset:6px}
+.ram{display:flex;flex-wrap:wrap;gap:3px;font-family:var(--f-mono);font-size:.7rem}
+.ram span{border:1px solid var(--line);border-radius:4px;padding:2px 6px;background:var(--panel);color:var(--muted)}
+.ram span b{display:block;color:var(--ink);font-weight:600;text-align:center}
+
+.gloss{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.gloss h2{font-family:var(--f-display);font-weight:500;font-size:1.3rem;margin:0 0 4px}
+.gloss>p{margin:0 0 14px;color:var(--muted);max-width:70ch}
+.gloss dl{margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px 24px}
+.gloss dl div{min-width:0}
+.gloss dt{font-weight:600}
+.gloss dd{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+
+@media (prefers-reduced-motion: reduce){.chg{animation:none}.zone{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>JVM Internals Lab</h1>
+    <p>New to JVM memory? Open Start here first. Each tab steps through a program one line at a time while the panels on the right show what changes in memory. Arrows are references.</p>
+  </header>
+
+  <nav class="tabs" role="tablist" id="tabs" aria-label="Scenarios"></nav>
+
+  <section class="lab">
+    <div class="rail">
+      <div class="code" id="code" aria-label="Source code"></div>
+      <div class="ctrl">
+        <button class="btn" id="prev" type="button">Back</button>
+        <button class="btn primary" id="next" type="button">Next step</button>
+        <button class="btn" id="play" type="button">Autoplay</button>
+        <span class="count" id="count"></span>
+        <div class="dots" id="dots"></div>
+      </div>
+      <div class="narr" id="narr" aria-live="polite"></div>
+      <div class="hint">Keyboard: ← and → move between steps.</div>
+    </div>
+    <div class="vis" id="vis"></div>
+  </section>
+
+  <section class="gloss" aria-labelledby="gloss-h">
+    <h2 id="gloss-h">Key terms</h2>
+    <p>The words used on every tab, in plain language. The Start here tab walks through each one with a small program.</p>
+    <dl>
+      <div><dt>JVM (Java Virtual Machine)</dt><dd>The program that runs your Java code. <code>java Shop</code> starts it. It asks the operating system for memory and splits it into the areas below.</dd></div>
+      <div><dt>Bytecode</dt><dd>What <code>javac</code> turns your <code>.java</code> file into. A list of simple instructions for the JVM, stored in a <code>.class</code> file.</dd></div>
+      <div><dt>Thread</dt><dd>A worker that carries out instructions one at a time. A program can have many threads working at once.</dd></div>
+      <div><dt>Main thread</dt><dd>The first thread the JVM creates. Its only job is to run your <code>main</code> method.</dd></div>
+      <div><dt>Thread stack</dt><dd>Each thread's private notepad. It is a pile of frames, one per method that is currently running. Other threads can't see it.</dd></div>
+      <div><dt>Stack frame</dt><dd>The scratch space for one method call: its parameters and local variables. Added on top when the method starts, thrown away when it returns.</dd></div>
+      <div><dt>Local variable</dt><dd>A variable declared inside a method. It lives in that method's frame and disappears when the method returns.</dd></div>
+      <div><dt>Heap</dt><dd>One big shared storage area for objects. Everything made with <code>new</code> goes here, and every thread can reach it.</dd></div>
+      <div><dt>Object</dt><dd>A block of heap memory holding the fields described by its class, for example one Customer with its own <code>name</code>.</dd></div>
+      <div><dt>Field</dt><dd>A variable declared in a class, outside any method. Each object carries its own copy inside its heap block.</dd></div>
+      <div><dt>Reference</dt><dd>The address of an object on the heap. A variable like <code>Customer cust</code> holds this address, not the object itself. Drawn as an arrow.</dd></div>
+      <div><dt>Metaspace</dt><dd>Where the JVM keeps class blueprints: each class's fields, methods and bytecode. One entry per class, no matter how many objects you create.</dd></div>
+      <div><dt>Garbage collector (GC)</dt><dd>A part of the JVM that finds objects no arrow can reach any more and frees their memory, so you never have to.</dd></div>
+    </dl>
+  </section>
+</div>
+
+<script>
+(() => {
+/* ---------- helpers that mutate a state ---------- */
+const V = x => ({v: String(x)}), R = id => ({ref: id}), NUL = {ref: null};
+const topF = s => s.stack[s.stack.length - 1];
+function push(s, name){ s.stack.push({name, vars: [], ops: []}); }
+function pop(s){ s.stack.pop(); }
+function setv(s, n, val){ const f = topF(s); let x = f.vars.find(q => q.n === n);
+  if(!x){ x = {n}; f.vars.push(x); } delete x.v; delete x.ref; Object.assign(x, val); }
+function unsetv(s, n){ const f = topF(s); f.vars = f.vars.filter(q => q.n !== n); }
+function ops(s, list){ topF(s).ops = list; }
+function alloc(s, o){ s.heap.push(Object.assign({fields: [], gen: 'eden', age: 0}, o)); }
+const ob = (s, id) => s.heap.find(o => o.id === id);
+function setf(s, id, n, val){ const o = ob(s, id); let x = o.fields.find(q => q.n === n);
+  if(!x){ x = {n}; o.fields.push(x); } delete x.v; delete x.ref; Object.assign(x, val); }
+function free(s, ids){ s.heap = s.heap.filter(o => !ids.includes(o.id)); }
+function mark(s, ids, m){ ids.forEach(id => { const o = ob(s, id); if(o) o.mark = m; }); }
+function clearMarks(s){ s.heap.forEach(o => delete o.mark); }
+function meta(s, item){ s.meta.push(item); }
+
+/* ---------- scenarios ---------- */
+const ALL = ['stack', 'heap', 'meta'];
+const SCENARIOS = [
+{
+  id: 'basics', label: 'Start here', heap: 'simple',
+  code: [
+    'public class Shop {',
+    '  public static void main(String[] args) {',
+    '    int price = 50;',
+    '    int qty = 2;',
+    '    int total = multiply(price, qty);',
+    '    Customer cust = new Customer();',
+    '    cust.name = "Asha";',
+    '  }',
+    '',
+    '  static int multiply(int a, int b) {',
+    '    int result = a * b;',
+    '    return result;',
+    '  }',
+    '}',
+    '',
+    'class Customer {',
+    '  String name;',
+    '}'
+  ],
+  steps: [
+    { line: -1, focus: ALL, title: 'Your code runs inside another program',
+      text: `<p>Your CPU doesn't understand Java. So there are two steps.</p><p>First, <code>javac Shop.java</code> translates your code into <b>bytecode</b> and saves it as <code>Shop.class</code>. Bytecode is a list of very simple instructions like "put 50 in box 1" or "multiply these two numbers".</p><p>Second, <code>java Shop</code> starts the <b>JVM</b>, the Java Virtual Machine. It is an ordinary program that reads bytecode and carries it out. Everything on the right side of this page happens inside the JVM.</p>`,
+      do: s => {} },
+    { line: -1, focus: ALL, title: 'Memory is a long row of numbered boxes',
+      text: `<p>Your computer's RAM is one huge row of boxes. Each box holds one byte and has a number, called its <b>address</b>:</p>
+      <div class="ram"><span>1000<b>0</b></span><span>1001<b>0</b></span><span>1002<b>50</b></span><span>1003<b>0</b></span><span>1004<b>2</b></span><span>1005<b>0</b></span><span>1006<b>0</b></span><span>…</span></div>
+      <p>That's all memory is. The JVM asks the operating system for a large share of these boxes and divides it into areas, each with its own job. The three that matter most are the panels on the right: the <b>thread stack</b>, the <b>heap</b> and <b>metaspace</b>. They are all empty right now.</p>`,
+      do: s => {} },
+    { line: [0, 15], focus: ['meta'], title: 'Metaspace: the shelf of blueprints',
+      text: `<p>Before it can run anything, the JVM reads <code>Shop.class</code> and stores what it learns in <b>metaspace</b>: the class name, its methods and their bytecode.</p><p>Think of a class as a <b>blueprint</b> for a house. The blueprint isn't a house. It just describes one. Metaspace holds exactly one copy of each blueprint, however many objects you later build from it.</p><p>The <code>Customer</code> class isn't loaded yet. The JVM loads classes lazily, the first time your code needs one.</p>`,
+      do: s => meta(s, {name: 'Shop', d: 'methods: main, multiply'}) },
+    { line: 1, focus: ['stack'], title: 'A thread is a worker; main is the first one',
+      text: `<p>Something has to actually follow the instructions. That something is a <b>thread</b>: a worker that executes one instruction after another.</p><p>The JVM creates a first thread called <b>main</b>, and gives it one job: run your <code>main</code> method. (The JVM also starts background threads of its own, such as the garbage collector. You never see them here.)</p><p>Every thread gets its own private <b>stack</b>, the left panel. It is the worker's notepad for "what am I doing right now". Other threads can never read it.</p>`,
+      do: s => {} },
+    { line: 1, focus: ['stack'], title: 'Calling a method adds a stack frame',
+      text: `<p>When the main thread starts <code>main</code>, it puts a fresh <b>stack frame</b> on its stack. A frame is the scratch space for one method call. It holds that call's parameters and local variables.</p><p>Picture a stack of plates. Calling a method puts a new plate on top. Returning from a method takes the top plate off. The thread always works on the <b>top plate only</b>.</p><p>main also has a parameter, <code>args</code>. It's hidden here to keep things simple.</p>`,
+      do: s => push(s, 'main()') },
+    { line: 2, focus: ['stack'], title: 'A local variable is a box in the frame',
+      text: `<p><code>int price = 50</code> reserves a small box inside main's frame and puts 50 in it.</p><p><code>int</code> is a <b>primitive</b> type, like <code>double</code>, <code>boolean</code> and <code>char</code>. For primitives the box holds the value itself. There is no arrow and nothing on the heap.</p>`,
+      do: s => setv(s, 'price', V(50)) },
+    { line: 3, focus: ['stack'], title: 'Another local, another box',
+      text: `<p>Same thing for <code>qty</code>. The highlighted row shows what changed in each step.</p>`,
+      do: s => setv(s, 'qty', V(2)) },
+    { line: [4, 9], focus: ['stack'], title: 'Calling multiply puts a new frame on top',
+      text: `<p>main calls <code>multiply(price, qty)</code>. A <b>new frame</b> goes on top of the stack, and main's frame waits underneath, paused in the middle of line 5.</p><p>The parameters <code>a</code> and <code>b</code> are new boxes in the new frame. They get <b>copies</b> of 50 and 2. If multiply changed <code>a</code>, main's <code>price</code> would stay 50.</p>`,
+      do: s => { push(s, 'multiply(int a, int b)'); setv(s, 'a', V(50)); setv(s, 'b', V(2)); } },
+    { line: 10, focus: ['stack'], title: 'Each frame has its own locals',
+      text: `<p><code>result</code> is a local of multiply, so it lives in multiply's frame. main can't see it, and multiply can't see <code>price</code> or <code>qty</code>. Each method only sees the boxes in its own frame.</p>`,
+      do: s => setv(s, 'result', V(100)) },
+    { line: [11, 4], focus: ['stack'], title: 'Returning removes the frame',
+      text: `<p><code>return result</code> hands the value 100 back to the caller. Then multiply's frame is <b>thrown away</b>, and <code>a</code>, <code>b</code> and <code>result</code> are gone for good.</p><p>main is back on top and stores 100 in <code>total</code>. This is why the stack is so fast: adding and removing a frame is just moving a marker up or down. Nothing needs cleaning.</p>`,
+      do: s => { pop(s); setv(s, 'total', V(100)); } },
+    { line: [5, 15, 16], focus: ['heap', 'meta'], title: 'new creates an object on the heap',
+      text: `<p><code>new Customer()</code> needs the Customer blueprint, so the JVM loads it into metaspace now. Then it builds an <b>object</b> from it on the <b>heap</b>.</p><p>Why not put the object in the frame? Because frames vanish when a method returns, and objects often need to live longer. They may also be large, or shared between methods and threads. The heap is one big shared storage area that every thread can reach.</p><p>Fields start with a default value. <code>name</code> is <code>null</code>, meaning "points at nothing yet".</p>`,
+      do: s => { meta(s, {name: 'Customer', d: 'fields: String name'}); alloc(s, {id: 'cu', type: 'Customer', addr: '@2048', fields: [{n: 'name', ref: null}]}); } },
+    { line: 5, focus: ['stack', 'heap'], title: 'A reference is the object\'s address',
+      text: `<p><code>cust</code> is a local variable, so its box is in main's frame. But the object doesn't fit in that box, so the box holds the object's <b>address</b> on the heap instead (here, @2048). That address is called a <b>reference</b>, and it's drawn as an arrow.</p><p>It's like writing a friend's home address on a note. The note isn't the house, but it tells you how to get there.</p>`,
+      do: s => setv(s, 'cust', R('cu')) },
+    { line: 6, focus: ['stack', 'heap'], title: 'cust.name follows the arrow',
+      text: `<p>The dot means "follow the arrow". The JVM reads the address in <code>cust</code>, goes to that object on the heap, and sets its <code>name</code> field.</p><p>A field lives inside the object, on the heap. A local lives in a frame, on the stack. That is the main difference between them.</p><p>Strictly speaking, <code>"Asha"</code> is itself a String object with its own arrow. It's shown inline here to keep the picture simple.</p>`,
+      do: s => setf(s, 'cu', 'name', V('"Asha"')) },
+    { line: 7, focus: ['stack', 'heap'], title: 'main ends, and the object is left behind',
+      text: `<p>main returns, so its frame is thrown away, and with it the only arrow to the Customer. The stack is empty.</p><p>The object is still on the heap, but nothing points at it any more, so no code can ever use it again. The <b>garbage collector</b> will notice that at some point and free its memory. You never free memory yourself in Java.</p><p>When the main thread finishes (and no other non-background threads are running), the JVM shuts down.</p>`,
+      do: s => { pop(s); mark(s, ['cu'], 'dead'); } },
+    { line: -1, focus: ALL, title: 'Summary: the three areas',
+      text: `<div class="tw"><table>
+        <tr><th></th><th>Thread stack</th><th>Heap</th><th>Metaspace</th></tr>
+        <tr><td>Holds</td><td>Frames: parameters and local variables</td><td>Objects and their fields</td><td>Class blueprints</td></tr>
+        <tr><td>Belongs to</td><td>One thread each</td><td>Shared by all threads</td><td>Shared by all threads</td></tr>
+        <tr><td>Created when</td><td>A method is called</td><td><code>new</code> runs</td><td>A class is first used</td></tr>
+        <tr><td>Removed when</td><td>The method returns</td><td>GC finds it unreachable</td><td>Rarely, when its class loader goes away</td></tr>
+        <tr><td>Think of it as</td><td>A pile of plates</td><td>A shared warehouse</td><td>A shelf of blueprints</td></tr>
+      </table></div>
+      <p>Now try the <b>Object creation</b> and <b>References</b> tabs. They show the same three areas with a little more detail, such as object headers and bytecode.</p>`,
+      do: s => {} }
+  ]
+},
+{
+  id: 'objects', label: 'Object creation', heap: 'gen',
+  caps: {eden: 4, s0: 3, s1: 3, old: 4},
+  code: [
+    'class Car {',
+    '  String model;',
+    '  int year;',
+    '}',
+    '',
+    'public static void main(String[] args) {',
+    '  Car c = new Car();',
+    '  c.model = "Tesla";',
+    '  c.year = 2024;',
+    '}'
+  ],
+  steps: [
+    { line: 5, bc: 'invokestatic Main.main', title: 'The main thread gets a stack and its first frame',
+      text: `<p>Every thread owns a private <b>stack</b>. Each method call pushes a <b>frame</b> holding a local-variable array and an operand stack. <code>main</code> gets slot 0 for <code>args</code>, a reference to a <code>String[]</code> that lives on the heap.</p><p>The <code>Main</code> class itself was already loaded into <b>metaspace</b>, the native-memory area that holds class metadata (it replaced PermGen in Java 8).</p>`,
+      do: s => { meta(s, {name: 'Main', d: 'methods: main(String[])'}); push(s, 'main(String[] args)');
+        alloc(s, {id: 'args', type: 'String[0]', addr: '@7a81', cells: []}); setv(s, 'args', R('args')); } },
+    { line: 6, bc: 'new #7  // class Car', title: 'First use of Car triggers class loading',
+      text: `<p>The <code>new</code> bytecode names a class. Car isn't loaded yet, so the class loader runs three phases: <b>load</b> the bytes of <code>Car.class</code>, <b>link</b> them (verify the bytecode, prepare static fields, resolve symbols) and <b>initialize</b> (run static initializers).</p><p>The result is a Klass structure in metaspace. It records the field layout, so the JVM now knows exactly how many bytes a Car needs.</p>`,
+      do: s => meta(s, {name: 'Car', d: 'layout: header 12B\n  model  @12 (4B ref)\n  year   @16 (4B int)\nsize: 24B (padded to 8)'}) },
+    { line: 6, bc: 'new #7  // allocate', title: 'Memory is carved out of Eden with a pointer bump',
+      text: `<p>Each thread has a <b>TLAB</b> (thread-local allocation buffer) inside Eden. Allocating is just moving a pointer forward by 24 bytes, with no lock. That is why <code>new</code> is cheap.</p><p>The memory is then <b>zeroed</b>, which is why fields start as <code>null</code> and <code>0</code> while local variables have no default. The JVM writes the object header: a <b>mark word</b> (hash code, lock state, GC age) and a <b>klass pointer</b> back to the Car metadata.</p>`,
+      do: s => { alloc(s, {id: 'c1', type: 'Car', addr: '@4e25', hdr: 'mark word · klass → Car', fields: [{n: 'model', ref: null}, {n: 'year', v: '0'}]});
+        ops(s, [{ref: 'c1'}]); } },
+    { line: 6, bc: 'dup\ninvokespecial Car.<init>()V', title: 'The constructor runs on the new object',
+      text: `<p><code>new</code> left the reference on the <b>operand stack</b>. <code>dup</code> copies it, and <code>invokespecial</code> calls <code>&lt;init&gt;</code>, the compiled constructor. It first calls <code>Object.&lt;init&gt;</code>, then runs field initializers and your constructor body.</p><p>Car has none, so the fields keep their zeroed defaults.</p>`,
+      do: s => ops(s, [{ref: 'c1'}, {ref: 'c1'}]) },
+    { line: 6, bc: 'astore_1', title: 'The reference lands in local variable c',
+      text: `<p><code>astore_1</code> pops the reference into slot 1, which is <code>c</code>. The variable does not hold the object. It holds the object's address (a compressed 4-byte pointer on most 64-bit JVMs).</p>`,
+      do: s => { ops(s, []); setv(s, 'c', R('c1')); } },
+    { line: 7, bc: 'aload_1\nldc "Tesla"\nputfield Car.model', title: 'A string literal is resolved, then stored by reference',
+      text: `<p><code>ldc</code> loads the literal. String literals are <b>interned</b>: the JVM checks its string table and reuses one shared String object per distinct literal. The String keeps its characters in a separate <code>byte[]</code> (compact strings, Java 9+).</p><p><code>putfield</code> writes a reference into <code>model</code>, so Car now points at the String.</p>`,
+      do: s => { alloc(s, {id: 'str', type: 'String', addr: '@1d81', tag: 'interned literal', fields: [{n: 'value', ref: 'bytes'}, {n: 'coder', v: 'LATIN1'}, {n: 'hash', v: '0'}]});
+        alloc(s, {id: 'bytes', type: 'byte[5]', addr: '@6f2b', cells: ['T','e','s','l','a'].map(V)});
+        setf(s, 'c1', 'model', R('str')); } },
+    { line: 8, bc: 'aload_1\nsipush 2024\nputfield Car.year', title: 'Primitives are stored inline',
+      text: `<p><code>year</code> is an <code>int</code>, so 2024 is written straight into the object's own 4 bytes. No extra object, no arrow. Only reference-typed fields point elsewhere.</p>`,
+      do: s => setf(s, 'c1', 'year', V(2024)) },
+    { line: 9, bc: 'return', title: 'main returns and its frame is popped',
+      text: `<p>The frame disappears instantly, and with it the only reference to the Car. Every object is now <b>unreachable</b>.</p><p>Nothing is freed yet. Garbage is only discovered at the next GC, and in Eden dead objects cost nothing to reclaim because the collector copies out the live ones and resets the whole space. See the <b>Garbage collection</b> tab.</p>`,
+      do: s => { pop(s); mark(s, ['args', 'c1', 'str', 'bytes'], 'dead'); } }
+  ]
+},
+{
+  id: 'references', label: 'References', heap: 'simple',
+  code: [
+    'public static void main(String[] args) {',
+    '  Car a = new Car("BMW");',
+    '  Car b = a;',
+    '  b.model = "Audi";',
+    '  b = new Car("VW");',
+    '  rename(a);',
+    '  a = null;',
+    '}',
+    '',
+    'static void rename(Car x) {',
+    '  x.model = "Kia";',
+    '  x = new Car("Fiat");',
+    '}'
+  ],
+  steps: [
+    { line: 1, bc: 'new Car; dup; ldc "BMW"; invokespecial; astore_1', title: 'One object, one reference',
+      text: `<p><code>a</code> is a slot in main's frame holding the address of a Car on the heap. Strings are shown inline here so the arrows stay readable.</p>`,
+      do: s => { push(s, 'main(String[] args)'); alloc(s, {id: 'c1', type: 'Car', addr: '@5e91', fields: [{n: 'model', v: '"BMW"'}]}); setv(s, 'a', R('c1')); } },
+    { line: 2, bc: 'aload_1; astore_2', title: 'Assignment copies the reference, not the object',
+      text: `<p><code>b = a</code> copies the 4-byte address. There is still exactly one Car, now with two arrows pointing at it. <code>a == b</code> is <code>true</code> because <code>==</code> compares addresses.</p>`,
+      do: s => setv(s, 'b', R('c1')) },
+    { line: 3, bc: 'aload_2; ldc "Audi"; putfield model', title: 'Mutating through b changes what a sees',
+      text: `<p>Both variables lead to the same memory, so <code>a.model</code> is now <code>"Audi"</code> too. This aliasing is the source of many "who changed my object?" bugs.</p>`,
+      do: s => setf(s, 'c1', 'model', V('"Audi"')) },
+    { line: 4, bc: 'new Car; ...; astore_2', title: 'Reassigning b only moves b\'s arrow',
+      text: `<p>A new Car is allocated and <code>b</code> gets its address. <code>a</code> is untouched and still points at the first Car.</p>`,
+      do: s => { alloc(s, {id: 'c2', type: 'Car', addr: '@3b07', fields: [{n: 'model', v: '"VW"'}]}); setv(s, 'b', R('c2')); } },
+    { line: [5, 9], bc: 'aload_1; invokestatic rename(Car)', title: 'Calling a method copies the reference again',
+      text: `<p>Java is always <b>pass-by-value</b>. For objects the value is the reference. A new frame is pushed and its parameter <code>x</code> gets a copy of <code>a</code>'s address.</p>`,
+      do: s => { push(s, 'rename(Car x)'); setv(s, 'x', R('c1')); } },
+    { line: 10, bc: 'aload_0; ldc "Kia"; putfield model', title: 'The callee can mutate the shared object',
+      text: `<p><code>x</code> and <code>a</code> point at the same Car, so the caller will see <code>"Kia"</code> after the call returns.</p>`,
+      do: s => setf(s, 'c1', 'model', V('"Kia"')) },
+    { line: 11, bc: 'new Car; ...; astore_0', title: 'The callee cannot redirect the caller\'s variable',
+      text: `<p>Assigning to <code>x</code> only overwrites the callee's own copy. <code>a</code> in main still points at the Kia. This is why a method can't "swap" two caller variables in Java.</p>`,
+      do: s => { alloc(s, {id: 'c3', type: 'Car', addr: '@2c66', fields: [{n: 'model', v: '"Fiat"'}]}); setv(s, 'x', R('c3')); } },
+    { line: 12, bc: 'return', title: 'rename returns and the Fiat is orphaned',
+      text: `<p>The frame is popped, so the only reference to the Fiat is gone. It is now garbage, waiting for the next GC.</p>`,
+      do: s => { pop(s); mark(s, ['c3'], 'dead'); } },
+    { line: 6, bc: 'aconst_null; astore_1', title: 'Setting a to null drops the last strong reference',
+      text: `<p>No root reaches the Kia any more, so it is eligible for collection. GC decides by <b>reachability from roots</b> (stack slots, static fields, JNI handles), not by reference counting, so cycles of objects pointing at each other are collected too.</p><p>Everything here is a <b>strong</b> reference. Java also has <code>SoftReference</code> (cleared under memory pressure, handy for caches), <code>WeakReference</code> (cleared at the next GC, used by <code>WeakHashMap</code>) and <code>PhantomReference</code> (cleanup notification after death).</p>`,
+      do: s => { setv(s, 'a', NUL); mark(s, ['c1'], 'dead'); } },
+    { line: 7, bc: 'return', title: 'main returns',
+      text: `<p>The last frame goes away and the VW is unreachable as well. All three Cars are garbage.</p>`,
+      do: s => { pop(s); mark(s, ['c2'], 'dead'); } }
+  ]
+},
+{
+  id: 'gc', label: 'Garbage collection', heap: 'gen',
+  caps: {eden: 4, s0: 3, s1: 3, old: 4},
+  code: [
+    'List<Order> cache = new ArrayList<>();',
+    'for (int i = 0; i < 8; i++) {',
+    '  Order tmp = new Order(i);',
+    '  if (i % 3 == 0) cache.add(tmp);',
+    '}',
+    'cache = null;      // drop the cache',
+    'System.gc();       // a hint → Full GC'
+  ],
+  steps: [
+    { line: 0, title: 'A generational heap',
+      text: `<p>HotSpot splits the heap by age because <b>most objects die young</b> (the weak generational hypothesis). New objects go to <b>Eden</b>. Two <b>survivor</b> spaces take turns holding objects that outlived a collection. Objects that keep surviving are promoted to the <b>Old</b> generation.</p><p>The space sizes are tiny here so collections happen quickly. The list is long-lived and every Order is short-lived unless the cache keeps it.</p>`,
+      do: s => { push(s, 'main'); alloc(s, {id: 'L', type: 'ArrayList', addr: '@11a0', cells: []}); setv(s, 'cache', R('L')); } },
+    { line: [1, 2, 3], title: 'i = 0: allocate and cache',
+      text: `<p><code>Order(0)</code> lands in Eden. Since <code>0 % 3 == 0</code> the list stores a reference to it, so it stays reachable after <code>tmp</code> moves on.</p>`,
+      do: s => { setv(s, 'i', V(0)); alloc(s, {id: 'o0', type: 'Order', addr: '@2f00', fields: [{n: 'id', v: '0'}]}); setv(s, 'tmp', R('o0')); ob(s, 'L').cells.push(R('o0')); } },
+    { line: [1, 2], title: 'i = 1: allocate, not cached',
+      text: `<p>Only <code>tmp</code> points at Order(1).</p>`,
+      do: s => { setv(s, 'i', V(1)); alloc(s, {id: 'o1', type: 'Order', addr: '@2f18', fields: [{n: 'id', v: '1'}]}); setv(s, 'tmp', R('o1')); } },
+    { line: [1, 2], title: 'i = 2: Order(1) silently becomes garbage',
+      text: `<p><code>tmp</code> now points at Order(2), so nothing reaches Order(1). The JVM doesn't notice: there is no reference counting and no immediate free. Eden is now full.</p>`,
+      do: s => { setv(s, 'i', V(2)); alloc(s, {id: 'o2', type: 'Order', addr: '@2f30', fields: [{n: 'id', v: '2'}]}); setv(s, 'tmp', R('o2')); } },
+    { line: 2, title: 'i = 3: allocation fails, Minor GC starts',
+      text: `<p>There is no room in Eden for Order(3), so the JVM triggers a <b>Minor GC</b>. Application threads are paused at a <b>safepoint</b> (stop-the-world). Minor collections are usually a few milliseconds because they only look at the young generation.</p>`,
+      do: s => { setv(s, 'i', V(3)); s.phase = 'Minor GC #1 · stop-the-world'; } },
+    { line: 2, title: 'Mark: trace from GC roots',
+      text: `<p>The collector starts from <b>roots</b> (stack slots like <code>cache</code> and <code>tmp</code>, static fields, JNI handles) and follows every reference. Reached: the list, Order(0) through the list, Order(2) through <code>tmp</code>.</p><p>Order(1) is never reached, so it is garbage. References from Old into Young are found via a <b>card table</b>, so the Old generation doesn't have to be scanned.</p>`,
+      do: s => { s.phase = 'Minor GC #1 · marking from roots'; mark(s, ['L', 'o0', 'o2'], 'live'); mark(s, ['o1'], 'dead'); } },
+    { line: 2, title: 'Copy survivors, then wipe Eden',
+      text: `<p>Live objects are <b>copied</b> into survivor space S0 and their age goes to 1. References are updated to the new addresses. Eden is then reset in one move, which is why dead objects cost nothing: the collector never touches them.</p><p>Copying also <b>compacts</b>, so there's no fragmentation in the young generation.</p>`,
+      do: s => { free(s, ['o1']); s.heap.forEach(o => { if(o.gen === 'eden'){ o.gen = 's0'; o.age = 1; } }); clearMarks(s); s.phase = null; } },
+    { line: [2, 3], title: 'i = 3: allocation succeeds in fresh Eden',
+      text: `<p>Order(3) is allocated and cached. Note that the list itself lives in S0 now, pointing into Eden.</p>`,
+      do: s => { alloc(s, {id: 'o3', type: 'Order', addr: '@3a00', fields: [{n: 'id', v: '3'}]}); setv(s, 'tmp', R('o3')); ob(s, 'L').cells.push(R('o3')); } },
+    { line: [1, 2], title: 'i = 4 and 5: more short-lived objects',
+      text: `<p>Order(4) is garbage as soon as <code>tmp</code> moves to Order(5). Order(2) in S0 is also garbage now, since <code>tmp</code> no longer points at it.</p>`,
+      do: s => { alloc(s, {id: 'o4', type: 'Order', addr: '@3a18', fields: [{n: 'id', v: '4'}]});
+        alloc(s, {id: 'o5', type: 'Order', addr: '@3a30', fields: [{n: 'id', v: '5'}]}); setv(s, 'i', V(5)); setv(s, 'tmp', R('o5')); } },
+    { line: [1, 2, 3], title: 'i = 6: cached, Eden full again',
+      text: `<p>Order(6) is added to the cache. Eden is at capacity again.</p>`,
+      do: s => { setv(s, 'i', V(6)); alloc(s, {id: 'o6', type: 'Order', addr: '@3a48', fields: [{n: 'id', v: '6'}]}); setv(s, 'tmp', R('o6')); ob(s, 'L').cells.push(R('o6')); } },
+    { line: 2, title: 'i = 7: Minor GC #2, mark',
+      text: `<p>Allocation fails again. This time the collector scans Eden <b>and</b> the occupied survivor space S0. Live: the list, Order(0), Order(3), Order(6). Dead: Order(2), Order(4), Order(5).</p>`,
+      do: s => { setv(s, 'i', V(7)); s.phase = 'Minor GC #2 · marking'; mark(s, ['L', 'o0', 'o3', 'o6'], 'live'); mark(s, ['o2', 'o4', 'o5'], 'dead'); } },
+    { line: 2, title: 'Copy to S1, promote old survivors',
+      text: `<p>Survivor spaces swap roles: live objects from Eden and S0 are copied into S1, and S0 and Eden are both wiped.</p><p>The list and Order(0) have now survived two collections. In this demo the tenuring threshold is 2, so they are <b>promoted</b> to the Old generation. HotSpot's default maximum is 15 and adapts at runtime (<code>-XX:MaxTenuringThreshold</code>).</p>`,
+      do: s => { free(s, ['o2', 'o4', 'o5']); s.heap.forEach(o => {
+          if(o.gen === 's0'){ o.gen = 'old'; o.age = 2; } else if(o.gen === 'eden'){ o.gen = 's1'; o.age = 1; } });
+        clearMarks(s); s.phase = null; } },
+    { line: [1, 2], title: 'i = 7: allocate the last Order',
+      text: `<p>Order(7) goes into the now-empty Eden. The loop ends after this iteration.</p>`,
+      do: s => { alloc(s, {id: 'o7', type: 'Order', addr: '@4b00', fields: [{n: 'id', v: '7'}]}); setv(s, 'tmp', R('o7')); } },
+    { line: [4, 5], title: 'Drop the cache',
+      text: `<p><code>i</code> and <code>tmp</code> go out of scope, and <code>cache = null</code> cuts the last root. Every object in the heap is now unreachable, including the two in Old. A Minor GC would never clean those up, because it doesn't collect Old.</p>`,
+      do: s => { unsetv(s, 'i'); unsetv(s, 'tmp'); setv(s, 'cache', NUL); } },
+    { line: 6, title: 'Full GC: mark the whole heap',
+      text: `<p><code>System.gc()</code> is only a request, which the JVM may ignore (<code>-XX:+DisableExplicitGC</code>). In practice a <b>Full GC</b> usually happens when Old fills up. It marks across young <b>and</b> old, which is why its pauses are much longer.</p><p>Nothing is reachable, so every object is dead.</p>`,
+      do: s => { s.phase = 'Full GC · marking young + old'; mark(s, s.heap.map(o => o.id), 'dead'); } },
+    { line: 6, title: 'Sweep and compact',
+      text: `<p>Dead objects are reclaimed and surviving ones (none here) are slid together to remove fragmentation. That's the classic <b>mark-sweep-compact</b> for the Old generation.</p><p>Modern collectors refine this. <b>G1</b> (the default since Java 9) cuts the heap into many equal regions, each tagged Eden, Survivor or Old, and collects the regions with the most garbage first to meet a pause target. <b>ZGC</b> and <b>Shenandoah</b> mark and move objects concurrently with your code, keeping pauses under a millisecond.</p>`,
+      do: s => { free(s, s.heap.map(o => o.id)); s.phase = null; } }
+  ]
+},
+{
+  id: 'lambda', label: 'Lambdas', heap: 'simple',
+  code: [
+    'public class Main {',
+    '  public static void main(String[] args) {',
+    '    int base = 10;',
+    '    Function<Integer,Integer> add = x -> x + base;',
+    '    int r = add.apply(5);',
+    '  }',
+    '}',
+    '',
+    '// what javac really generates:',
+    'private static Integer lambda$main$0(int base, Integer x) {',
+    '  return x + base;',
+    '}'
+  ],
+  steps: [
+    { line: [9, 10, 11], title: 'Compile time: the body becomes a private method',
+      text: `<p>Unlike an anonymous inner class, a lambda does <b>not</b> get its own <code>Main$1.class</code> file. javac moves the body into a private static synthetic method in the same class, <code>lambda$main$0</code>. Captured variables become its leading parameters.</p><p>At the call site javac emits a single <code>invokedynamic</code> instruction plus a BootstrapMethods entry pointing at <code>LambdaMetafactory.metafactory</code>.</p>`,
+      do: s => meta(s, {name: 'Main', d: 'main(String[])\nlambda$main$0(int, Integer)\nBootstrapMethods:\n  LambdaMetafactory.metafactory'}) },
+    { line: 2, bc: 'bipush 10\nistore_1', title: 'base is a plain int in the frame',
+      text: `<p>A primitive local stored directly in slot 1. No heap involvement.</p>`,
+      do: s => { push(s, 'main(String[] args)'); setv(s, 'base', V(10)); } },
+    { line: 3, bc: 'iload_1\ninvokedynamic #0:apply(I)Ljava/util/function/Function;', title: 'First execution: the call site is unlinked',
+      text: `<p>An <code>invokedynamic</code> site starts out with no target. The first time it executes, the JVM calls its <b>bootstrap method</b>, <code>LambdaMetafactory.metafactory</code>, passing the interface (<code>Function</code>), the method name (<code>apply</code>) and a method handle to <code>lambda$main$0</code>.</p>`,
+      do: s => ops(s, [{v: '10'}]) },
+    { line: 3, title: 'The metafactory spins a hidden class',
+      text: `<p>At runtime it generates a small class that implements <code>Function</code>. It has one field per captured value and an <code>apply</code> that forwards to <code>lambda$main$0</code>. Since Java 15 it is a <b>hidden class</b>: it can't be found by name or loaded by anyone else.</p><p>The call site is then linked permanently, so later executions skip all of this and go straight to the factory.</p>`,
+      do: s => meta(s, {name: 'Main$$Lambda/0x0000…', d: 'hidden class implements Function\n  final int arg$1\n  apply(Object) → lambda$main$0(arg$1, x)'}) },
+    { line: 3, bc: 'astore_2', title: 'A lambda object captures a copy of base',
+      text: `<p>The factory returns an instance with <code>arg$1 = 10</code>. The value is <b>copied</b> into the object. That's why captured locals must be <b>effectively final</b>: if you could change <code>base</code> later, the copy would silently be stale.</p><p>A lambda that captures nothing gets a single cached instance that every evaluation reuses.</p>`,
+      do: s => { ops(s, []); alloc(s, {id: 'lam', type: 'Main$$Lambda', addr: '@6e8c', fields: [{n: 'arg$1', v: '10'}]}); setv(s, 'add', R('lam')); } },
+    { line: 4, bc: 'aload_2\niconst_5\ninvokestatic Integer.valueOf\ninvokeinterface Function.apply', title: 'apply(5): autoboxing, then an interface call',
+      text: `<p><code>Function</code> works on objects, so <code>5</code> is boxed with <code>Integer.valueOf(5)</code>. Values from -128 to 127 come from the shared <b>IntegerCache</b>, so no new object is made.</p><p>The interface call dispatches to the hidden class's <code>apply</code>, which gets its own frame.</p>`,
+      do: s => { alloc(s, {id: 'i5', type: 'Integer', addr: '@1c20', tag: 'IntegerCache', fields: [{n: 'value', v: '5'}]});
+        push(s, 'Main$$Lambda.apply(Object x)'); setv(s, 'this', R('lam')); setv(s, 'x', R('i5')); } },
+    { line: [9, 10], bc: 'getfield arg$1\ninvokestatic lambda$main$0', title: 'apply forwards to the synthetic method',
+      text: `<p>The hidden class reads its captured field and calls <code>lambda$main$0(10, x)</code>. Your lambda body finally runs in an ordinary static method frame. Once JIT-compiled, this whole chain is usually inlined to almost nothing.</p>`,
+      do: s => { push(s, 'lambda$main$0(int base, Integer x)'); setv(s, 'base', V(10)); setv(s, 'x', R('i5')); } },
+    { line: [10, 4], bc: 'invokevirtual intValue; iadd; Integer.valueOf\n… checkcast Integer; intValue; istore_3', title: 'Return 15 and unwind',
+      text: `<p><code>x</code> is unboxed, 10 is added, and 15 is boxed again (also from the cache) because the method returns <code>Integer</code>. Both frames pop. Back in main the result is cast and unboxed into <code>r</code>.</p><p>Method references like <code>String::length</code> use exactly the same <code>invokedynamic</code> mechanism, just without a synthetic method.</p>`,
+      do: s => { pop(s); pop(s); alloc(s, {id: 'i15', type: 'Integer', addr: '@1c34', tag: 'IntegerCache', fields: [{n: 'value', v: '15'}]}); setv(s, 'r', V(15)); } }
+  ]
+},
+{
+  id: 'capture', label: 'Locals vs fields', heap: 'simple',
+  code: [
+    'class Counter {',
+    '  int count = 0;                 // field: inside the object, on the heap',
+    '',
+    '  Runnable make() {',
+    '    int local = 10;              // local: a slot in make()\'s frame',
+    '    Runnable r = () -> {',
+    '      count++;                   // field: reached through captured this',
+    '      System.out.println(local); // local: reads a copied value',
+    '    };',
+    '    // local = 20;              // compile error: must be effectively final',
+    '    return r;',
+    '  }',
+    '}',
+    '',
+    'Counter c = new Counter();',
+    'Runnable r = c.make();',
+    'r.run();     // make() is already gone, yet this works',
+    'r.run();',
+    '',
+    '// what javac generates for the lambda body:',
+    '// private void lambda$make$0(int local) {',
+    '//   this.count++;  System.out.println(local);',
+    '// }'
+  ],
+  steps: [
+    { line: 14, bc: 'new Counter; dup; invokespecial <init>; astore_1', title: 'A field lives inside the object, on the heap',
+      text: `<p><code>count</code> is part of every Counter object. When <code>new Counter()</code> runs, the 4 bytes for <code>count</code> are allocated in the heap together with the object header.</p><p>That gives a field three properties. It lives as long as the object is reachable. Every thread that holds a reference to the object reads and writes the <b>same</b> memory. And it always has a default value (0, false or null), even before the constructor runs.</p>`,
+      do: s => { push(s, 'main'); alloc(s, {id: 'cnt', type: 'Counter', addr: '@4a10', hdr: 'mark word · klass → Counter', fields: [{n: 'count', v: '0'}]}); setv(s, 'c', R('cnt')); } },
+    { line: [3, 15], bc: 'aload_1; invokevirtual Counter.make()', title: 'Calling an instance method passes this in slot 0',
+      text: `<p>A new frame is pushed for <code>make()</code>. Its slot 0 holds <code>this</code>, a copy of the reference to the Counter.</p><p>The frame has no copy of <code>count</code>. Code inside <code>make()</code> that touches <code>count</code> compiles to <code>aload_0; getfield count</code>: load <code>this</code>, then follow it to the heap. A field is always reached through a reference.</p>`,
+      do: s => { push(s, 'Counter.make()'); setv(s, 'this', R('cnt')); } },
+    { line: 4, bc: 'bipush 10; istore_1', title: 'A local lives in the stack frame',
+      text: `<p><code>local</code> gets slot 1 of <code>make()</code>'s local-variable array. It is not on the heap at all.</p><p>That gives a local the opposite properties. It exists only while this frame exists. Only this thread can see it, because each thread has its own stack and there is no way to hand out a pointer to a stack slot. And it has no default value: javac refuses to compile a read before the first assignment.</p>`,
+      do: s => setv(s, 'local', V(10)) },
+    { line: [5, 6, 7, 8], bc: 'aload_0; iload_1\ninvokedynamic run(LCounter;I)Ljava/lang/Runnable;\nastore_2', title: 'Creating the lambda captures this and a copy of local',
+      text: `<p>The two variables are captured in different ways. Look at what goes onto the operand stack before <code>invokedynamic</code>: <code>aload_0</code> pushes <b>this</b>, and <code>iload_1</code> pushes the <b>value</b> 10.</p><p>The lambda object stores both in its own fields. <code>arg$1</code> is a reference to the same Counter, so the field <code>count</code> is <b>not</b> copied and the lambda will see every future change to it. <code>arg$2</code> is a snapshot of <code>local</code>, a separate int with no link back to the stack slot.</p>`,
+      do: s => { alloc(s, {id: 'lam', type: 'Counter$$Lambda', addr: '@6e8c', tag: 'hidden class implements Runnable', fields: [{n: 'arg$1 (this)', ref: 'cnt'}, {n: 'arg$2 (local)', v: '10'}]}); setv(s, 'r', R('lam')); } },
+    { line: 9, title: 'Hypothetical: what if Java allowed local = 20?',
+      text: `<p>Pretend the compiler let this line through. The frame's slot becomes 20, but the lambda still holds its own copy, 10. Now there are two variables with the same name and different values. Code that reads <code>local</code> after a call to <code>r.run()</code> would see 20 while the lambda prints 10, and nothing in the source would show why.</p><p>The same problem appears in the other direction: if the lambda could assign <code>local = 5</code>, it would only change its private copy, and the caller would never see it.</p>`,
+      do: s => { setv(s, 'local', V(20)); s.exception = 'Hypothetical state: frame says 20, lambda copy says 10'; } },
+    { line: 9, title: 'So javac rejects it: effectively final',
+      text: `<p>Because a copy is only correct if the original never changes, javac requires captured locals to be <b>effectively final</b>: assigned exactly once, never modified. That rule makes the copy indistinguishable from the original, so the JVM can copy freely without changing meaning.</p><p>The compiler message is <code>local variables referenced from a lambda expression must be final or effectively final</code>. Anonymous inner classes follow the same rule. Before Java 8 you had to write <code>final</code> explicitly.</p>`,
+      do: s => { setv(s, 'local', V(10)); s.exception = 'error: local variables referenced from a lambda\nexpression must be final or effectively final'; } },
+    { line: [10, 15], bc: 'aload_2; areturn', title: 'make() returns and its frame is destroyed',
+      text: `<p>This is the deeper reason the lambda cannot simply point at the local. The frame is popped and slot 1 is gone. The next method call on this thread reuses that same stack memory for something else. A lambda holding a pointer into the stack would read garbage.</p><p>The lambda object is on the heap, so it survives: its copy of 10 and its reference to the Counter are still valid. It also <b>keeps the Counter alive</b> through <code>arg$1</code>, which is a classic source of memory leaks when lambdas that use instance fields are registered as long-lived listeners.</p>`,
+      do: s => { s.exception = null; pop(s); setv(s, 'r', R('lam')); } },
+    { line: [16, 6, 7], bc: 'invokeinterface Runnable.run\n→ invokevirtual Counter.lambda$make$0(I)V', title: 'r.run(): the field is updated in place, the local is read from the copy',
+      text: `<p>The hidden class's <code>run()</code> passes its captured values to the synthetic method: <code>arg$1</code> becomes the receiver (<code>this</code>) and <code>arg$2</code> becomes the parameter <code>local</code>.</p><p><code>count++</code> compiles to <code>getfield</code>, <code>iadd</code>, <code>putfield</code> on the Counter in the heap, so the change is real and visible to everyone who holds that Counter. <code>local</code> is just a parameter with the value 10. Mutating a field from a lambda is allowed because there is only ever one copy of it.</p>`,
+      do: s => { push(s, 'Counter$$Lambda.run()'); setv(s, 'this', R('lam'));
+        push(s, 'Counter.lambda$make$0(int local)'); setv(s, 'this', R('cnt')); setv(s, 'local', V(10));
+        setf(s, 'cnt', 'count', V(1)); } },
+    { line: 17, title: 'Second call: the field keeps counting',
+      text: `<p>Both frames pop, and a second call pushes fresh ones. <code>count</code> goes to 2 because every call writes to the same heap memory. <code>local</code> is still 10 because it is a value baked into the lambda object.</p><p>One caution: <code>count++</code> is read, add, write. If <code>r</code> is submitted to an executor and runs on several threads at once, updates can be lost. Fields are shared memory, so they need <code>AtomicInteger</code>, <code>synchronized</code> or <code>volatile</code> where threads are involved.</p>`,
+      do: s => { pop(s); pop(s); setf(s, 'cnt', 'count', V(2)); } },
+    { line: [1, 4], title: 'Side by side',
+      text: `<div class="tw"><table>
+        <tr><th></th><th>Local variable</th><th>Instance field</th></tr>
+        <tr><td>Stored in</td><td>Stack frame slot</td><td>Object on the heap</td></tr>
+        <tr><td>Lifetime</td><td>Until the method returns</td><td>Until the object is unreachable</td></tr>
+        <tr><td>Visible to</td><td>One thread only</td><td>Any thread with a reference</td></tr>
+        <tr><td>Default value</td><td>None, must be assigned</td><td><code>0</code> / <code>false</code> / <code>null</code></td></tr>
+        <tr><td>Lambda captures</td><td>A copy of the value</td><td><code>this</code>, then reads the live field</td></tr>
+        <tr><td>Can change after capture?</td><td>No, effectively final</td><td>Yes, but watch thread safety</td></tr>
+      </table></div>
+      <p>Static fields aren't captured at all, since the lambda reads them straight from the class. If you need a counter that changes inside a lambda, keep the variable final and put the mutable state in a heap object, for example <code>AtomicInteger n = new AtomicInteger()</code> and then <code>n.incrementAndGet()</code>. The reference never changes, so the copy rule holds, while the object it points to can change freely.</p>`,
+      do: s => {} }
+  ]
+},
+{
+  id: 'cme', label: 'for-each + remove', heap: 'simple',
+  code: [
+    'List<String> list = new ArrayList<>(List.of("A","B","C"));',
+    'for (String s : list) {',
+    '  if (s.equals("A")) {',
+    '    list.remove(s);',
+    '  }',
+    '}',
+    '',
+    '// javac turns the for-each into:',
+    '// Iterator<String> it = list.iterator();',
+    '// while (it.hasNext()) { String s = it.next(); ... }'
+  ],
+  steps: [
+    { line: 0, title: 'An ArrayList and its modCount',
+      text: `<p>An ArrayList is a wrapper around an <code>Object[]</code> plus a <code>size</code>. It also keeps <code>modCount</code>, a counter that goes up on every <b>structural change</b>: add, remove, clear. Calling <code>set</code> does not count.</p>`,
+      do: s => { push(s, 'main');
+        alloc(s, {id: 'arr', type: 'Object[3]', addr: '@71c3', cells: ['"A"','"B"','"C"'].map(V), idx: true});
+        alloc(s, {id: 'L', type: 'ArrayList', addr: '@5a10', fields: [{n: 'elementData', ref: 'arr'}, {n: 'size', v: '3'}, {n: 'modCount', v: '0'}]});
+        setv(s, 'list', R('L')); } },
+    { line: [1, 8], bc: 'invokeinterface List.iterator', title: 'A hidden iterator snapshots modCount',
+      text: `<p>The for-each loop secretly calls <code>list.iterator()</code>. The returned <code>ArrayList.Itr</code> tracks its position with <code>cursor</code> (next index to return) and <code>lastRet</code> (last index returned). It records <code>expectedModCount = modCount</code>, which is 0.</p>`,
+      do: s => { alloc(s, {id: 'it', type: 'ArrayList$Itr', addr: '@3f88', fields: [{n: 'cursor', v: '0'}, {n: 'lastRet', v: '-1'}, {n: 'expectedModCount', v: '0'}, {n: 'this$0', ref: 'L'}]});
+        setv(s, 'it (hidden)', R('it')); } },
+    { line: [1, 9], title: 'hasNext() and next() return "A"',
+      text: `<p><code>hasNext()</code> checks <code>cursor != size</code>: 0 ≠ 3, true. <code>next()</code> first calls <code>checkForComodification()</code>: modCount 0 equals expectedModCount 0, fine. It returns <code>elementData[0]</code>, then sets <code>cursor = 1</code>, <code>lastRet = 0</code>.</p>`,
+      do: s => { setf(s, 'it', 'cursor', V(1)); setf(s, 'it', 'lastRet', V(0)); setv(s, 's', V('"A"')); } },
+    { line: 3, bc: 'invokeinterface List.remove(Object)', title: 'list.remove() goes around the iterator',
+      text: `<p><code>ArrayList.remove</code> finds "A" and shifts everything after it one slot left with <code>System.arraycopy</code>, nulls the last slot, drops <code>size</code> to 2 and bumps <code>modCount</code> to 1.</p><p>The iterator is not told. Its <code>cursor</code> is still 1, but index 1 now holds "C". <b>"B" just slid underneath the cursor.</b></p>`,
+      do: s => { const a = ob(s, 'arr'); a.cells = ['"B"','"C"','null'].map(V); setf(s, 'L', 'size', V(2)); setf(s, 'L', 'modCount', V(1)); } },
+    { line: [1, 9], title: 'next() detects the change and throws',
+      text: `<p><code>hasNext()</code>: cursor 1 ≠ size 2, true. <code>next()</code> calls <code>checkForComodification()</code>: modCount is 1 but expectedModCount is 0.</p><p>The iterator throws <code>ConcurrentModificationException</code>. "Concurrent" is misleading: there is only one thread. It means the collection was structurally changed by something other than this iterator.</p>`,
+      do: s => { s.exception = 'java.util.ConcurrentModificationException\n  at ArrayList$Itr.checkForComodification\n  at ArrayList$Itr.next'; } },
+    { line: 3, title: 'Why fail-fast is the right call',
+      text: `<p>Without the check, <code>next()</code> would return "C" and "B" would never be visited. Your loop would silently skip an element. Throwing early turns a hidden logic bug into a loud one.</p><p>A famous edge case: remove "B" (the second-to-last) instead. Then size becomes 2, cursor is 2, <code>hasNext()</code> returns false, and the loop just ends. No exception, and "C" is never checked. The check is best-effort, so don't rely on it for correctness.</p>`,
+      do: s => {} }
+  ]
+},
+{
+  id: 'iterator', label: 'Iterator.remove', heap: 'simple',
+  code: [
+    'List<String> list = new ArrayList<>(List.of("A","B","C"));',
+    'Iterator<String> it = list.iterator();',
+    'while (it.hasNext()) {',
+    '  String s = it.next();',
+    '  if (s.equals("A")) {',
+    '    it.remove();',
+    '  }',
+    '}',
+    '// Java 8+: list.removeIf(s -> s.equals("A"));'
+  ],
+  steps: [
+    { line: 0, title: 'Same list, same modCount',
+      text: `<p>Identical starting point: three elements, <code>size = 3</code>, <code>modCount = 0</code>.</p>`,
+      do: s => { push(s, 'main');
+        alloc(s, {id: 'arr', type: 'Object[3]', addr: '@71c3', cells: ['"A"','"B"','"C"'].map(V), idx: true});
+        alloc(s, {id: 'L', type: 'ArrayList', addr: '@5a10', fields: [{n: 'elementData', ref: 'arr'}, {n: 'size', v: '3'}, {n: 'modCount', v: '0'}]});
+        setv(s, 'list', R('L')); } },
+    { line: 1, title: 'This time you hold the iterator',
+      text: `<p>Same <code>ArrayList.Itr</code> as before, with <code>expectedModCount = 0</code>. The difference is that you now have a variable for it, so you can call its own <code>remove()</code>.</p>`,
+      do: s => { alloc(s, {id: 'it', type: 'ArrayList$Itr', addr: '@3f88', fields: [{n: 'cursor', v: '0'}, {n: 'lastRet', v: '-1'}, {n: 'expectedModCount', v: '0'}, {n: 'this$0', ref: 'L'}]});
+        setv(s, 'it', R('it')); } },
+    { line: [2, 3], title: 'next() returns "A"',
+      text: `<p>cursor 0 ≠ size 3, and modCount matches. Returns "A", then <code>cursor = 1</code>, <code>lastRet = 0</code>.</p>`,
+      do: s => { setf(s, 'it', 'cursor', V(1)); setf(s, 'it', 'lastRet', V(0)); setv(s, 's', V('"A"')); } },
+    { line: 5, title: 'it.remove(), part 1: delete via the list',
+      text: `<p>Iterator.remove first checks <code>lastRet &gt;= 0</code> (otherwise <code>IllegalStateException</code>) and runs <code>checkForComodification()</code>. Then it calls <code>ArrayList.this.remove(lastRet)</code>.</p><p>This is the same shift as before: "B" and "C" move left, <code>size = 2</code>, <code>modCount = 1</code>. So far the iterator is out of sync, exactly like the failing case.</p>`,
+      do: s => { const a = ob(s, 'arr'); a.cells = ['"B"','"C"','null'].map(V); setf(s, 'L', 'size', V(2)); setf(s, 'L', 'modCount', V(1)); } },
+    { line: 5, title: 'it.remove(), part 2: the iterator repairs itself',
+      text: `<p>Because the iterator made the change, it knows exactly what happened and fixes its own bookkeeping:</p><p><code>cursor = lastRet</code> (back to 0) so "B", which just slid into index 0, is not skipped. <code>lastRet = -1</code>, so calling <code>remove()</code> twice in a row throws <code>IllegalStateException</code>. <code>expectedModCount = modCount</code> (now 1), so the next check passes.</p><p>That re-sync is the whole answer: list.remove() changes modCount behind the iterator's back, while it.remove() changes it and updates expectedModCount in the same breath.</p>`,
+      do: s => { setf(s, 'it', 'cursor', V(0)); setf(s, 'it', 'lastRet', V(-1)); setf(s, 'it', 'expectedModCount', V(1)); } },
+    { line: [2, 3], title: 'next() returns "B", nothing skipped',
+      text: `<p>cursor 0 ≠ size 2. modCount 1 equals expectedModCount 1, so no exception. Returns "B", <code>cursor = 1</code>, <code>lastRet = 0</code>.</p>`,
+      do: s => { setf(s, 'it', 'cursor', V(1)); setf(s, 'it', 'lastRet', V(0)); setv(s, 's', V('"B"')); } },
+    { line: [2, 3], title: 'next() returns "C"',
+      text: `<p>"B" didn't match. cursor 1 ≠ 2, returns "C", <code>cursor = 2</code>, <code>lastRet = 1</code>.</p>`,
+      do: s => { setf(s, 'it', 'cursor', V(2)); setf(s, 'it', 'lastRet', V(1)); setv(s, 's', V('"C"')); } },
+    { line: [2, 7], title: 'hasNext() is false, loop ends cleanly',
+      text: `<p>cursor 2 = size 2. The list is <code>[B, C]</code> and every element was visited once.</p><p>In modern code prefer <code>list.removeIf(...)</code>. ArrayList implements it in one pass that marks matches and then compacts, O(n), whereas repeated <code>it.remove()</code> shifts the array each time, O(n²) in the worst case. If other threads modify the list, use <code>CopyOnWriteArrayList</code> (iterators work on a snapshot) or concurrent collections whose iterators are weakly consistent and never throw CME.</p>`,
+      do: s => { unsetv(s, 's'); } }
+  ]
+}
+];
+
+/* ---------- precompute states ---------- */
+const clone = o => JSON.parse(JSON.stringify(o));
+SCENARIOS.forEach(sc => {
+  let s = {stack: [], heap: [], meta: [], phase: null, exception: null};
+  sc.init = clone(s);
+  sc.states = sc.steps.map(st => { s = clone(s); st.do(s); return s; });
+});
+
+function sig(s){
+  const m = {};
+  s.stack.forEach((f, i) => { f.vars.forEach(x => m[`v:${i}:${f.name}:${x.n}`] = JSON.stringify([x.v, x.ref])); m[`ops:${i}`] = JSON.stringify(f.ops); });
+  s.heap.forEach(o => { m[`o:${o.id}`] = o.gen; o.fields.forEach(x => m[`f:${o.id}:${x.n}`] = JSON.stringify([x.v, x.ref]));
+    (o.cells || []).forEach((c, j) => m[`c:${o.id}:${j}`] = JSON.stringify([c.v, c.ref])); });
+  s.meta.forEach(x => m[`m:${x.name}`] = x.d);
+  return m;
+}
+
+/* ---------- rendering ---------- */
+const $ = id => document.getElementById(id);
+const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+let cur = SCENARIOS[0], idx = 0, timer = null;
+
+function hiCode(line){
+  let h = esc(line);
+  if(/^\s*\/\//.test(line)) return h;
+  h = h.replace(/(&quot;|"[^"]*")/g, '<span class="str">$1</span>');
+  h = h.replace(/\b(public|static|private|class|int|new|for|if|while|return|null|void)\b(?![^<]*>)/g, '<span class="kw">$1</span>');
+  h = h.replace(/(\/\/.*)$/, '<span style="color:var(--muted)">$1</span>');
+  return h;
+}
+
+function valHTML(x){
+  if('ref' in x) return x.ref ? `<span class="ref" data-ref="${x.ref}">ref</span>` : `<span class="ref nul">null</span>`;
+  return `<span class="val">${esc(x.v)}</span>`;
+}
+
+function objHTML(o, ch){
+  const cls = ['obj', o.mark || '', ch.has(`o:${o.id}`) ? 'chg' : ''].join(' ');
+  let h = `<div class="${cls}" data-obj="${o.id}">`;
+  if(cur.heap === 'gen' && o.age) h += `<span class="badge">age ${o.age}</span>`;
+  h += `<div class="oh"><span>${esc(o.type)}</span><span class="ad">${o.addr || ''}</span></div>`;
+  if(o.hdr) h += `<div class="hdr">${esc(o.hdr)}</div>`;
+  o.fields.forEach(f => h += `<div class="f${ch.has(`f:${o.id}:${f.n}`) ? ' chg' : ''}"><span class="k">${esc(f.n)}</span>${valHTML(f)}</div>`);
+  if(o.cells){
+    h += `<div class="cells${o.idx ? ' idx' : ''}">`;
+    if(!o.cells.length) h += `<span class="k" style="color:var(--muted)">[ ]</span>`;
+    o.cells.forEach((c, j) => h += `<span class="cell${ch.has(`c:${o.id}:${j}`) ? ' chg' : ''}">${o.idx ? `<small>${j}</small>` : ''}${valHTML(c)}</span>`);
+    h += `</div>`;
+  }
+  if(o.tag) h += `<div class="tag">${esc(o.tag)}</div>`;
+  return h + `</div>`;
+}
+
+function render(){
+  const s = cur.states[idx], st = cur.steps[idx];
+  const prev = idx ? sig(cur.states[idx - 1]) : sig(cur.init), now = sig(s);
+  const ch = new Set(Object.keys(now).filter(k => prev[k] !== now[k]));
+
+  // code
+  const lines = [].concat(st.line);
+  $('code').innerHTML = cur.code.map((l, i) =>
+    `<div class="ln${lines.includes(i) ? ' hl' : ''}${/^\s*\/\//.test(l) ? ' cm' : ''}"><span class="n">${i + 1}</span><span>${hiCode(l) || ' '}</span></div>`).join('');
+
+  // narration
+  $('narr').innerHTML = `<h2>${esc(st.title)}</h2>${st.bc ? `<div class="bc">${esc(st.bc)}</div>` : ''}${st.text}`;
+
+  // controls
+  $('count').textContent = `Step ${idx + 1} of ${cur.steps.length}`;
+  $('prev').disabled = idx === 0;
+  $('next').disabled = idx === cur.steps.length - 1;
+  $('dots').innerHTML = cur.steps.map((_, i) => `<button class="dot ${i < idx ? 'done' : ''} ${i === idx ? 'on' : ''}" data-i="${i}" aria-label="Go to step ${i + 1}" type="button"></button>`).join('');
+
+  // stack column
+  const z = name => st.focus ? (st.focus.includes(name) ? ' focus' : ' dim') : '';
+  let left = `<div class="col"><div class="zone${z('stack')}"><h3 class="ctitle">Thread stack <small>main thread</small></h3>`;
+  if(s.exception) left += `<div class="exc">${esc(s.exception).replace(/\n/g, '<br>')}</div>`;
+  if(!s.stack.length) left += `<div class="empty">No frames. No method is running.</div>`;
+  [...s.stack].map((f, i) => [f, i]).reverse().forEach(([f, i]) => {
+    left += `<div class="frame${i === s.stack.length - 1 ? ' top' : ''}"><div class="fh">${esc(f.name)}</div>`;
+    if(!f.vars.length) left += `<div class="var"><span class="k">no locals yet</span></div>`;
+    f.vars.forEach(x => left += `<div class="var${ch.has(`v:${i}:${f.name}:${x.n}`) ? ' chg' : ''}"><span class="k">${esc(x.n)}</span>${valHTML(x)}</div>`);
+    if(f.ops.length) left += `<div class="ops${ch.has(`ops:${i}`) ? ' chg' : ''}">operand stack ${f.ops.map(valHTML).join(' ')}</div>`;
+    left += `</div>`;
+  });
+  left += `</div><div class="zone${z('meta')}"><h3 class="ctitle">Metaspace <small>class blueprints</small></h3><div class="meta">`;
+  if(!s.meta.length) left += `<div class="empty">No classes shown.</div>`;
+  s.meta.forEach(m => left += `<div class="mi${ch.has(`m:${m.name}`) ? ' chg' : ''}"><b>${esc(m.name)}</b><span>${esc(m.d)}</span></div>`);
+  left += `</div></div></div>`;
+
+  // heap column
+  let right = `<div class="col"><div class="zone${z('heap')}"><h3 class="ctitle">Heap <small>${cur.heap === 'gen' ? 'generational layout' : 'shared by all threads'}</small></h3>`;
+  if(s.phase) right += `<div class="phase">${esc(s.phase)}</div>`;
+  if(cur.heap === 'gen'){
+    right += `<div class="heap">`;
+    [['eden', 'Eden'], ['s0', 'Survivor S0'], ['s1', 'Survivor S1'], ['old', 'Old generation']].forEach(([g, name]) => {
+      const objs = s.heap.filter(o => o.gen === g), cap = cur.caps[g];
+      const used = Math.min(objs.length, cap);
+      right += `<div class="region ${g}"><div class="rl"><span>${name}</span><em>${objs.length}/${cap}</em></div>
+        <div class="bar"><i style="width:${used / cap * 100}%"></i></div>
+        <div class="objs">${objs.map(o => objHTML(o, ch)).join('') || '<span class="empty">empty</span>'}</div></div>`;
+    });
+    right += `</div>`;
+  } else {
+    right += `<div class="heap simple"><div class="region heapall"><div class="objs">${s.heap.map(o => objHTML(o, ch)).join('') || '<span class="empty">No objects yet.</span>'}</div></div></div>`;
+  }
+  right += `</div></div>`;
+
+  const legend = `<div class="legend"><span class="cg">changed this step</span><span class="lv">marked live by GC</span><span class="dd">unreachable</span></div>`;
+  $('vis').innerHTML = left + right + legend + `<svg class="wires" id="wires" aria-hidden="true"></svg>`;
+  requestAnimationFrame(drawWires);
+}
+
+function drawWires(){
+  const vis = $('vis'), svg = $('wires'); if(!svg) return;
+  const vb = vis.getBoundingClientRect();
+  let out = '';
+  vis.querySelectorAll('[data-ref]').forEach(src => {
+    const tgt = vis.querySelector(`[data-obj="${src.dataset.ref}"]`); if(!tgt) return;
+    const a = src.getBoundingClientRect(), b = tgt.getBoundingClientRect();
+    const sx = a.right - vb.left, sy = a.top + a.height / 2 - vb.top;
+    const hot = !!src.closest('.chg');
+    const dead = !!src.closest('.obj.dead');
+    let ex, ey, c1x, c2x, dir;
+    if(b.left - vb.left >= sx + 10){
+      ex = b.left - vb.left; ey = b.top - vb.top + 13;
+      const dx = Math.max(30, (ex - sx) / 2); c1x = sx + dx; c2x = ex - dx; dir = 1;
+    } else {
+      ex = b.right - vb.left; ey = b.top - vb.top + 13;
+      const far = Math.max(sx, ex) + 34; c1x = far; c2x = far; dir = -1;
+    }
+    const col = hot ? 'var(--wire-hot)' : 'var(--wire)';
+    out += `<path d="M${sx},${sy} C${c1x},${sy} ${c2x},${ey} ${ex},${ey}" fill="none" stroke="${col}" stroke-width="${hot ? 2.2 : 1.5}" opacity="${dead ? .3 : .85}" ${dead ? 'stroke-dasharray="4 3"' : ''}/>`;
+    out += `<path d="M${ex},${ey} l${-7 * dir},-4 l0,8 z" fill="${col}" opacity="${dead ? .3 : .9}"/>`;
+  });
+  svg.setAttribute('viewBox', `0 0 ${vb.width} ${vb.height}`);
+  svg.innerHTML = out;
+}
+
+/* ---------- controls ---------- */
+function go(i){ idx = Math.max(0, Math.min(cur.steps.length - 1, i)); render(); }
+function stop(){ clearInterval(timer); timer = null; $('play').textContent = 'Autoplay'; }
+function pick(id){
+  stop(); cur = SCENARIOS.find(x => x.id === id) || SCENARIOS[0]; idx = 0;
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.id === cur.id));
+  try { localStorage.setItem('jvmlab-tab-v2', cur.id); } catch(e){}
+  render();
+}
+$('tabs').innerHTML = SCENARIOS.map(sc => `<button class="tab" role="tab" type="button" data-id="${sc.id}">${esc(sc.label)}</button>`).join('');
+$('tabs').addEventListener('click', e => { const t = e.target.closest('.tab'); if(t) pick(t.dataset.id); });
+$('prev').onclick = () => { stop(); go(idx - 1); };
+$('next').onclick = () => { stop(); go(idx + 1); };
+$('dots').addEventListener('click', e => { const d = e.target.closest('.dot'); if(d){ stop(); go(+d.dataset.i); } });
+$('play').onclick = () => {
+  if(timer) return stop();
+  if(idx === cur.steps.length - 1) go(0);
+  $('play').textContent = 'Pause';
+  timer = setInterval(() => { if(idx >= cur.steps.length - 1) return stop(); go(idx + 1); }, 3200);
+};
+document.addEventListener('keydown', e => {
+  if(e.target.closest('input,textarea')) return;
+  if(e.key === 'ArrowRight'){ stop(); go(idx + 1); }
+  if(e.key === 'ArrowLeft'){ stop(); go(idx - 1); }
+});
+window.addEventListener('resize', () => requestAnimationFrame(drawWires));
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => requestAnimationFrame(drawWires));
+
+let start = (location.hash || '').slice(1);
+if(!SCENARIOS.some(x => x.id === start)){ try { start = localStorage.getItem('jvmlab-tab-v2') || ''; } catch(e){ start = ''; } }
+pick(start || 'basics');
+})();
+</script>
+
+</body></html>
